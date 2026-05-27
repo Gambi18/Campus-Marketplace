@@ -2,49 +2,52 @@ package main
 
 import (
 	"log"
-	"os"
+	
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	
+    "campus-marketplace/internal/config"
+    "campus-marketplace/internal/db"
+	dbsqlc "campus-marketplace/internal/db/sqlc"
+	"campus-marketplace/internal/handlers"
+	"campus-marketplace/internal/services"
+
 )
 
 func main() {
-	// Load environment variables
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("No .env file found, using environment variables")
-	}
+	// Iinsted of Loading environment variables, loaded config insted since everything is alredy set there
+	cfg := config.LoadConfig()
+     // Run migrations
+    if err := db.RunMigrations(cfg.DatabaseURL()); err != nil {
+        log.Fatalf("Migration error: %v", err)
+    }
+    //  Connect to database
+    database, err := db.Connect(cfg.DatabaseURL())
+    if err != nil {
+        log.Fatalf("Database connection error: %v", err)
+    }
+    defer database.Close()
 
-	// Get port from environment or use default
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+    //  Initialize sqlc queries
+    queries := dbsqlc.New(database)
+    _ = queries
+	//  Initialize service
+	authService := services.NewAuthService(cfg.JWTSecret)
+
+
+    // Set gin mode based on environment
+    if cfg.Env == "production" {
+        gin.SetMode(gin.ReleaseMode)
+    }
 
 	// Create Gin router
 	router := gin.Default()
+	handlers.SetupRoutes(router, queries, authService)
 
-	// Health check endpoint
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status": "ok",
-		})
-	})
-
-	// API v1 routes
-	api := router.Group("/api/v1")
-	{
-		// Example route
-		api.GET("/status", func(c *gin.Context) {
-			c.JSON(200, gin.H{
-				"message": "Campus Marketplace API v1",
-			})
-		})
-	}
 
 	// Start server
-	log.Printf("Starting server on port %s", port)
-	if err := router.Run(":" + port); err != nil {
+	log.Printf("Starting server on port %s", cfg.Port)
+	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }

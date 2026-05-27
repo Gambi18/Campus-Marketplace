@@ -1,6 +1,5 @@
 package middleware
-// Package middleware provides middleware functions for Gin router
-package middleware
+ 
 
 import (
 	"github.com/gin-gonic/gin"
