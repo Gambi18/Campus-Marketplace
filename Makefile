@@ -54,14 +54,21 @@ install-frontend:
 
 # Development targets
 dev: dev-backend dev-frontend
+	@echo "Development servers started!"
 
 dev-backend:
 	@echo "Starting backend development server..."
-	cd backend && go run cmd/api/main.go
+	cd backend && go run cmd/api/main.go & 
 
 dev-frontend:
 	@echo "Starting frontend development server..."
-	cd frontend && npm run dev
+	cd frontend && npm run dev & 
+
+dev-stop:
+	@echo "Stopping development servers..."
+	pkill -f "go run cmd/api/main.go"
+	pkill -f "npm run dev"
+	@echo "Development servers stopped!"
 
 # Build targets
 build: build-backend build-frontend
