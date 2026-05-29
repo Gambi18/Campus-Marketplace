@@ -6,24 +6,24 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   const marketplaceLinks = [
-    { label: 'Textbooks', href: '/marketplace/textbooks' },
-    { label: 'Electronics', href: '/marketplace/electronics' },
-    { label: 'Furniture', href: '/marketplace/furniture' },
-    { label: 'Browse Items', href: '/marketplace/browse' },
+    { label: 'Textbooks', href: '/' },
+    { label: 'Electronics', href: '/' },
+    { label: 'Furniture', href: '/' },
+    { label: 'Browse Items', href: '/' },
   ];
 
   const resourceLinks = [
-    { label: 'Safety Guide', href: '/resources/safety' },
-    { label: 'Sell an Item', href: '/resources/sell' },
-    { label: 'Price Checker', href: '/resources/price-checker' },
-    { label: 'Community Blog', href: '/blog' },
+    { label: 'Safety Guide', href: '/' },
+    { label: 'Sell an Item', href: '/' },
+    { label: 'Price Checker', href: '/' },
+    { label: 'Community Blog', href: '/' },
   ];
 
   const supportLinks = [
-    { label: 'Help Center', href: '/support' },
-    { label: 'Contact Support', href: '/support/contact' },
-    { label: 'Trust & Safety', href: '/support/trust-safety' },
-    { label: 'Terms of Service', href: '/legal/terms' },
+    { label: 'Help Center', href: '/' },
+    { label: 'Contact Support', href: '/' },
+    { label: 'Trust & Safety', href: '/' },
+    { label: 'Terms of Service', href: '/' },
   ];
 
   return (

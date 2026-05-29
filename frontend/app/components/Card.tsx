@@ -1,4 +1,4 @@
-import React from 'react';
+
 import Link from 'next/link';
 
 export interface ProductCard {
@@ -14,11 +14,11 @@ export interface ProductCard {
   updated_at: number;
 }
 
-const DEFAULT_MOCK_PRODUCT: ProductCard = {
-  id: "mock-id-123",
+const Product: ProductCard = {
+  id: "default-1",
   title: "Premium Ergonomic Office Chair",
   description: "High-quality mesh office chair with adjustable lumbar support and 3D armrests. Perfect for long study sessions in the dorm. Only used for one semester.",
-  price: 89.99,
+  price: 20000,
   seller_id: "seller-student-456",
   category: "Furniture",
   condition: "Like New",
@@ -32,20 +32,20 @@ interface ItemCardProps {
 }
 
 export default function ItemCard({ item }: ItemCardProps) {
-  const title = item?.title ?? DEFAULT_MOCK_PRODUCT.title;
-  const price = item?.price ?? DEFAULT_MOCK_PRODUCT.price;
-  const category = item?.category ?? DEFAULT_MOCK_PRODUCT.category;
-  const condition = item?.condition ?? DEFAULT_MOCK_PRODUCT.condition;
-  const id = item?.id ?? DEFAULT_MOCK_PRODUCT.id;
-  const createdAt = item?.created_at ?? DEFAULT_MOCK_PRODUCT.created_at;
+  const title = item?.title ?? Product.title;
+  const price = item?.price ?? Product.price;
+  const category = item?.category ?? Product.category;
+  const condition = item?.condition ?? Product.condition;
+  const id = item?.id ?? Product.id;
+  const createdAt = item?.created_at ?? Product.created_at;
   
   const displayImage = item?.images && item.images.length > 0 
     ? item.images[0] 
-    : DEFAULT_MOCK_PRODUCT.images[0];
+    : Product.images[0];
 
   const formattedPrice = new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'XAF',
   }).format(price);
 
   const formattedDate = new Date(createdAt).toLocaleDateString('en-US', {
@@ -60,7 +60,7 @@ export default function ItemCard({ item }: ItemCardProps) {
       className="group block bg-white rounded-lg border border-gray-100 overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 relative bg-clip-border max-w-[280px] w-full"
     >
       <div className="w-full aspect-square bg-gray-50 relative overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+      
         <img 
           src={displayImage} 
           alt={title}
