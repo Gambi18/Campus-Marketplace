@@ -17,7 +17,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+
     "forceConsistentCasingInFileNames": true,
+    
     "jsx": "react-jsx",
     /* Linting */
     "strict": true,
