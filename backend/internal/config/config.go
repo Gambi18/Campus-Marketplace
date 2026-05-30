@@ -19,6 +19,9 @@ type Config struct {
 	DBPass   string
 	DBName   string
 	JWTSecret string
+	CloudinaryCloudName string
+    CloudinaryAPIKey    string
+    CloudinaryAPISecret string
 }
 
 func LoadConfig() *Config {
@@ -35,6 +38,9 @@ func LoadConfig() *Config {
 		DBPass:   getEnv("DB_PASSWORD", "password"),
 		DBName:   getEnv("DB_NAME", "campus_marketplace"),
 		JWTSecret: getEnv("JWT_SECRET", ""),
+		CloudinaryCloudName: getEnv("CLOUDINARY_CLOUD_NAME", ""),
+		CloudinaryAPIKey:    getEnv("CLOUDINARY_API_KEY", ""),
+		CloudinaryAPISecret: getEnv("CLOUDINARY_API_SECRET", ""),
 
 	}
 }

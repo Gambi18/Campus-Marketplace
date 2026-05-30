@@ -5,10 +5,31 @@
 package db
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type Category struct {
+	ID          int32          `json:"id"`
+	Name        string         `json:"name"`
+	Description sql.NullString `json:"description"`
+	CreatedAt   time.Time      `json:"created_at"`
+}
+
+type Product struct {
+	ID          uuid.UUID      `json:"id"`
+	SellerID    uuid.UUID      `json:"seller_id"`
+	CategoryID  int32          `json:"category_id"`
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	Price       string         `json:"price"`
+	ImageUrl    sql.NullString `json:"image_url"`
+	Status      string         `json:"status"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+}
 
 type User struct {
 	ID           uuid.UUID `json:"id"`

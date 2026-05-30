@@ -17,6 +17,8 @@ import (
 func main() {
 	// Iinsted of Loading environment variables, loaded config insted since everything is alredy set there
 	cfg := config.LoadConfig()
+    // temporary debug - remove after fixing
+
      // Run migrations
     if err := db.RunMigrations(cfg.DatabaseURL()); err != nil {
         log.Fatalf("Migration error: %v", err)
@@ -30,22 +32,35 @@ func main() {
 
     //  Initialize sqlc queries
     queries := dbsqlc.New(database)
-    _ = queries
+    
 	//  Initialize service
 	authService := services.NewAuthService(cfg.JWTSecret)
 
+        // cloudinary  initialization
+    cloudinaryService, err := services.NewCloudinaryService(
+        cfg.CloudinaryCloudName,
+        cfg.CloudinaryAPIKey,
+        cfg.CloudinaryAPISecret,
+    )
+    if err != nil {
+        log.Fatalf("❌ Cloudinary error: %v", err)
+    }
 
-    // Set gin mode based on environment
+    productService := services.NewProductService(queries, cloudinaryService)
+
+
+    // Sets gin mode based on environment
     if cfg.Env == "production" {
         gin.SetMode(gin.ReleaseMode)
     }
 
-	// Create Gin router
+	// Creates Gin router
 	router := gin.Default()
-	handlers.SetupRoutes(router, queries, authService)
+
+	handlers.SetupRoutes(router, queries, authService,  productService)
 
 
-	// Start server
+	// Starts server
 	log.Printf("Starting server on port %s", cfg.Port)
 	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
