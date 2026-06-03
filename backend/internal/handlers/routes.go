@@ -21,6 +21,7 @@ func SetupRoutes(
 	authHandler := NewAuthHandler(queries, authService)
 	productHandler  := NewProductHandler(queries, productService)
 	categoryHandler := NewCategoryHandler(queries)
+	reportHandler := NewReportHandler(queries)
 
 	// API v1
 	api := router.Group("/api/v1")
@@ -60,6 +61,8 @@ func SetupRoutes(
 		protected.PUT("/products/:id",              productHandler.UpdateProduct)
 		protected.PATCH("/products/:id/status",     productHandler.UpdateProductStatus)
 		protected.DELETE("/products/:id",           productHandler.DeleteProduct)
+		protected.POST("/reports",      reportHandler.CreateReport)
+		protected.GET("/my-reports",    reportHandler.GetMyReports)
 	}
 
 	// Admin routes — valid JWT + admin role required
@@ -71,5 +74,8 @@ func SetupRoutes(
 		admin.POST("/categories",           categoryHandler.CreateCategory)
 		admin.PUT("/categories/:id",        categoryHandler.UpdateCategory)
 		admin.DELETE("/categories/:id",     categoryHandler.DeleteCategory)
+		admin.GET("/reports",           reportHandler.GetAllReports)
+		admin.GET("/reports/:id",       reportHandler.GetReportByID)
+		admin.PATCH("/reports/:id/status", reportHandler.UpdateReportStatus)
 	}
 }

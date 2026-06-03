@@ -31,6 +31,16 @@ type Product struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 }
 
+type Report struct {
+	ID         uuid.UUID `json:"id"`
+	ReporterID uuid.UUID `json:"reporter_id"`
+	ProductID  uuid.UUID `json:"product_id"`
+	Reason     string    `json:"reason"`
+	Status     string    `json:"status"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
 type User struct {
 	ID           uuid.UUID `json:"id"`
 	Username     string    `json:"username"`
