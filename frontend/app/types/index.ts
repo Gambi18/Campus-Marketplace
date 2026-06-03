@@ -1,16 +1,16 @@
 // Type definitions for the application
 
 export interface ProductCard {
-  id?: string;
+  id: string;
   title: string;
-  description?: string;
-  price?: number;
-  seller_id?: string;
-  category?: string;
-  condition?: 'New' | 'Like New' | 'Excellent' | 'Good' | 'Refurbished' | 'Fair';
-  images?: string[];
-  created_at?: number;
-  updated_at?: number;
+  description: string;
+  price: number;
+  seller_id: string;
+  category: string;
+  condition: 'New' | 'Like New' | 'Excellent' | 'Good' | 'Refurbished' | 'Fair';
+  images: string[];
+  created_at: number;
+  updated_at: number;
 }
 
 export interface User {

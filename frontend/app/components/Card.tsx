@@ -1,20 +1,10 @@
 
+import { ProductCard } from '@/types';
 import Link from 'next/link';
 
-export interface ProductCard {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  seller_id: string;
-  category: string;
-  condition: 'New' | 'Like New' | 'Excellent' | 'Good' | 'Refurbished' | 'Fair';
-  images: string[];
-  created_at: number;
-  updated_at: number;
-}
 
-const Product: ProductCard = {
+
+export const Product: ProductCard = {
   id: "default-1",
   title: "Premium Ergonomic Office Chair",
   description: "High-quality mesh office chair with adjustable lumbar support and 3D armrests. Perfect for long study sessions in the dorm. Only used for one semester.",
