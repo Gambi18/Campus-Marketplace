@@ -14,21 +14,27 @@ import (
 type Querier interface {
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
+	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteCategory(ctx context.Context, id int32) error
 	DeleteProduct(ctx context.Context, arg DeleteProductParams) error
 	GetAllCategories(ctx context.Context) ([]Category, error)
 	GetAllProducts(ctx context.Context) ([]GetAllProductsRow, error)
+	GetAllReports(ctx context.Context) ([]GetAllReportsRow, error)
 	GetCategoryByID(ctx context.Context, id int32) (Category, error)
 	GetProductByID(ctx context.Context, id uuid.UUID) (GetProductByIDRow, error)
 	GetProductsByCategory(ctx context.Context, categoryID int32) ([]GetProductsByCategoryRow, error)
 	GetProductsBySellerID(ctx context.Context, sellerID uuid.UUID) ([]GetProductsBySellerIDRow, error)
+	GetReportByID(ctx context.Context, id uuid.UUID) (GetReportByIDRow, error)
+	GetReportsByReporterID(ctx context.Context, reporterID uuid.UUID) ([]GetReportsByReporterIDRow, error)
+	GetReportsByStatus(ctx context.Context, status string) ([]GetReportsByStatusRow, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
 	SearchProducts(ctx context.Context, dollar_1 sql.NullString) ([]SearchProductsRow, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error)
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error)
 	UpdateProductStatus(ctx context.Context, arg UpdateProductStatusParams) (Product, error)
+	UpdateReportStatus(ctx context.Context, arg UpdateReportStatusParams) (Report, error)
 	UpdateUserVerification(ctx context.Context, arg UpdateUserVerificationParams) (User, error)
 }
 
