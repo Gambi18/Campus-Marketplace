@@ -1,0 +1,27 @@
+name: Auto Request Reviews
+
+on:
+    pull_request:
+        types: [opened, reopened]
+
+jobs:
+    auto-request-reviews:
+        runs-on: ubuntu-latest
+        permissions:
+            pull-requests: write
+
+        steps:
+            - name: Request review from team members
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const reviewers = ['Gambi18', 'Kimbohlovette'];
+
+                      github.rest.pulls.requestReviewers({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        pull_number: context.issue.number,
+                        reviewers: reviewers
+                      });
+
+                      console.log(`Requested reviews from: ${reviewers.join(', ')}`);
