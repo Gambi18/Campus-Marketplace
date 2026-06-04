@@ -55,6 +55,13 @@ type UserResponse struct {
 	Email string `json:"email"`
 	Role string `json:"role"`
 	IsVerified bool `json:"is_verified"`
+    AccountStatus string `json:"account_status"` 
+    StudentIDUrl  string `json:"student_id_url"` 
+}
+
+//  admin request to reject with reason shown to user
+type UpdateAccountStatusRequest struct {
+    Status string `json:"status" binding:"required,oneof=approved rejected"`
 }
 
 // CATEGORY MODELS
@@ -193,4 +200,100 @@ func ToBasicProductResponse(p db.Product) ProductResponse {
         Status:      p.Status,
         CreatedAt:   p.CreatedAt.String(),
     }
+}
+
+//  REPORT MODELS
+
+type CreateReportRequest struct {
+	ProductID string `json:"product_id" binding:"required"`
+	Reason    string `json:"reason"     binding:"required,oneof=fake_listing wrong_price scam inappropriate other"`
+}
+
+type UpdateReportStatusRequest struct {
+	Status string `json:"status" binding:"required,oneof=pending reviewed resolved"`
+}
+
+type ReportResponse struct {
+	ID           string `json:"id"`
+	ReporterID   string `json:"reporter_id"`
+	ReporterName string `json:"reporter_name,omitempty"`
+	ProductID    string `json:"product_id"`
+	ProductTitle string `json:"product_title,omitempty"`
+	Reason       string `json:"reason"`
+	Status       string `json:"status"`
+	CreatedAt    string `json:"created_at"`
+	UpdatedAt    string `json:"updated_at"`
+}
+
+//  Report (basic, no joins)
+func ToBasicReportResponse(r db.Report) ReportResponse {
+	return ReportResponse{
+		ID:        r.ID.String(),
+		ReporterID: r.ReporterID.String(),
+		ProductID:  r.ProductID.String(),
+		Reason:     r.Reason,
+		Status:     r.Status,
+		CreatedAt:  r.CreatedAt.String(),
+		UpdatedAt:  r.UpdatedAt.String(),
+	}
+}
+
+//  GetAllReportsRow
+func ToReportResponse(r db.GetAllReportsRow) ReportResponse {
+	return ReportResponse{
+		ID:           r.ID.String(),
+		ReporterID:   r.ReporterID.String(),
+		ReporterName: r.ReporterName,
+		ProductID:    r.ProductID.String(),
+		ProductTitle: r.ProductTitle,
+		Reason:       r.Reason,
+		Status:       r.Status,
+		CreatedAt:    r.CreatedAt.String(),
+		UpdatedAt:    r.UpdatedAt.String(),
+	}
+}
+
+//  GetReportByIDRow
+func ToGetByIDReportResponse(r db.GetReportByIDRow) ReportResponse {
+	return ReportResponse{
+		ID:           r.ID.String(),
+		ReporterID:   r.ReporterID.String(),
+		ReporterName: r.ReporterName,
+		ProductID:    r.ProductID.String(),
+		ProductTitle: r.ProductTitle,
+		Reason:       r.Reason,
+		Status:       r.Status,
+		CreatedAt:    r.CreatedAt.String(),
+		UpdatedAt:    r.UpdatedAt.String(),
+	}
+}
+
+//  GetReportsByStatusRow
+func ToStatusReportResponse(r db.GetReportsByStatusRow) ReportResponse {
+	return ReportResponse{
+		ID:           r.ID.String(),
+		ReporterID:   r.ReporterID.String(),
+		ReporterName: r.ReporterName,
+		ProductID:    r.ProductID.String(),
+		ProductTitle: r.ProductTitle,
+		Reason:       r.Reason,
+		Status:       r.Status,
+		CreatedAt:    r.CreatedAt.String(),
+		UpdatedAt:    r.UpdatedAt.String(),
+	}
+}
+
+//  GetReportsByReporterIDRow
+func ToReporterReportResponse(r db.GetReportsByReporterIDRow) ReportResponse {
+	return ReportResponse{
+		ID:           r.ID.String(),
+		ReporterID:   r.ReporterID.String(),
+		ReporterName: r.ReporterName,
+		ProductID:    r.ProductID.String(),
+		ProductTitle: r.ProductTitle,
+		Reason:       r.Reason,
+		Status:       r.Status,
+		CreatedAt:    r.CreatedAt.String(),
+		UpdatedAt:    r.UpdatedAt.String(),
+	}
 }
