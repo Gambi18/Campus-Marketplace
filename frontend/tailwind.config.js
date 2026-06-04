@@ -10,13 +10,17 @@ export default {
       colors: {
         brand: {
           primary: 'var(--brand-primary)',
-          'primary-hover': 'var(--brand-primary-hover)',
           secondary: 'var(--brand-secondary)',
-          accent: 'var(--brand-accent)',
+          tertiary: 'var(--brand-tertiary)',
+          neutral: 'var(--brand-neutral)',
+        },
+        text: {
+          main: 'var(--text-main)',
+          muted: 'var(--text-muted)',
         },
       },
     },
-    
+
   },
   plugins: [],
 }

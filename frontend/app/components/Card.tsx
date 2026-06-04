@@ -38,9 +38,9 @@ export default function ItemCard({ item }: ItemCardProps) {
   const condition = item?.condition ?? Product.condition;
   const id = item?.id ?? Product.id;
   const createdAt = item?.created_at ?? Product.created_at;
-  
-  const displayImage = item?.images && item.images.length > 0 
-    ? item.images[0] 
+
+  const displayImage = item?.images && item.images.length > 0
+    ? item.images[0]
     : Product.images[0];
 
   const formattedPrice = new Intl.NumberFormat('en-US', {
@@ -55,19 +55,19 @@ export default function ItemCard({ item }: ItemCardProps) {
   });
 
   return (
-    <Link 
-      href={`/item/${id}`}
+    <Link
+      href={`/details/${id}`}
       className="group block bg-white rounded-lg border border-gray-100 overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 relative bg-clip-border max-w-[280px] w-full"
     >
       <div className="w-full aspect-square bg-gray-50 relative overflow-hidden">
-      
-        <img 
-          src={displayImage} 
+
+        <img
+          src={displayImage}
           alt={title}
           className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
           loading="lazy"
         />
-        
+
         <span className="absolute top-2.5 left-2.5 px-1.5 py-0.5 bg-white/95 backdrop-blur-xs text-[9px] font-bold text-gray-700 rounded-md shadow-xs uppercase tracking-wider">
           {condition}
         </span>
