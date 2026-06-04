@@ -15,7 +15,6 @@ import type { Product, ProductCondition } from '../../types';
 interface ProductDetail extends Product {
   condition: ProductCondition | string;
   location: string;
-  seller_rating: number;
 }
 
 const MOCK_PRODUCT: ProductDetail = {
@@ -34,7 +33,6 @@ const MOCK_PRODUCT: ProductDetail = {
   created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
   condition: 'Good',
   location: 'Library',
-  seller_rating: 4.9,
 };
 
 export default function ProductDetailsPage() {
@@ -80,7 +78,7 @@ export default function ProductDetailsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc]">
-      <Navbar showBuyerSwitch />
+      <Navbar />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-6">
         <Link
@@ -134,11 +132,11 @@ export default function ProductDetailsPage() {
 
             <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-4">
-                Seller Information
+                Listed by
               </p>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-lg font-bold text-slate-600">
-                  {product.seller_name?.charAt(0) ?? 'S'}
+                  {product.seller_name?.charAt(0) ?? '?'}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -148,14 +146,12 @@ export default function ProductDetailsPage() {
                       Verified
                     </span>
                   </div>
-                  <p className="text-sm text-text-muted mt-0.5">
-                    <span className="text-amber-500">★</span> {product.seller_rating} rating
-                  </p>
+                  <p className="text-sm text-text-muted mt-0.5">Campus student</p>
                 </div>
               </div>
               <Button variant="outlined" fullWidth className="mt-4">
                 <MessageCircle className="w-4 h-4 mr-2" />
-                Chat with Seller
+                Message
               </Button>
             </div>
 

@@ -54,7 +54,7 @@ export default function SellUploadPage() {
         <InfoTipBox
           icon={<ShieldCheck className="w-5 h-5" />}
           title="Stay Safe"
-          description="Photos of the actual item help build trust with buyers."
+          description="Photos of the actual item help build trust with other students on campus."
         />
       </div>
     </>

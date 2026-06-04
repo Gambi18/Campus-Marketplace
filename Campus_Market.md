@@ -4,9 +4,11 @@
 
 ## Project Overview
 
-Campus Marketplace is a web application that enables university students to buy and sell items within a trusted campus community.
+Campus Marketplace is a **peer-to-peer** web application: every student can list items and browse or message about others’ listings. There are no separate “buyer” or “seller” roles—only students trading with each other.
 
-The platform addresses the challenges students face when using WhatsApp groups, Facebook posts, and informal channels to trade goods. It provides a centralized marketplace where verified students can create listings, browse products, communicate with sellers, and report suspicious activity.
+The platform addresses the challenges students face when using WhatsApp groups, Facebook posts, and informal channels to trade goods. It provides a centralized marketplace where verified students can create listings, browse products, message each other, and report suspicious activity.
+
+**Not in scope:** user ratings, reviews, or reputation scores.
 
 This project is being developed as a full-stack web application using **Next.js** for the frontend, **Golang (Gin)** for the backend, and **PostgreSQL** as the database.
 
@@ -46,7 +48,7 @@ Primary goals:
 
 1. Allow students to create and manage listings.
 2. Enable browsing and searching of products.
-3. Allow communication between buyers and sellers.
+3. Allow direct messaging between students about listings.
 4. Provide a reporting system.
 5. Support student verification.
 6. Demonstrate production-style full-stack development.
@@ -81,6 +83,14 @@ Deployment: Railway
 ## Database
 
 - **PostgreSQL** (UUID primary keys for users/products)
+
+---
+
+# Platform model
+
+- **Peer-to-peer:** All authenticated students can browse, list, and message. UI must not imply role switching (e.g. no “buyer mode” / “seller mode”).
+- **No ratings:** Do not show stars, scores, or “X rating” anywhere in product or profile UI.
+- **API naming:** `seller_id` / `seller_name` on products mean “who posted this listing” (database field names), not a fixed seller role.
 
 ---
 
@@ -149,7 +159,7 @@ Must be completed:
 
 **Planned (not yet in API):**
 
-- Buyer-to-seller messaging
+- Student-to-student messaging about listings
 - Report listing + admin review
 - Product `condition` field (UI collects in listing wizard; not persisted yet)
 - Meetup `location` field (UI only for now)
@@ -239,7 +249,7 @@ Base URL: `http://localhost:8080` (configurable via `NEXT_PUBLIC_API_URL`)
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/v1/profile` | Current user |
-| GET | `/api/v1/my-products` | Seller's listings |
+| GET | `/api/v1/my-products` | Current user's listings |
 | POST | `/api/v1/products` | Create product (multipart) |
 | PUT | `/api/v1/products/:id` | Update product (multipart) |
 | PATCH | `/api/v1/products/:id/status` | Update status JSON `{ "status": "..." }` |
@@ -311,7 +321,7 @@ On publish, frontend sends `POST /api/v1/products` with collected fields.
 
 Route: `/details/[id]`
 
-Shows image, title, condition badge, price, location/time (mock or extended API later), description, category, seller card, safe-transaction info, chat CTA, and reserve/deposit CTA (visual only until payments are in scope).
+Shows image, title, condition badge, price, location/time (mock or extended API later), description, category, **Listed by** card (poster name from `seller_name`; no ratings), safe-transaction info, **Message** CTA, and reserve/deposit CTA (visual only until payments are in scope).
 
 ---
 

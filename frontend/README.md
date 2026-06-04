@@ -76,6 +76,12 @@ Format code with Prettier:
 npm run format
 ```
 
+## Product UX conventions
+
+- **Peer-to-peer:** Students both list and browse; avoid copy that implies separate buyer/seller roles (no role switcher in the navbar).
+- **No ratings:** Do not display stars, scores, or review counts.
+- **Listing owner:** API fields `seller_id` / `seller_name` are shown in the UI as **Listed by** + student name.
+
 ## API Integration
 
 The frontend connects to the backend API at:

@@ -34,7 +34,7 @@ export default function Footer() {
         <div className="md:col-span-4 flex flex-col space-y-4">
           <Logo />
           <p className="text-sm text-text-muted leading-relaxed max-w-sm">
-            The premier peer-to-peer marketplace designed exclusively for university students to trade, sell, and buy with confidence.
+            A peer-to-peer marketplace for university students—everyone can list items and shop listings from others on campus.
           </p>
 
           <div className="flex items-center space-x-4 pt-2 text-text-muted">

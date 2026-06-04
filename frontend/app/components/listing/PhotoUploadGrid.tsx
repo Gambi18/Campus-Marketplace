@@ -40,6 +40,8 @@ export default function PhotoUploadGrid({ photos, onPhotoChange }: PhotoUploadGr
                 type="file"
                 accept="image/*"
                 className="hidden"
+                title={`Upload photo ${index + 1}`}
+                aria-label={`Upload photo ${index + 1}`}
                 onChange={(e) => handleFile(index, e.target.files?.[0])}
               />
             </label>
@@ -50,6 +52,8 @@ export default function PhotoUploadGrid({ photos, onPhotoChange }: PhotoUploadGr
                 type="file"
                 accept="image/*"
                 className="hidden"
+                title={`Upload photo ${index + 1}`}
+                aria-label={`Upload photo ${index + 1}`}
                 onChange={(e) => handleFile(index, e.target.files?.[0])}
               />
             </label>

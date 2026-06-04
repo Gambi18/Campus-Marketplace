@@ -9,9 +9,9 @@ function Hero() {
         <span>Trusted by 5,000+ students across campus</span>
       </div>
         <h2 className="font-bold text-4xl">Buy & Sell Safely Within Your Campus <br />Community</h2>
-        <p className="text-white/80 text-sm md:text-lg max-w-2xl mb-8 leading-relaxed">Discover affordable student deals, trusted sellers, and secondhand
-            essentials from university classmates. The smartest way to 
-            shop locally
+        <p className="text-white/80 text-sm md:text-lg max-w-2xl mb-8 leading-relaxed">
+            Discover affordable deals and secondhand essentials from classmates.
+            List what you do not need and pick up what you do—all in one peer-to-peer campus marketplace.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 p-4">
             <Button variant="secondary"><span>Start Browsing</span></Button>

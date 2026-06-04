@@ -31,14 +31,14 @@ export default function ItemCard({ item }: ItemCardProps) {
 
   const displayImage = item?.images && item.images.length > 0
     ? item.images[0]
-    : Product.images[0];
+    : Product.images?.[0];
 
   const formattedPrice = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'XAF',
   }).format(price);
 
-  const formattedDate = new Date(createdAt).toLocaleDateString('en-US', {
+  const formattedDate = new Date(createdAt ?? Date.now()).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric'

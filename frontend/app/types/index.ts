@@ -2,8 +2,23 @@
 
 export type ProductCondition = 'Brand New' | 'Like New' | 'Good' | 'Fair';
 
+/** Browse-grid card shape (may differ from API `Product`). */
+export interface ProductCard {
+  id: string;
+  title: string;
+  description?: string;
+  price: number;
+  seller_id?: string;
+  category?: string;
+  condition?: ProductCondition | string;
+  images?: string[];
+  created_at?: number;
+  updated_at?: number;
+}
+
 export interface Product {
   id: string;
+  /** API field: user who posted the listing (display as "Listed by", not "seller"). */
   seller_id: string;
   seller_name?: string;
   category_id: number;

@@ -90,7 +90,7 @@ export default function SellPricingPage() {
           required
           placeholder="0.00"
           value={form.price}
-          helperText="Buyers will pay 50% deposit to reserve."
+          helperText="The other party pays 50% deposit to reserve (when payments are enabled)."
           onChange={(e) => updateForm({ price: e.target.value })}
         />
 
