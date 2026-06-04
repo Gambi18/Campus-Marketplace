@@ -11,16 +11,46 @@ import (
 	"github.com/google/uuid"
 )
 
+const approveUser = `-- name: ApproveUser :one
+UPDATE users
+SET
+    account_status = 'approved',
+    is_verified    = TRUE,
+    updated_at     = NOW()
+WHERE id = $1
+RETURNING id, username, email, password_hash, is_verified, role, created_at, updated_at, student_id_url, account_status
+`
+
+func (q *Queries) ApproveUser(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, approveUser, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.IsVerified,
+		&i.Role,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.StudentIDUrl,
+		&i.AccountStatus,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
     username,
     email,
     password_hash,
-    role
+    role,
+    student_id_url,
+    account_status
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3, $4, $5, 'pending'
 )
-RETURNING id, username, email, password_hash, is_verified, role, created_at, updated_at
+RETURNING id, username, email, password_hash, is_verified, role, created_at, updated_at, student_id_url, account_status
 `
 
 type CreateUserParams struct {
@@ -28,6 +58,7 @@ type CreateUserParams struct {
 	Email        string `json:"email"`
 	PasswordHash string `json:"password_hash"`
 	Role         string `json:"role"`
+	StudentIDUrl string `json:"student_id_url"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -36,6 +67,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Email,
 		arg.PasswordHash,
 		arg.Role,
+		arg.StudentIDUrl,
 	)
 	var i User
 	err := row.Scan(
@@ -47,12 +79,54 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Role,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.StudentIDUrl,
+		&i.AccountStatus,
 	)
 	return i, err
 }
 
+const getPendingUsers = `-- name: GetPendingUsers :many
+SELECT id, username, email, password_hash, is_verified, role, created_at, updated_at, student_id_url, account_status FROM users
+WHERE account_status = 'pending'
+ORDER BY created_at ASC
+`
+
+func (q *Queries) GetPendingUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getPendingUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Email,
+			&i.PasswordHash,
+			&i.IsVerified,
+			&i.Role,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.StudentIDUrl,
+			&i.AccountStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, password_hash, is_verified, role, created_at, updated_at FROM users
+SELECT id, username, email, password_hash, is_verified, role, created_at, updated_at, student_id_url, account_status FROM users
 WHERE email = $1
 LIMIT 1
 `
@@ -69,12 +143,14 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Role,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.StudentIDUrl,
+		&i.AccountStatus,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, email, password_hash, is_verified, role, created_at, updated_at FROM users
+SELECT id, username, email, password_hash, is_verified, role, created_at, updated_at, student_id_url, account_status FROM users
 WHERE id = $1
 LIMIT 1
 `
@@ -91,6 +167,35 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.Role,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.StudentIDUrl,
+		&i.AccountStatus,
+	)
+	return i, err
+}
+
+const rejectUser = `-- name: RejectUser :one
+UPDATE users
+SET
+    account_status = 'rejected',
+    updated_at     = NOW()
+WHERE id = $1
+RETURNING id, username, email, password_hash, is_verified, role, created_at, updated_at, student_id_url, account_status
+`
+
+func (q *Queries) RejectUser(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, rejectUser, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.IsVerified,
+		&i.Role,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.StudentIDUrl,
+		&i.AccountStatus,
 	)
 	return i, err
 }
@@ -101,7 +206,7 @@ SET
     is_verified = $2,
     updated_at = NOW()
 WHERE id = $1
-RETURNING id, username, email, password_hash, is_verified, role, created_at, updated_at
+RETURNING id, username, email, password_hash, is_verified, role, created_at, updated_at, student_id_url, account_status
 `
 
 type UpdateUserVerificationParams struct {
@@ -121,6 +226,8 @@ func (q *Queries) UpdateUserVerification(ctx context.Context, arg UpdateUserVeri
 		&i.Role,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.StudentIDUrl,
+		&i.AccountStatus,
 	)
 	return i, err
 }

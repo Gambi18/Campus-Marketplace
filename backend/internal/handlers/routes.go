@@ -13,12 +13,13 @@ func SetupRoutes(
 	queries *db.Queries,
 	authService *services.AuthService,
 	productService *services.ProductService,
+	cloudinaryService *services.CloudinaryService,
 ) {
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
 	// Initialize handlers
-	authHandler := NewAuthHandler(queries, authService)
+	authHandler := NewAuthHandler(queries, authService, cloudinaryService)
 	productHandler  := NewProductHandler(queries, productService)
 	categoryHandler := NewCategoryHandler(queries)
 	reportHandler := NewReportHandler(queries)
@@ -77,5 +78,8 @@ func SetupRoutes(
 		admin.GET("/reports",           reportHandler.GetAllReports)
 		admin.GET("/reports/:id",       reportHandler.GetReportByID)
 		admin.PATCH("/reports/:id/status", reportHandler.UpdateReportStatus)
+		admin.GET("/pending-users",          authHandler.GetPendingUsers)
+		admin.PATCH("/users/:id/approve",    authHandler.ApproveUser)
+		admin.PATCH("/users/:id/reject",     authHandler.RejectUser)
 	}
 }

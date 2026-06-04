@@ -57,7 +57,7 @@ func main() {
 	// Creates Gin router
 	router := gin.Default()
 
-	handlers.SetupRoutes(router, queries, authService,  productService)
+	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService)
 
 
 	// Starts server
