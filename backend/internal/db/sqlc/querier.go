@@ -12,6 +12,7 @@ import (
 )
 
 type Querier interface {
+	ApproveUser(ctx context.Context, id uuid.UUID) (User, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
@@ -22,6 +23,7 @@ type Querier interface {
 	GetAllProducts(ctx context.Context) ([]GetAllProductsRow, error)
 	GetAllReports(ctx context.Context) ([]GetAllReportsRow, error)
 	GetCategoryByID(ctx context.Context, id int32) (Category, error)
+	GetPendingUsers(ctx context.Context) ([]User, error)
 	GetProductByID(ctx context.Context, id uuid.UUID) (GetProductByIDRow, error)
 	GetProductsByCategory(ctx context.Context, categoryID int32) ([]GetProductsByCategoryRow, error)
 	GetProductsBySellerID(ctx context.Context, sellerID uuid.UUID) ([]GetProductsBySellerIDRow, error)
@@ -30,6 +32,7 @@ type Querier interface {
 	GetReportsByStatus(ctx context.Context, status string) ([]GetReportsByStatusRow, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
+	RejectUser(ctx context.Context, id uuid.UUID) (User, error)
 	SearchProducts(ctx context.Context, dollar_1 sql.NullString) ([]SearchProductsRow, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error)
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error)

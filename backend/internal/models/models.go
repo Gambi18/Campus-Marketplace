@@ -55,6 +55,13 @@ type UserResponse struct {
 	Email string `json:"email"`
 	Role string `json:"role"`
 	IsVerified bool `json:"is_verified"`
+    AccountStatus string `json:"account_status"` 
+    StudentIDUrl  string `json:"student_id_url"` 
+}
+
+//  admin request to reject with reason shown to user
+type UpdateAccountStatusRequest struct {
+    Status string `json:"status" binding:"required,oneof=approved rejected"`
 }
 
 // CATEGORY MODELS
