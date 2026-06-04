@@ -4,6 +4,7 @@ import Footer from "./components/Footer";
 import Hero from "./components/Hero";
 import ItemCategory from "./components/ItemCategory";
 import Navbar from "./components/Navbar";
+import Toolbar from "./components/Toolbar";
 
 export default function Home() {
     return (
@@ -11,6 +12,7 @@ export default function Home() {
             <div className="text-center">
                 <Navbar/>
                 <Hero/>
+                <Toolbar/>
                  <ItemCategory/>
                   <CardGrid/>
                  <Footer/>
