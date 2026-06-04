@@ -72,6 +72,7 @@ func SetupRoutes(
 	admin.Use(authMiddleware.RequireAdmin())
 	{
 		admin.GET("/users", authHandler.GetAllUsers)
+		admin.PATCH("/users/:id/block", authHandler.BlockUser)
 		admin.POST("/categories",           categoryHandler.CreateCategory)
 		admin.PUT("/categories/:id",        categoryHandler.UpdateCategory)
 		admin.DELETE("/categories/:id",     categoryHandler.DeleteCategory)

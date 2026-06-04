@@ -13,6 +13,7 @@ import (
 
 type Querier interface {
 	ApproveUser(ctx context.Context, id uuid.UUID) (User, error)
+	BlockUser(ctx context.Context, id uuid.UUID) (User, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
@@ -20,6 +21,7 @@ type Querier interface {
 	DeleteCategory(ctx context.Context, id int32) error
 	DeleteProduct(ctx context.Context, arg DeleteProductParams) error
 	GetAllCategories(ctx context.Context) ([]Category, error)
+	GetAllUsers(ctx context.Context) ([]User, error)
 	GetAllProducts(ctx context.Context) ([]GetAllProductsRow, error)
 	GetAllReports(ctx context.Context) ([]GetAllReportsRow, error)
 	GetCategoryByID(ctx context.Context, id int32) (Category, error)

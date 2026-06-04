@@ -31,10 +31,22 @@ SET
 WHERE id = $1
 RETURNING *;
 
+-- name: GetAllUsers :many
+SELECT id, username, email, is_verified, role, created_at, updated_at, student_id_url, account_status FROM users
+ORDER BY created_at DESC;
+
 -- name: GetPendingUsers :many
 SELECT * FROM users
 WHERE account_status = 'pending'
 ORDER BY created_at ASC;
+
+-- name: BlockUser :one
+UPDATE users
+SET
+    account_status = 'blocked',
+    updated_at     = NOW()
+WHERE id = $1
+RETURNING *;
 
 -- name: ApproveUser :one
 UPDATE users

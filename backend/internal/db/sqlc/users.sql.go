@@ -85,6 +85,71 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const blockUser = `-- name: BlockUser :one
+UPDATE users
+SET
+    account_status = 'blocked',
+    updated_at     = NOW()
+WHERE id = $1
+RETURNING id, username, email, password_hash, is_verified, role, created_at, updated_at, student_id_url, account_status
+`
+
+func (q *Queries) BlockUser(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, blockUser, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.IsVerified,
+		&i.Role,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.StudentIDUrl,
+		&i.AccountStatus,
+	)
+	return i, err
+}
+
+const getAllUsers = `-- name: GetAllUsers :many
+SELECT id, username, email, is_verified, role, created_at, updated_at, student_id_url, account_status FROM users
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getAllUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Email,
+			&i.IsVerified,
+			&i.Role,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.StudentIDUrl,
+			&i.AccountStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPendingUsers = `-- name: GetPendingUsers :many
 SELECT id, username, email, password_hash, is_verified, role, created_at, updated_at, student_id_url, account_status FROM users
 WHERE account_status = 'pending'

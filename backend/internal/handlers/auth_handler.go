@@ -131,6 +131,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
             "error": "your verification was rejected, make sure your ID card photo is clear and has not expired",
         })
         return
+    case "blocked":
+        c.JSON(http.StatusForbidden, gin.H{
+            "error": "your account has been blocked. Contact support if you believe this is a mistake",
+        })
+        return
     }
 
     // 4. Generate JWT token
@@ -173,7 +178,55 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 }
 
 func (h *AuthHandler) GetAllUsers(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "admin only - list of users will go here"})
+	users, err := h.queries.GetAllUsers(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch users"})
+		return
+	}
+
+	response := make([]models.UserResponse, len(users))
+	for i, u := range users {
+		response[i] = models.UserResponse{
+			ID:            u.ID.String(),
+			Username:      u.Username,
+			Email:         u.Email,
+			Role:          u.Role,
+			IsVerified:    u.IsVerified,
+			AccountStatus: u.AccountStatus,
+			StudentIDUrl:  u.StudentIDUrl,
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"users": response,
+		"count": len(response),
+	})
+}
+
+func (h *AuthHandler) BlockUser(c *gin.Context) {
+	userID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		return
+	}
+
+	user, err := h.queries.BlockUser(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not block user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "user blocked successfully",
+		"user": models.UserResponse{
+			ID:            user.ID.String(),
+			Username:      user.Username,
+			Email:         user.Email,
+			Role:          user.Role,
+			IsVerified:    user.IsVerified,
+			AccountStatus: user.AccountStatus,
+		},
+	})
 }
 
 // ADDED: admin approves a student
@@ -229,6 +282,20 @@ func (h *AuthHandler) RejectUser(c *gin.Context) {
         },
     })
 }
+- View all users (`GET /api/v1/admin/users`)
+- Approve or reject pending student sign-ups (`GET /api/v1/admin/pending-users`, `PATCH .../approve`, `PATCH .../reject`)
+- Block accounts (`PATCH /api/v1/admin/users/:id/block` — sets `account_status` to `blocked`)
+- Create / update / delete product categories (admin category routes)
+- Reports & moderation — **planned in admin UI** (report APIs exist on backend; dashboard page is a placeholder)
+
+**Not in scope (differs from design mockups):**
+
+- **Item listing approvals** — products are not held in an admin queue; students publish directly.
+- **“Generate reports” / analytics dashboard** — not part of MVP admin.
+- **Full moderation queue UI** — deferred until reports workflow is finalized.
+
+Admin frontend: `/admin/users`, `/admin/categories`, `/admin/reports` (placeholder).
+
 
 // ADDED: admin views all pending users
 func (h *AuthHandler) GetPendingUsers(c *gin.Context) {

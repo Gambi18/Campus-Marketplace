@@ -121,9 +121,19 @@ Cannot:
 
 Can:
 
-- View all users
-- Create / update / delete categories
-- (Reports & moderation — planned)
+- View all users (`GET /api/v1/admin/users`)
+- Approve or reject pending student sign-ups (`GET /api/v1/admin/pending-users`, `PATCH .../approve`, `PATCH .../reject`)
+- Block accounts (`PATCH /api/v1/admin/users/:id/block` — sets `account_status` to `blocked`)
+- Create / update / delete product categories (admin category routes)
+- Reports & moderation — **planned in admin UI** (report APIs exist on backend; dashboard page is a placeholder)
+
+**Not in scope (differs from design mockups):**
+
+- **Item listing approvals** — products are not held in an admin queue; students publish directly.
+- **“Generate reports” / analytics dashboard** — not part of MVP admin.
+- **Full moderation queue UI** — deferred until reports workflow is finalized.
+
+Admin frontend: `/admin/users`, `/admin/categories`, `/admin/reports` (placeholder).
 
 ---
 
@@ -213,7 +223,8 @@ backend/
 
 ## users
 
-- `id` (UUID), `username`, `email`, `password_hash`, `role`, `is_verified`, timestamps
+- `id` (UUID), `username`, `email`, `password_hash`, `role`, `is_verified`, `student_id_url`, `account_status`, timestamps
+- `account_status`: `pending` | `approved` | `rejected` | `blocked`
 
 ## categories
 
@@ -260,9 +271,20 @@ Base URL: `http://localhost:8080` (configurable via `NEXT_PUBLIC_API_URL`)
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/v1/admin/users` | All users |
+| GET | `/api/v1/admin/pending-users` | Users awaiting ID verification |
+| PATCH | `/api/v1/admin/users/:id/approve` | Approve sign-up |
+| PATCH | `/api/v1/admin/users/:id/reject` | Reject sign-up |
+| PATCH | `/api/v1/admin/users/:id/block` | Block account (`account_status=blocked`) |
 | POST | `/api/v1/admin/categories` | Create category |
 | PUT | `/api/v1/admin/categories/:id` | Update category |
 | DELETE | `/api/v1/admin/categories/:id` | Delete category |
+| GET | `/api/v1/admin/reports` | List reports (UI planned) |
+| GET | `/api/v1/admin/reports/:id` | Report detail (UI planned) |
+| PATCH | `/api/v1/admin/reports/:id/status` | Update report status (UI planned) |
+
+### User `account_status` values
+
+`pending` → `approved` | `rejected` | `blocked`. Login is denied for `pending`, `rejected`, and `blocked`.
 
 ### Create / update product (multipart form)
 
@@ -298,6 +320,7 @@ frontend/app/
 │   ├── details/page.tsx   # Step 2: Item details
 │   └── pricing/page.tsx   # Step 3: Pricing & location
 ├── details/[id]/     # Product detail page
+├── admin/            # Admin dashboard (users, categories, reports placeholder)
 ├── context/          # ListingFormContext (wizard state)
 ├── types/
 └── utils/api.ts

@@ -5,10 +5,10 @@ interface FilterActionsProps {
   onSortChange: (sortOrder: string) => void;
 }
 
-export function FilterActions({ onFilterClick, onSortChange }: FilterActionsProps) {
+export function FilterActions({ onFilterClick, onSortChange: _onSortChange }: FilterActionsProps) {
   return (
     <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-      <button 
+      <button
         onClick={onFilterClick}
         className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer w-full sm:w-auto"
       >
