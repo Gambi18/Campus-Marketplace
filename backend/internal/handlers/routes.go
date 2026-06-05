@@ -13,7 +13,7 @@ func SetupRoutes(
 	queries *db.Queries,
 	authService *services.AuthService,
 	productService *services.ProductService,
-	cloudinaryService *services.CloudinaryService,
+	cloudinaryService *services.CloudinaryService, 
 ) {
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(authService)

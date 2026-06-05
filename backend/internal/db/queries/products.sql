@@ -5,9 +5,13 @@ INSERT INTO products (
     title,
     description,
     price,
-    image_url
+    condition,
+    image_url_1,
+    image_url_2,
+    image_url_3,
+    image_url_4
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 )
 RETURNING *;
 
@@ -77,10 +81,14 @@ SET
     title       = $3,
     description = $4,
     price       = $5,
-    image_url   = $6,
+    condition   = $6,
+    image_url_1 = $7,
+    image_url_2 = $8,
+    image_url_3 = $9,
+    image_url_4 = $10,
     updated_at  = NOW()
 WHERE id = $1
-AND seller_id = $7
+AND seller_id = $11
 RETURNING *;
 
 -- name: UpdateProductStatus :one

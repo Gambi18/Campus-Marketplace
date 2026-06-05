@@ -20,20 +20,28 @@ INSERT INTO products (
     title,
     description,
     price,
-    image_url
+    condition,
+    image_url_1,
+    image_url_2,
+    image_url_3,
+    image_url_4
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 )
-RETURNING id, seller_id, category_id, title, description, price, image_url, status, created_at, updated_at
+RETURNING id, seller_id, category_id, title, description, price, status, created_at, updated_at, condition, image_url_1, image_url_2, image_url_3, image_url_4
 `
 
 type CreateProductParams struct {
-	SellerID    uuid.UUID      `json:"seller_id"`
-	CategoryID  int32          `json:"category_id"`
-	Title       string         `json:"title"`
-	Description string         `json:"description"`
-	Price       string         `json:"price"`
-	ImageUrl    sql.NullString `json:"image_url"`
+	SellerID    uuid.UUID `json:"seller_id"`
+	CategoryID  int32     `json:"category_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Price       string    `json:"price"`
+	Condition   string    `json:"condition"`
+	ImageUrl1   string    `json:"image_url_1"`
+	ImageUrl2   string    `json:"image_url_2"`
+	ImageUrl3   string    `json:"image_url_3"`
+	ImageUrl4   string    `json:"image_url_4"`
 }
 
 func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error) {
@@ -43,7 +51,11 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		arg.Title,
 		arg.Description,
 		arg.Price,
-		arg.ImageUrl,
+		arg.Condition,
+		arg.ImageUrl1,
+		arg.ImageUrl2,
+		arg.ImageUrl3,
+		arg.ImageUrl4,
 	)
 	var i Product
 	err := row.Scan(
@@ -53,10 +65,14 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		&i.Title,
 		&i.Description,
 		&i.Price,
-		&i.ImageUrl,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Condition,
+		&i.ImageUrl1,
+		&i.ImageUrl2,
+		&i.ImageUrl3,
+		&i.ImageUrl4,
 	)
 	return i, err
 }
@@ -79,7 +95,7 @@ func (q *Queries) DeleteProduct(ctx context.Context, arg DeleteProductParams) er
 
 const getAllProducts = `-- name: GetAllProducts :many
 SELECT
-    p.id, p.seller_id, p.category_id, p.title, p.description, p.price, p.image_url, p.status, p.created_at, p.updated_at,
+    p.id, p.seller_id, p.category_id, p.title, p.description, p.price, p.status, p.created_at, p.updated_at, p.condition, p.image_url_1, p.image_url_2, p.image_url_3, p.image_url_4,
     u.username  AS seller_name,
     c.name      AS category_name
 FROM products p
@@ -90,18 +106,22 @@ ORDER BY p.created_at DESC
 `
 
 type GetAllProductsRow struct {
-	ID           uuid.UUID      `json:"id"`
-	SellerID     uuid.UUID      `json:"seller_id"`
-	CategoryID   int32          `json:"category_id"`
-	Title        string         `json:"title"`
-	Description  string         `json:"description"`
-	Price        string         `json:"price"`
-	ImageUrl     sql.NullString `json:"image_url"`
-	Status       string         `json:"status"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	SellerName   string         `json:"seller_name"`
-	CategoryName string         `json:"category_name"`
+	ID           uuid.UUID `json:"id"`
+	SellerID     uuid.UUID `json:"seller_id"`
+	CategoryID   int32     `json:"category_id"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	Price        string    `json:"price"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Condition    string    `json:"condition"`
+	ImageUrl1    string    `json:"image_url_1"`
+	ImageUrl2    string    `json:"image_url_2"`
+	ImageUrl3    string    `json:"image_url_3"`
+	ImageUrl4    string    `json:"image_url_4"`
+	SellerName   string    `json:"seller_name"`
+	CategoryName string    `json:"category_name"`
 }
 
 func (q *Queries) GetAllProducts(ctx context.Context) ([]GetAllProductsRow, error) {
@@ -120,10 +140,14 @@ func (q *Queries) GetAllProducts(ctx context.Context) ([]GetAllProductsRow, erro
 			&i.Title,
 			&i.Description,
 			&i.Price,
-			&i.ImageUrl,
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Condition,
+			&i.ImageUrl1,
+			&i.ImageUrl2,
+			&i.ImageUrl3,
+			&i.ImageUrl4,
 			&i.SellerName,
 			&i.CategoryName,
 		); err != nil {
@@ -142,7 +166,7 @@ func (q *Queries) GetAllProducts(ctx context.Context) ([]GetAllProductsRow, erro
 
 const getProductByID = `-- name: GetProductByID :one
 SELECT 
-    p.id, p.seller_id, p.category_id, p.title, p.description, p.price, p.image_url, p.status, p.created_at, p.updated_at,
+    p.id, p.seller_id, p.category_id, p.title, p.description, p.price, p.status, p.created_at, p.updated_at, p.condition, p.image_url_1, p.image_url_2, p.image_url_3, p.image_url_4,
     u.username  AS seller_name,
     c.name      AS category_name
 FROM products p
@@ -152,18 +176,22 @@ WHERE p.id = $1
 `
 
 type GetProductByIDRow struct {
-	ID           uuid.UUID      `json:"id"`
-	SellerID     uuid.UUID      `json:"seller_id"`
-	CategoryID   int32          `json:"category_id"`
-	Title        string         `json:"title"`
-	Description  string         `json:"description"`
-	Price        string         `json:"price"`
-	ImageUrl     sql.NullString `json:"image_url"`
-	Status       string         `json:"status"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	SellerName   string         `json:"seller_name"`
-	CategoryName string         `json:"category_name"`
+	ID           uuid.UUID `json:"id"`
+	SellerID     uuid.UUID `json:"seller_id"`
+	CategoryID   int32     `json:"category_id"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	Price        string    `json:"price"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Condition    string    `json:"condition"`
+	ImageUrl1    string    `json:"image_url_1"`
+	ImageUrl2    string    `json:"image_url_2"`
+	ImageUrl3    string    `json:"image_url_3"`
+	ImageUrl4    string    `json:"image_url_4"`
+	SellerName   string    `json:"seller_name"`
+	CategoryName string    `json:"category_name"`
 }
 
 func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (GetProductByIDRow, error) {
@@ -176,10 +204,14 @@ func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (GetProductB
 		&i.Title,
 		&i.Description,
 		&i.Price,
-		&i.ImageUrl,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Condition,
+		&i.ImageUrl1,
+		&i.ImageUrl2,
+		&i.ImageUrl3,
+		&i.ImageUrl4,
 		&i.SellerName,
 		&i.CategoryName,
 	)
@@ -188,7 +220,7 @@ func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (GetProductB
 
 const getProductsByCategory = `-- name: GetProductsByCategory :many
 SELECT
-    p.id, p.seller_id, p.category_id, p.title, p.description, p.price, p.image_url, p.status, p.created_at, p.updated_at,
+    p.id, p.seller_id, p.category_id, p.title, p.description, p.price, p.status, p.created_at, p.updated_at, p.condition, p.image_url_1, p.image_url_2, p.image_url_3, p.image_url_4,
     u.username  AS seller_name,
     c.name      AS category_name
 FROM products p
@@ -200,18 +232,22 @@ ORDER BY p.created_at DESC
 `
 
 type GetProductsByCategoryRow struct {
-	ID           uuid.UUID      `json:"id"`
-	SellerID     uuid.UUID      `json:"seller_id"`
-	CategoryID   int32          `json:"category_id"`
-	Title        string         `json:"title"`
-	Description  string         `json:"description"`
-	Price        string         `json:"price"`
-	ImageUrl     sql.NullString `json:"image_url"`
-	Status       string         `json:"status"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	SellerName   string         `json:"seller_name"`
-	CategoryName string         `json:"category_name"`
+	ID           uuid.UUID `json:"id"`
+	SellerID     uuid.UUID `json:"seller_id"`
+	CategoryID   int32     `json:"category_id"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	Price        string    `json:"price"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Condition    string    `json:"condition"`
+	ImageUrl1    string    `json:"image_url_1"`
+	ImageUrl2    string    `json:"image_url_2"`
+	ImageUrl3    string    `json:"image_url_3"`
+	ImageUrl4    string    `json:"image_url_4"`
+	SellerName   string    `json:"seller_name"`
+	CategoryName string    `json:"category_name"`
 }
 
 func (q *Queries) GetProductsByCategory(ctx context.Context, categoryID int32) ([]GetProductsByCategoryRow, error) {
@@ -230,10 +266,14 @@ func (q *Queries) GetProductsByCategory(ctx context.Context, categoryID int32) (
 			&i.Title,
 			&i.Description,
 			&i.Price,
-			&i.ImageUrl,
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Condition,
+			&i.ImageUrl1,
+			&i.ImageUrl2,
+			&i.ImageUrl3,
+			&i.ImageUrl4,
 			&i.SellerName,
 			&i.CategoryName,
 		); err != nil {
@@ -252,7 +292,7 @@ func (q *Queries) GetProductsByCategory(ctx context.Context, categoryID int32) (
 
 const getProductsBySellerID = `-- name: GetProductsBySellerID :many
 SELECT
-    p.id, p.seller_id, p.category_id, p.title, p.description, p.price, p.image_url, p.status, p.created_at, p.updated_at,
+    p.id, p.seller_id, p.category_id, p.title, p.description, p.price, p.status, p.created_at, p.updated_at, p.condition, p.image_url_1, p.image_url_2, p.image_url_3, p.image_url_4,
     u.username  AS seller_name,
     c.name      AS category_name
 FROM products p
@@ -263,18 +303,22 @@ ORDER BY p.created_at DESC
 `
 
 type GetProductsBySellerIDRow struct {
-	ID           uuid.UUID      `json:"id"`
-	SellerID     uuid.UUID      `json:"seller_id"`
-	CategoryID   int32          `json:"category_id"`
-	Title        string         `json:"title"`
-	Description  string         `json:"description"`
-	Price        string         `json:"price"`
-	ImageUrl     sql.NullString `json:"image_url"`
-	Status       string         `json:"status"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	SellerName   string         `json:"seller_name"`
-	CategoryName string         `json:"category_name"`
+	ID           uuid.UUID `json:"id"`
+	SellerID     uuid.UUID `json:"seller_id"`
+	CategoryID   int32     `json:"category_id"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	Price        string    `json:"price"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Condition    string    `json:"condition"`
+	ImageUrl1    string    `json:"image_url_1"`
+	ImageUrl2    string    `json:"image_url_2"`
+	ImageUrl3    string    `json:"image_url_3"`
+	ImageUrl4    string    `json:"image_url_4"`
+	SellerName   string    `json:"seller_name"`
+	CategoryName string    `json:"category_name"`
 }
 
 func (q *Queries) GetProductsBySellerID(ctx context.Context, sellerID uuid.UUID) ([]GetProductsBySellerIDRow, error) {
@@ -293,10 +337,14 @@ func (q *Queries) GetProductsBySellerID(ctx context.Context, sellerID uuid.UUID)
 			&i.Title,
 			&i.Description,
 			&i.Price,
-			&i.ImageUrl,
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Condition,
+			&i.ImageUrl1,
+			&i.ImageUrl2,
+			&i.ImageUrl3,
+			&i.ImageUrl4,
 			&i.SellerName,
 			&i.CategoryName,
 		); err != nil {
@@ -315,7 +363,7 @@ func (q *Queries) GetProductsBySellerID(ctx context.Context, sellerID uuid.UUID)
 
 const searchProducts = `-- name: SearchProducts :many
 SELECT
-    p.id, p.seller_id, p.category_id, p.title, p.description, p.price, p.image_url, p.status, p.created_at, p.updated_at,
+    p.id, p.seller_id, p.category_id, p.title, p.description, p.price, p.status, p.created_at, p.updated_at, p.condition, p.image_url_1, p.image_url_2, p.image_url_3, p.image_url_4,
     u.username  AS seller_name,
     c.name      AS category_name
 FROM products p
@@ -330,18 +378,22 @@ ORDER BY p.created_at DESC
 `
 
 type SearchProductsRow struct {
-	ID           uuid.UUID      `json:"id"`
-	SellerID     uuid.UUID      `json:"seller_id"`
-	CategoryID   int32          `json:"category_id"`
-	Title        string         `json:"title"`
-	Description  string         `json:"description"`
-	Price        string         `json:"price"`
-	ImageUrl     sql.NullString `json:"image_url"`
-	Status       string         `json:"status"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	SellerName   string         `json:"seller_name"`
-	CategoryName string         `json:"category_name"`
+	ID           uuid.UUID `json:"id"`
+	SellerID     uuid.UUID `json:"seller_id"`
+	CategoryID   int32     `json:"category_id"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	Price        string    `json:"price"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Condition    string    `json:"condition"`
+	ImageUrl1    string    `json:"image_url_1"`
+	ImageUrl2    string    `json:"image_url_2"`
+	ImageUrl3    string    `json:"image_url_3"`
+	ImageUrl4    string    `json:"image_url_4"`
+	SellerName   string    `json:"seller_name"`
+	CategoryName string    `json:"category_name"`
 }
 
 func (q *Queries) SearchProducts(ctx context.Context, dollar_1 sql.NullString) ([]SearchProductsRow, error) {
@@ -360,10 +412,14 @@ func (q *Queries) SearchProducts(ctx context.Context, dollar_1 sql.NullString) (
 			&i.Title,
 			&i.Description,
 			&i.Price,
-			&i.ImageUrl,
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Condition,
+			&i.ImageUrl1,
+			&i.ImageUrl2,
+			&i.ImageUrl3,
+			&i.ImageUrl4,
 			&i.SellerName,
 			&i.CategoryName,
 		); err != nil {
@@ -387,21 +443,29 @@ SET
     title       = $3,
     description = $4,
     price       = $5,
-    image_url   = $6,
+    condition   = $6,
+    image_url_1 = $7,
+    image_url_2 = $8,
+    image_url_3 = $9,
+    image_url_4 = $10,
     updated_at  = NOW()
 WHERE id = $1
-AND seller_id = $7
-RETURNING id, seller_id, category_id, title, description, price, image_url, status, created_at, updated_at
+AND seller_id = $11
+RETURNING id, seller_id, category_id, title, description, price, status, created_at, updated_at, condition, image_url_1, image_url_2, image_url_3, image_url_4
 `
 
 type UpdateProductParams struct {
-	ID          uuid.UUID      `json:"id"`
-	CategoryID  int32          `json:"category_id"`
-	Title       string         `json:"title"`
-	Description string         `json:"description"`
-	Price       string         `json:"price"`
-	ImageUrl    sql.NullString `json:"image_url"`
-	SellerID    uuid.UUID      `json:"seller_id"`
+	ID          uuid.UUID `json:"id"`
+	CategoryID  int32     `json:"category_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Price       string    `json:"price"`
+	Condition   string    `json:"condition"`
+	ImageUrl1   string    `json:"image_url_1"`
+	ImageUrl2   string    `json:"image_url_2"`
+	ImageUrl3   string    `json:"image_url_3"`
+	ImageUrl4   string    `json:"image_url_4"`
+	SellerID    uuid.UUID `json:"seller_id"`
 }
 
 func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error) {
@@ -411,7 +475,11 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (P
 		arg.Title,
 		arg.Description,
 		arg.Price,
-		arg.ImageUrl,
+		arg.Condition,
+		arg.ImageUrl1,
+		arg.ImageUrl2,
+		arg.ImageUrl3,
+		arg.ImageUrl4,
 		arg.SellerID,
 	)
 	var i Product
@@ -422,10 +490,14 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (P
 		&i.Title,
 		&i.Description,
 		&i.Price,
-		&i.ImageUrl,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Condition,
+		&i.ImageUrl1,
+		&i.ImageUrl2,
+		&i.ImageUrl3,
+		&i.ImageUrl4,
 	)
 	return i, err
 }
@@ -437,7 +509,7 @@ SET
     updated_at = NOW()
 WHERE id = $1
 AND  seller_id = $3
-RETURNING id, seller_id, category_id, title, description, price, image_url, status, created_at, updated_at
+RETURNING id, seller_id, category_id, title, description, price, status, created_at, updated_at, condition, image_url_1, image_url_2, image_url_3, image_url_4
 `
 
 type UpdateProductStatusParams struct {
@@ -456,10 +528,14 @@ func (q *Queries) UpdateProductStatus(ctx context.Context, arg UpdateProductStat
 		&i.Title,
 		&i.Description,
 		&i.Price,
-		&i.ImageUrl,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Condition,
+		&i.ImageUrl1,
+		&i.ImageUrl2,
+		&i.ImageUrl3,
+		&i.ImageUrl4,
 	)
 	return i, err
 }
