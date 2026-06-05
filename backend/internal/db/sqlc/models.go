@@ -19,16 +19,20 @@ type Category struct {
 }
 
 type Product struct {
-	ID          uuid.UUID      `json:"id"`
-	SellerID    uuid.UUID      `json:"seller_id"`
-	CategoryID  int32          `json:"category_id"`
-	Title       string         `json:"title"`
-	Description string         `json:"description"`
-	Price       string         `json:"price"`
-	ImageUrl    sql.NullString `json:"image_url"`
-	Status      string         `json:"status"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	ID          uuid.UUID `json:"id"`
+	SellerID    uuid.UUID `json:"seller_id"`
+	CategoryID  int32     `json:"category_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Price       string    `json:"price"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Condition   string    `json:"condition"`
+	ImageUrl1   string    `json:"image_url_1"`
+	ImageUrl2   string    `json:"image_url_2"`
+	ImageUrl3   string    `json:"image_url_3"`
+	ImageUrl4   string    `json:"image_url_4"`
 }
 
 type Report struct {

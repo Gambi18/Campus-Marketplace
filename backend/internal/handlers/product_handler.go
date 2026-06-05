@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"database/sql"
-	"log"
+	
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -118,7 +118,7 @@ func (h *ProductHandler) GetProductsByCategory(c *gin.Context) {
 //PROTECTED ENDPOINTS 
 
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
-	// 1. Get seller ID from JWT context
+	// 1. Get seller ID from JWT
 	sellerIDStr := c.GetString("user_id")
 	sellerID, err := uuid.Parse(sellerIDStr)
 	if err != nil {
@@ -127,13 +127,24 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	}
 
 	// 2. Parse form fields
-	title := c.PostForm("title")
+	title       := c.PostForm("title")
 	description := c.PostForm("description")
-	price := c.PostForm("price")
+	price       := c.PostForm("price")
 	categoryIDStr := c.PostForm("category_id")
+	condition   := c.PostForm("condition")
 
-	if title == "" || description == "" || price == "" || categoryIDStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "title, description, price and category_id are required"})
+	if title == "" || description == "" || price == "" || categoryIDStr == "" || condition == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "title, description, price, category_id and condition are required"})
+		return
+	}
+
+	// 3. Validate condition
+	validConditions := map[string]bool{
+		"brand_new": true, "like_new": true,
+		"good": true, "fair": true,
+	}
+	if !validConditions[condition] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "condition must be one of: brand_new, like_new, good, fair"})
 		return
 	}
 
@@ -143,30 +154,44 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	// 3. Get image file if provided
-	var mf multipart.File
-	fileHeader, err := c.FormFile("image")
-	if err == nil && fileHeader != nil {
-		mf, err = fileHeader.Open()
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "could not read image file"})
-			return
-		}
-		defer mf.Close()
+	// 4. Get image 1 — required
+	fileHeader1, err := c.FormFile("image_1")
+	if err != nil || fileHeader1 == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "at least one image is required (image_1)"})
+		return
+	}
+	image1, err := fileHeader1.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "could not read image_1"})
+		return
+	}
+	defer image1.Close()
+
+	// 5. Get images 2, 3, 4 — optional
+	var image2, image3, image4 multipart.File
+
+	if fh, err := c.FormFile("image_2"); err == nil && fh != nil {
+		image2, _ = fh.Open()
+		defer image2.Close()
+	}
+	if fh, err := c.FormFile("image_3"); err == nil && fh != nil {
+		image3, _ = fh.Open()
+		defer image3.Close()
+	}
+	if fh, err := c.FormFile("image_4"); err == nil && fh != nil {
+		image4, _ = fh.Open()
+		defer image4.Close()
 	}
 
-	// 4. Call service
+	// 6. Call service
 	product, err := h.productService.CreateProduct(
 		c.Request.Context(),
 		sellerID,
 		int32(categoryID),
-		title,
-		description,
-		price,
-		mf,
+		title, description, price, condition,
+		image1, image2, image3, image4,
 	)
 	if err != nil {
-		log.Printf("Create product error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create product"})
 		return
 	}
@@ -203,7 +228,7 @@ func (h *ProductHandler) GetMyProducts(c *gin.Context) {
 }
 
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
-	//Gets seller ID from JWT
+	// 1. Get seller ID from JWT
 	sellerIDStr := c.GetString("user_id")
 	sellerID, err := uuid.Parse(sellerIDStr)
 	if err != nil {
@@ -211,28 +236,38 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	// Gets product ID from URL
+	// 2. Get product ID from URL
 	productID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
 		return
 	}
 
-	// Gets existing product to retrieve current image URL
+	// 3. Get existing product
 	existing, err := h.queries.GetProductByID(c.Request.Context(), productID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
 		return
 	}
 
-	// Parses form fields
-	title := c.PostForm("title")
-	description := c.PostForm("description")
-	price := c.PostForm("price")
+	// 4. Parse form fields
+	title         := c.PostForm("title")
+	description   := c.PostForm("description")
+	price         := c.PostForm("price")
 	categoryIDStr := c.PostForm("category_id")
+	condition     := c.PostForm("condition")
 
-	if title == "" || description == "" || price == "" || categoryIDStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "title, description, price and category_id are required"})
+	if title == "" || description == "" || price == "" || categoryIDStr == "" || condition == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "title, description, price, category_id and condition are required"})
+		return
+	}
+
+	validConditions := map[string]bool{
+		"brand_new": true, "like_new": true,
+		"good": true, "fair": true,
+	}
+	if !validConditions[condition] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "condition must be one of: brand_new, like_new, good, fair"})
 		return
 	}
 
@@ -242,34 +277,35 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	//Handle image upload
-	var mf multipart.File
-	fileHeader, err := c.FormFile("image")
-	if err == nil && fileHeader != nil {
-		mf, err = fileHeader.Open()
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "could not read image"})
-			return
-		}
-		defer mf.Close()
+	// 5. Get new images if provided
+	var image1, image2, image3, image4 multipart.File
+
+	if fh, err := c.FormFile("image_1"); err == nil && fh != nil {
+		image1, _ = fh.Open()
+		defer image1.Close()
+	}
+	if fh, err := c.FormFile("image_2"); err == nil && fh != nil {
+		image2, _ = fh.Open()
+		defer image2.Close()
+	}
+	if fh, err := c.FormFile("image_3"); err == nil && fh != nil {
+		image3, _ = fh.Open()
+		defer image3.Close()
+	}
+	if fh, err := c.FormFile("image_4"); err == nil && fh != nil {
+		image4, _ = fh.Open()
+		defer image4.Close()
 	}
 
-	existingImage := ""
-	if existing.ImageUrl.Valid {
-		existingImage = existing.ImageUrl.String
-	}
-
-	//Call service
+	// 6. Call service
 	product, err := h.productService.UpdateProduct(
 		c.Request.Context(),
-		productID,
-		sellerID,
+		productID, sellerID,
 		int32(categoryID),
-		title,
-		description,
-		price,
-		mf,
-		existingImage,
+		title, description, price, condition,
+		image1, image2, image3, image4,
+		existing.ImageUrl1, existing.ImageUrl2,
+		existing.ImageUrl3, existing.ImageUrl4,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update product"})
@@ -332,23 +368,17 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 		return
 	}
 
-	// Gets product to retrieve image URL before deleting
 	existing, err := h.queries.GetProductByID(c.Request.Context(), productID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
 		return
 	}
 
-	imageURL := ""
-	if existing.ImageUrl.Valid {
-		imageURL = existing.ImageUrl.String
-	}
-
 	if err := h.productService.DeleteProduct(
 		c.Request.Context(),
-		productID,
-		sellerID,
-		imageURL,
+		productID, sellerID,
+		existing.ImageUrl1, existing.ImageUrl2,
+		existing.ImageUrl3, existing.ImageUrl4,
 	); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete product"})
 		return

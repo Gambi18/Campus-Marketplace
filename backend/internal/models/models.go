@@ -98,7 +98,12 @@ type ProductResponse struct {
     Title        string `json:"title"`
     Description  string `json:"description"`
     Price        string `json:"price"`
-    ImageURL     string `json:"image_url"`
+	Condition    string `json:"condition"`   
+	ImageUrl1    string `json:"image_url_1"` 
+	ImageUrl2    string `json:"image_url_2"` 
+	ImageUrl3    string `json:"image_url_3"` 
+	ImageUrl4    string `json:"image_url_4"` 
+
     Status       string `json:"status"`
     CreatedAt    string `json:"created_at"`
 }
@@ -114,7 +119,11 @@ func ToProductResponse(p db.GetAllProductsRow) ProductResponse {
         Title:        p.Title,
         Description:  p.Description,
         Price:        p.Price,
-        ImageURL:     p.ImageUrl.String,
+        Condition:    p.Condition,
+		ImageUrl1:    p.ImageUrl1,
+		ImageUrl2:    p.ImageUrl2,
+		ImageUrl3:    p.ImageUrl3,
+		ImageUrl4:    p.ImageUrl4,
         Status:       p.Status,
         CreatedAt:    p.CreatedAt.String(),
     }
@@ -130,7 +139,11 @@ func ToSearchProductResponse(p db.SearchProductsRow) ProductResponse {
         Title:        p.Title,
         Description:  p.Description,
         Price:        p.Price,
-        ImageURL:     p.ImageUrl.String,
+		Condition:    p.Condition,
+		ImageUrl1:    p.ImageUrl1,
+		ImageUrl2:    p.ImageUrl2,
+		ImageUrl3:    p.ImageUrl3,
+		ImageUrl4:    p.ImageUrl4,
         Status:       p.Status,
         CreatedAt:    p.CreatedAt.String(),
     }
@@ -147,7 +160,11 @@ func ToCategoryProductResponse(p db.GetProductsByCategoryRow) ProductResponse {
         Title:        p.Title,
         Description:  p.Description,
         Price:        p.Price,
-        ImageURL:     p.ImageUrl.String,
+		Condition:    p.Condition,
+		ImageUrl1:    p.ImageUrl1,
+		ImageUrl2:    p.ImageUrl2,
+		ImageUrl3:    p.ImageUrl3,
+		ImageUrl4:    p.ImageUrl4,
         Status:       p.Status,
         CreatedAt:    p.CreatedAt.String(),
     }
@@ -164,7 +181,11 @@ func ToSellerProductResponse(p db.GetProductsBySellerIDRow) ProductResponse {
         Title:        p.Title,
         Description:  p.Description,
         Price:        p.Price,
-        ImageURL:     p.ImageUrl.String,
+		Condition:    p.Condition,
+		ImageUrl1:    p.ImageUrl1,
+		ImageUrl2:    p.ImageUrl2,
+		ImageUrl3:    p.ImageUrl3,
+		ImageUrl4:    p.ImageUrl4,
         Status:       p.Status,
         CreatedAt:    p.CreatedAt.String(),
     }
@@ -181,7 +202,11 @@ func ToGetByIDProductResponse(p db.GetProductByIDRow) ProductResponse {
         Title:        p.Title,
         Description:  p.Description,
         Price:        p.Price,
-        ImageURL:     p.ImageUrl.String,
+        Condition:    p.Condition,
+		ImageUrl1:    p.ImageUrl1,
+		ImageUrl2:    p.ImageUrl2,
+		ImageUrl3:    p.ImageUrl3,
+		ImageUrl4:    p.ImageUrl4,
         Status:       p.Status,
         CreatedAt:    p.CreatedAt.String(),
     }
@@ -196,7 +221,11 @@ func ToBasicProductResponse(p db.Product) ProductResponse {
         Title:       p.Title,
         Description: p.Description,
         Price:       p.Price,
-        ImageURL:    p.ImageUrl.String,
+		Condition:   p.Condition,
+		ImageUrl1:   p.ImageUrl1,
+		ImageUrl2:   p.ImageUrl2,
+		ImageUrl3:   p.ImageUrl3,
+		ImageUrl4:   p.ImageUrl4,
         Status:      p.Status,
         CreatedAt:   p.CreatedAt.String(),
     }
