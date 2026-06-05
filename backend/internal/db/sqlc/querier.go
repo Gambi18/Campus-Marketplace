@@ -14,12 +14,16 @@ import (
 type Querier interface {
 	ApproveUser(ctx context.Context, id uuid.UUID) (User, error)
 	BlockUser(ctx context.Context, id uuid.UUID) (User, error)
+	CountAdmins(ctx context.Context) (int64, error)
+	CreateAdmin(ctx context.Context, arg CreateAdminParams) (Admin, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteCategory(ctx context.Context, id int32) error
 	DeleteProduct(ctx context.Context, arg DeleteProductParams) error
+	GetAdminByEmail(ctx context.Context, email string) (Admin, error)
+	GetAdminByID(ctx context.Context, id uuid.UUID) (Admin, error)
 	GetAllCategories(ctx context.Context) ([]Category, error)
 	GetAllUsers(ctx context.Context) ([]User, error)
 	GetAllProducts(ctx context.Context) ([]GetAllProductsRow, error)

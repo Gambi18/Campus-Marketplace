@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FolderTree, Flag, Users } from 'lucide-react';
+import { clearAdminToken } from '../../utils/adminApi';
 
 const NAV = [
   { href: '/admin/users', label: 'Users', icon: Users },
@@ -35,8 +36,8 @@ export default function AdminSidebar() {
               key={href}
               href={href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${active
-                  ? 'bg-brand-primary text-white'
-                  : 'text-text-muted hover:bg-gray-50 hover:text-brand-neutral'
+                ? 'bg-brand-primary text-white'
+                : 'text-text-muted hover:bg-gray-50 hover:text-brand-neutral'
                 }`}
             >
               <Icon className="w-4 h-4" />
@@ -54,13 +55,23 @@ export default function AdminSidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-100">
+      <div className="p-4 border-t border-gray-100 space-y-2">
         <Link
           href="/"
-          className="text-sm text-text-muted hover:text-brand-primary transition-colors"
+          className="block text-sm text-text-muted hover:text-brand-primary transition-colors"
         >
           ← Back to marketplace
         </Link>
+        <button
+          type="button"
+          onClick={() => {
+            clearAdminToken();
+            window.location.href = '/admin/login';
+          }}
+          className="text-sm text-text-muted hover:text-red-600 transition-colors"
+        >
+          Log out
+        </button>
       </div>
     </aside>
   );

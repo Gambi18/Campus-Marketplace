@@ -78,9 +78,10 @@ npm run format
 
 ## Admin dashboard
 
-Routes (require admin JWT in `localStorage` as `token`):
+Routes (require admin JWT in `localStorage` as `admin_token`):
 
-- `/admin/users` — all users, pending verification, approve / reject / block
+- `/admin/login` — platform admin sign-in (`POST /api/v1/admin/auth/login`)
+- `/admin/users` — all students, pending verification, approve / reject / block
 - `/admin/categories` — CRUD categories
 - `/admin/reports` — placeholder (moderation UI planned)
 

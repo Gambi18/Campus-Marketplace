@@ -41,13 +41,21 @@ type Report struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
+type Admin struct {
+	ID           uuid.UUID `json:"id"`
+	Username     string    `json:"username"`
+	Email        string    `json:"email"`
+	PasswordHash string    `json:"password_hash"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
 type User struct {
 	ID            uuid.UUID `json:"id"`
 	Username      string    `json:"username"`
 	Email         string    `json:"email"`
 	PasswordHash  string    `json:"password_hash"`
 	IsVerified    bool      `json:"is_verified"`
-	Role          string    `json:"role"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 	StudentIDUrl  string    `json:"student_id_url"`

@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"log"
-	
 
 	"github.com/gin-gonic/gin"
 	
@@ -32,9 +32,9 @@ func main() {
 
     //  Initialize sqlc queries
     queries := dbsqlc.New(database)
-    
-	//  Initialize service
+
 	authService := services.NewAuthService(cfg.JWTSecret)
+	services.EnsureDefaultAdmin(context.Background(), queries, authService, cfg.AdminUsername, cfg.AdminEmail, cfg.AdminPassword)
 
         // cloudinary  initialization
     cloudinaryService, err := services.NewCloudinaryService(

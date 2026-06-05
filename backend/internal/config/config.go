@@ -20,8 +20,11 @@ type Config struct {
 	DBName   string
 	JWTSecret string
 	CloudinaryCloudName string
-    CloudinaryAPIKey    string
-    CloudinaryAPISecret string
+	CloudinaryAPIKey    string
+	CloudinaryAPISecret string
+	AdminUsername       string
+	AdminEmail          string
+	AdminPassword       string
 }
 
 func LoadConfig() *Config {
@@ -41,7 +44,9 @@ func LoadConfig() *Config {
 		CloudinaryCloudName: getEnv("CLOUDINARY_CLOUD_NAME", ""),
 		CloudinaryAPIKey:    getEnv("CLOUDINARY_API_KEY", ""),
 		CloudinaryAPISecret: getEnv("CLOUDINARY_API_SECRET", ""),
-
+		AdminUsername:       getEnv("ADMIN_USERNAME", "admin"),
+		AdminEmail:          getEnv("ADMIN_EMAIL", ""),
+		AdminPassword:       getEnv("ADMIN_PASSWORD", ""),
 	}
 }
 // added this cause Always built fresh from current field values

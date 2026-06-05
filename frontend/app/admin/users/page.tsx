@@ -72,8 +72,8 @@ export default function AdminUsersPage() {
             type="button"
             onClick={() => setTab(t)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${tab === t
-                ? 'border-brand-primary text-brand-primary'
-                : 'border-transparent text-text-muted hover:text-brand-neutral'
+              ? 'border-brand-primary text-brand-primary'
+              : 'border-transparent text-text-muted hover:text-brand-neutral'
               }`}
           >
             {t === 'all' ? 'All users' : 'Pending verification'}
@@ -96,7 +96,6 @@ export default function AdminUsersPage() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold text-brand-neutral">User</th>
-                  <th className="text-left px-4 py-3 font-semibold text-brand-neutral">Role</th>
                   <th className="text-left px-4 py-3 font-semibold text-brand-neutral">Status</th>
                   <th className="text-right px-4 py-3 font-semibold text-brand-neutral">Actions</th>
                 </tr>
@@ -108,7 +107,6 @@ export default function AdminUsersPage() {
                       <p className="font-medium text-brand-neutral">{user.username}</p>
                       <p className="text-text-muted text-xs">{user.email}</p>
                     </td>
-                    <td className="px-4 py-3 capitalize text-text-muted">{user.role}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${STATUS_STYLES[user.account_status] ?? 'bg-gray-100 text-gray-600'
@@ -149,7 +147,7 @@ export default function AdminUsersPage() {
                             </Button>
                           </>
                         )}
-                        {user.account_status === 'approved' && user.role !== 'admin' && (
+                        {user.account_status === 'approved' && (
                           <Button
                             size="sm"
                             variant="outlined"

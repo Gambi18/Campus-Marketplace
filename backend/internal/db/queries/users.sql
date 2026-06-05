@@ -3,11 +3,10 @@ INSERT INTO users (
     username,
     email,
     password_hash,
-    role,
     student_id_url,
     account_status
 ) VALUES (
-    $1, $2, $3, $4, $5, 'pending'
+    $1, $2, $3, $4, 'pending'
 )
 RETURNING *;
 
@@ -32,7 +31,7 @@ WHERE id = $1
 RETURNING *;
 
 -- name: GetAllUsers :many
-SELECT id, username, email, is_verified, role, created_at, updated_at, student_id_url, account_status FROM users
+SELECT id, username, email, is_verified, created_at, updated_at, student_id_url, account_status FROM users
 ORDER BY created_at DESC;
 
 -- name: GetPendingUsers :many
