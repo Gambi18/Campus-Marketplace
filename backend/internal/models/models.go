@@ -50,13 +50,44 @@ type AuthResponse struct {
 }
 
 type UserResponse struct {
-	ID string `json:"id"`
-	Username string `json:"username"`
-	Email string `json:"email"`
-	Role string `json:"role"`
-	IsVerified bool `json:"is_verified"`
-    AccountStatus string `json:"account_status"` 
-    StudentIDUrl  string `json:"student_id_url"` 
+	ID            string `json:"id"`
+	Username      string `json:"username"`
+	Email         string `json:"email"`
+	IsVerified    bool   `json:"is_verified"`
+	AccountStatus string `json:"account_status"`
+	StudentIDUrl  string `json:"student_id_url,omitempty"`
+}
+
+type AdminResponse struct {
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	CreatedAt string `json:"created_at"`
+}
+
+type AdminAuthResponse struct {
+	Token string        `json:"token"`
+	Admin AdminResponse `json:"admin"`
+}
+
+func ToUserResponse(u db.User) UserResponse {
+	return UserResponse{
+		ID:            u.ID.String(),
+		Username:      u.Username,
+		Email:         u.Email,
+		IsVerified:    u.IsVerified,
+		AccountStatus: u.AccountStatus,
+		StudentIDUrl:  u.StudentIDUrl,
+	}
+}
+
+func ToAdminResponse(a db.Admin) AdminResponse {
+	return AdminResponse{
+		ID:        a.ID.String(),
+		Username:  a.Username,
+		Email:     a.Email,
+		CreatedAt: a.CreatedAt.String(),
+	}
 }
 
 //  admin request to reject with reason shown to user

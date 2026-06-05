@@ -19,7 +19,6 @@ func NewAuthMiddleware(authService *services.AuthService) *AuthMiddleware {
 
 func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		//  Get the Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization header required"})
@@ -27,7 +26,6 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 			return
 		}
 
-		// Check if it starts with "Bearer "
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization header format must be: Bearer {token}"})
@@ -35,7 +33,6 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 			return
 		}
 
-		// Validate the token
 		claims, err := m.authService.ValidateToken(parts[1])
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
@@ -43,31 +40,35 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 			return
 		}
 
-		//  Store claims in context for handlers to use
+		actorType, _ := claims["actor_type"].(string)
 		c.Set("user_id", claims["user_id"])
 		c.Set("email", claims["email"])
-		c.Set("role", claims["role"])
+		c.Set("actor_type", actorType)
 
-		//  Continue to the next handler
+		c.Next()
+	}
+}
+
+func (m *AuthMiddleware) RequireStudent() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		actorType, _ := c.Get("actor_type")
+		if actorType != services.ActorTypeStudent {
+			c.JSON(http.StatusForbidden, gin.H{"error": "student access required"})
+			c.Abort()
+			return
+		}
 		c.Next()
 	}
 }
 
 func (m *AuthMiddleware) RequireAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		role, exists := c.Get("role")
-		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-			c.Abort()
-			return
-		}
-
-		if role != "admin" {
+		actorType, _ := c.Get("actor_type")
+		if actorType != services.ActorTypeAdmin {
 			c.JSON(http.StatusForbidden, gin.H{"error": "admin access required"})
 			c.Abort()
 			return
 		}
-
 		c.Next()
 	}
 }
