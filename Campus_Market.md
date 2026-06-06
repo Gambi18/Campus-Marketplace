@@ -94,36 +94,27 @@ Deployment: Railway
 
 ---
 
-# User Roles
+# Actors (two separate account types)
 
-## Student
+Students and platform admins are **different tables** with **different login endpoints** and JWT `actor_type` claims (`student` | `admin`). The `users` table has no `role` column.
 
-Can:
+## Student (`users` table)
 
-- Register
-- Login
-- View products
-- Create listings (authenticated)
-- Edit own listings
-- Delete own listings
-- Update listing status (`available` | `sold` | `removed`)
-- Send messages (planned)
-- Receive messages (planned)
-- Report products (planned)
-- Manage profile
+- Register / login via `/api/v1/auth/*`
+- JWT `actor_type: student` required for marketplace routes (`/profile`, `/products`, etc.)
+- `account_status`: `pending` | `approved` | `rejected` | `blocked`
 
-Cannot:
+## Platform admin (`admins` table)
 
-- Delete other users' products
-- Access admin functionality
+- Login via `POST /api/v1/admin/auth/login` only (not student login)
+- JWT `actor_type: admin` required for `/api/v1/admin/*`
+- First admin seeded from env when table is empty: `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`
+- Can: view/block students, approve/reject sign-ups, manage categories
+- Reports & moderation UI — **planned** (API exists; dashboard placeholder)
 
-## Admin
+**Admin UI:** `/admin/login` → `/admin/users`, `/admin/categories`, `/admin/reports`
 
-Can:
-
-- View all users
-- Create / update / delete categories
-- (Reports & moderation — planned)
+**Not in scope (differs from design mockups):** item listing approvals, analytics “generate reports” dashboard.
 
 ---
 
@@ -211,9 +202,16 @@ backend/
 
 # Database Schema (core tables)
 
-## users
+## users (students only)
 
-- `id` (UUID), `username`, `email`, `password_hash`, `role`, `is_verified`, timestamps
+- `id` (UUID), `username`, `email`, `password_hash`, `is_verified`, `student_id_url`, `account_status`, timestamps
+- `account_status`: `pending` | `approved` | `rejected` | `blocked`
+- No `role` column — students are the only kind of user in this table
+
+## admins (platform operators)
+
+- `id` (UUID), `username`, `email`, `password_hash`, timestamps
+- Separate credentials from students; not linked to `users`
 
 ## categories
 
@@ -244,25 +242,43 @@ Base URL: `http://localhost:8080` (configurable via `NEXT_PUBLIC_API_URL`)
 | GET | `/api/v1/products/search?q=` | Search by title |
 | GET | `/api/v1/products/:id` | Product by ID |
 
-## Protected (Bearer JWT)
+## Protected — student JWT (`actor_type: student`)
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/v1/profile` | Current user |
+| GET | `/api/v1/profile` | Current student |
 | GET | `/api/v1/my-products` | Current user's listings |
 | POST | `/api/v1/products` | Create product (multipart) |
 | PUT | `/api/v1/products/:id` | Update product (multipart) |
 | PATCH | `/api/v1/products/:id/status` | Update status JSON `{ "status": "..." }` |
 | DELETE | `/api/v1/products/:id` | Delete product |
 
-## Admin (JWT + admin role)
+## Admin auth (public)
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/v1/admin/users` | All users |
+| POST | `/api/v1/admin/auth/login` | Platform admin login → JWT `actor_type: admin` |
+
+## Admin — platform JWT (`actor_type: admin`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/admin/profile` | Current admin |
+| GET | `/api/v1/admin/users` | All students |
+| GET | `/api/v1/admin/pending-users` | Users awaiting ID verification |
+| PATCH | `/api/v1/admin/users/:id/approve` | Approve sign-up |
+| PATCH | `/api/v1/admin/users/:id/reject` | Reject sign-up |
+| PATCH | `/api/v1/admin/users/:id/block` | Block account (`account_status=blocked`) |
 | POST | `/api/v1/admin/categories` | Create category |
 | PUT | `/api/v1/admin/categories/:id` | Update category |
 | DELETE | `/api/v1/admin/categories/:id` | Delete category |
+| GET | `/api/v1/admin/reports` | List reports (UI planned) |
+| GET | `/api/v1/admin/reports/:id` | Report detail (UI planned) |
+| PATCH | `/api/v1/admin/reports/:id/status` | Update report status (UI planned) |
+
+### User `account_status` values
+
+`pending` → `approved` | `rejected` | `blocked`. Login is denied for `pending`, `rejected`, and `blocked`.
 
 ### Create / update product (multipart form)
 
@@ -298,6 +314,7 @@ frontend/app/
 │   ├── details/page.tsx   # Step 2: Item details
 │   └── pricing/page.tsx   # Step 3: Pricing & location
 ├── details/[id]/     # Product detail page
+├── admin/            # Admin dashboard (users, categories, reports placeholder)
 ├── context/          # ListingFormContext (wizard state)
 ├── types/
 └── utils/api.ts

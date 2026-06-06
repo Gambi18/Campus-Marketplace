@@ -18,17 +18,31 @@ type Category struct {
 	CreatedAt   time.Time      `json:"created_at"`
 }
 
+type Message struct {
+	ID         uuid.UUID `json:"id"`
+	SenderID   uuid.UUID `json:"sender_id"`
+	ReceiverID uuid.UUID `json:"receiver_id"`
+	ProductID  uuid.UUID `json:"product_id"`
+	Content    string    `json:"content"`
+	IsRead     bool      `json:"is_read"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
 type Product struct {
-	ID          uuid.UUID      `json:"id"`
-	SellerID    uuid.UUID      `json:"seller_id"`
-	CategoryID  int32          `json:"category_id"`
-	Title       string         `json:"title"`
-	Description string         `json:"description"`
-	Price       string         `json:"price"`
-	ImageUrl    sql.NullString `json:"image_url"`
-	Status      string         `json:"status"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	ID          uuid.UUID `json:"id"`
+	SellerID    uuid.UUID `json:"seller_id"`
+	CategoryID  int32     `json:"category_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Price       string    `json:"price"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Condition   string    `json:"condition"`
+	ImageUrl1   string    `json:"image_url_1"`
+	ImageUrl2   string    `json:"image_url_2"`
+	ImageUrl3   string    `json:"image_url_3"`
+	ImageUrl4   string    `json:"image_url_4"`
 }
 
 type Report struct {
@@ -41,13 +55,21 @@ type Report struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
+type Admin struct {
+	ID           uuid.UUID `json:"id"`
+	Username     string    `json:"username"`
+	Email        string    `json:"email"`
+	PasswordHash string    `json:"password_hash"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
 type User struct {
 	ID            uuid.UUID `json:"id"`
 	Username      string    `json:"username"`
 	Email         string    `json:"email"`
 	PasswordHash  string    `json:"password_hash"`
 	IsVerified    bool      `json:"is_verified"`
-	Role          string    `json:"role"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 	StudentIDUrl  string    `json:"student_id_url"`

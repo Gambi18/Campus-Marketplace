@@ -13,16 +13,25 @@ import (
 
 type Querier interface {
 	ApproveUser(ctx context.Context, id uuid.UUID) (User, error)
+	BlockUser(ctx context.Context, id uuid.UUID) (User, error)
+	CountAdmins(ctx context.Context) (int64, error)
+	CreateAdmin(ctx context.Context, arg CreateAdminParams) (Admin, error)
 	CreateCategory(ctx context.Context, arg CreateCategoryParams) (Category, error)
+	CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteCategory(ctx context.Context, id int32) error
 	DeleteProduct(ctx context.Context, arg DeleteProductParams) error
+	GetAdminByEmail(ctx context.Context, email string) (Admin, error)
+	GetAdminByID(ctx context.Context, id uuid.UUID) (Admin, error)
 	GetAllCategories(ctx context.Context) ([]Category, error)
+	GetAllUsers(ctx context.Context) ([]User, error)
 	GetAllProducts(ctx context.Context) ([]GetAllProductsRow, error)
 	GetAllReports(ctx context.Context) ([]GetAllReportsRow, error)
 	GetCategoryByID(ctx context.Context, id int32) (Category, error)
+	GetConversations(ctx context.Context, senderID uuid.UUID) ([]GetConversationsRow, error)
+	GetMessagesByConversation(ctx context.Context, arg GetMessagesByConversationParams) ([]GetMessagesByConversationRow, error)
 	GetPendingUsers(ctx context.Context) ([]User, error)
 	GetProductByID(ctx context.Context, id uuid.UUID) (GetProductByIDRow, error)
 	GetProductsByCategory(ctx context.Context, categoryID int32) ([]GetProductsByCategoryRow, error)
@@ -30,8 +39,10 @@ type Querier interface {
 	GetReportByID(ctx context.Context, id uuid.UUID) (GetReportByIDRow, error)
 	GetReportsByReporterID(ctx context.Context, reporterID uuid.UUID) ([]GetReportsByReporterIDRow, error)
 	GetReportsByStatus(ctx context.Context, status string) ([]GetReportsByStatusRow, error)
+	GetUnreadCount(ctx context.Context, receiverID uuid.UUID) (int64, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
+	MarkMessagesAsRead(ctx context.Context, arg MarkMessagesAsReadParams) error
 	RejectUser(ctx context.Context, id uuid.UUID) (User, error)
 	SearchProducts(ctx context.Context, dollar_1 sql.NullString) ([]SearchProductsRow, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error)

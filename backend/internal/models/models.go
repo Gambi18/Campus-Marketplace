@@ -50,13 +50,44 @@ type AuthResponse struct {
 }
 
 type UserResponse struct {
-	ID string `json:"id"`
-	Username string `json:"username"`
-	Email string `json:"email"`
-	Role string `json:"role"`
-	IsVerified bool `json:"is_verified"`
-    AccountStatus string `json:"account_status"` 
-    StudentIDUrl  string `json:"student_id_url"` 
+	ID            string `json:"id"`
+	Username      string `json:"username"`
+	Email         string `json:"email"`
+	IsVerified    bool   `json:"is_verified"`
+	AccountStatus string `json:"account_status"`
+	StudentIDUrl  string `json:"student_id_url,omitempty"`
+}
+
+type AdminResponse struct {
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	CreatedAt string `json:"created_at"`
+}
+
+type AdminAuthResponse struct {
+	Token string        `json:"token"`
+	Admin AdminResponse `json:"admin"`
+}
+
+func ToUserResponse(u db.User) UserResponse {
+	return UserResponse{
+		ID:            u.ID.String(),
+		Username:      u.Username,
+		Email:         u.Email,
+		IsVerified:    u.IsVerified,
+		AccountStatus: u.AccountStatus,
+		StudentIDUrl:  u.StudentIDUrl,
+	}
+}
+
+func ToAdminResponse(a db.Admin) AdminResponse {
+	return AdminResponse{
+		ID:        a.ID.String(),
+		Username:  a.Username,
+		Email:     a.Email,
+		CreatedAt: a.CreatedAt.String(),
+	}
 }
 
 //  admin request to reject with reason shown to user
@@ -98,7 +129,12 @@ type ProductResponse struct {
     Title        string `json:"title"`
     Description  string `json:"description"`
     Price        string `json:"price"`
-    ImageURL     string `json:"image_url"`
+	Condition    string `json:"condition"`   
+	ImageUrl1    string `json:"image_url_1"` 
+	ImageUrl2    string `json:"image_url_2"` 
+	ImageUrl3    string `json:"image_url_3"` 
+	ImageUrl4    string `json:"image_url_4"` 
+
     Status       string `json:"status"`
     CreatedAt    string `json:"created_at"`
 }
@@ -114,7 +150,11 @@ func ToProductResponse(p db.GetAllProductsRow) ProductResponse {
         Title:        p.Title,
         Description:  p.Description,
         Price:        p.Price,
-        ImageURL:     p.ImageUrl.String,
+        Condition:    p.Condition,
+		ImageUrl1:    p.ImageUrl1,
+		ImageUrl2:    p.ImageUrl2,
+		ImageUrl3:    p.ImageUrl3,
+		ImageUrl4:    p.ImageUrl4,
         Status:       p.Status,
         CreatedAt:    p.CreatedAt.String(),
     }
@@ -130,7 +170,11 @@ func ToSearchProductResponse(p db.SearchProductsRow) ProductResponse {
         Title:        p.Title,
         Description:  p.Description,
         Price:        p.Price,
-        ImageURL:     p.ImageUrl.String,
+		Condition:    p.Condition,
+		ImageUrl1:    p.ImageUrl1,
+		ImageUrl2:    p.ImageUrl2,
+		ImageUrl3:    p.ImageUrl3,
+		ImageUrl4:    p.ImageUrl4,
         Status:       p.Status,
         CreatedAt:    p.CreatedAt.String(),
     }
@@ -147,7 +191,11 @@ func ToCategoryProductResponse(p db.GetProductsByCategoryRow) ProductResponse {
         Title:        p.Title,
         Description:  p.Description,
         Price:        p.Price,
-        ImageURL:     p.ImageUrl.String,
+		Condition:    p.Condition,
+		ImageUrl1:    p.ImageUrl1,
+		ImageUrl2:    p.ImageUrl2,
+		ImageUrl3:    p.ImageUrl3,
+		ImageUrl4:    p.ImageUrl4,
         Status:       p.Status,
         CreatedAt:    p.CreatedAt.String(),
     }
@@ -164,7 +212,11 @@ func ToSellerProductResponse(p db.GetProductsBySellerIDRow) ProductResponse {
         Title:        p.Title,
         Description:  p.Description,
         Price:        p.Price,
-        ImageURL:     p.ImageUrl.String,
+		Condition:    p.Condition,
+		ImageUrl1:    p.ImageUrl1,
+		ImageUrl2:    p.ImageUrl2,
+		ImageUrl3:    p.ImageUrl3,
+		ImageUrl4:    p.ImageUrl4,
         Status:       p.Status,
         CreatedAt:    p.CreatedAt.String(),
     }
@@ -181,7 +233,11 @@ func ToGetByIDProductResponse(p db.GetProductByIDRow) ProductResponse {
         Title:        p.Title,
         Description:  p.Description,
         Price:        p.Price,
-        ImageURL:     p.ImageUrl.String,
+        Condition:    p.Condition,
+		ImageUrl1:    p.ImageUrl1,
+		ImageUrl2:    p.ImageUrl2,
+		ImageUrl3:    p.ImageUrl3,
+		ImageUrl4:    p.ImageUrl4,
         Status:       p.Status,
         CreatedAt:    p.CreatedAt.String(),
     }
@@ -196,7 +252,11 @@ func ToBasicProductResponse(p db.Product) ProductResponse {
         Title:       p.Title,
         Description: p.Description,
         Price:       p.Price,
-        ImageURL:    p.ImageUrl.String,
+		Condition:   p.Condition,
+		ImageUrl1:   p.ImageUrl1,
+		ImageUrl2:   p.ImageUrl2,
+		ImageUrl3:   p.ImageUrl3,
+		ImageUrl4:   p.ImageUrl4,
         Status:      p.Status,
         CreatedAt:   p.CreatedAt.String(),
     }
@@ -296,4 +356,30 @@ func ToReporterReportResponse(r db.GetReportsByReporterIDRow) ReportResponse {
 		CreatedAt:    r.CreatedAt.String(),
 		UpdatedAt:    r.UpdatedAt.String(),
 	}
+}
+
+// MESSAGE MODELS 
+
+type MessageResponse struct {
+	ID         string `json:"id"`
+	SenderID   string `json:"sender_id"`
+	SenderName string `json:"sender_name"`
+	ReceiverID string `json:"receiver_id"`
+	ProductID  string `json:"product_id"`
+	Content    string `json:"content"`
+	IsRead     bool   `json:"is_read"`
+	CreatedAt  string `json:"created_at"`
+}
+
+type ConversationResponse struct {
+	ID           string `json:"id"`
+	SenderID     string `json:"sender_id"`
+	SenderName   string `json:"sender_name"`
+	ReceiverID   string `json:"receiver_id"`
+	ProductID    string `json:"product_id"`
+	ProductTitle string `json:"product_title"`
+	ProductImage string `json:"product_image"`
+	Content      string `json:"content"`
+	IsRead       bool   `json:"is_read"`
+	CreatedAt    string `json:"created_at"`
 }

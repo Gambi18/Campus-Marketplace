@@ -28,7 +28,7 @@ function Button({
     secondary: 'bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] focus:ring-slate-400',
     outlined: 'border border-gray-300 bg-white text-[#475569] hover:bg-slate-50 focus:ring-slate-400',
     form: 'bg-brand-primary text-white hover:bg-blue-700 focus:ring-brand-primary w-full font-semibold shadow-sm',
-    formLightBlue: 'bg-blue-50 text-blue-600 hover:bg-blue-100 focus:ring-blue-400 font-semibold shadow-sm',
+    formLightBlue: 'bg-blue-50 text-brand-primary border border-blue-100 hover:bg-blue-100 focus:ring-brand-primary w-full font-semibold',
   };
   const sizeStyles = {
     sm: 'px-3 py-1.5 text-xs rounded-md',

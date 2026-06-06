@@ -76,6 +76,15 @@ Format code with Prettier:
 npm run format
 ```
 
+## Admin dashboard
+
+Routes (require admin JWT in `localStorage` as `admin_token`):
+
+- `/admin/login` — platform admin sign-in (`POST /api/v1/admin/auth/login`)
+- `/admin/users` — all students, pending verification, approve / reject / block
+- `/admin/categories` — CRUD categories
+- `/admin/reports` — placeholder (moderation UI planned)
+
 ## Product UX conventions
 
 - **Peer-to-peer:** Students both list and browse; avoid copy that implies separate buyer/seller roles (no role switcher in the navbar).

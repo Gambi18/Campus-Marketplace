@@ -114,13 +114,13 @@ export default function SellPricingPage() {
       )}
 
       <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
-        <Button variant="outlined" size="lg" fullWidth onClick={() => router.push('/sell/details')}>
+        <Button variant="outlined" size="lg" fullWidth={false} onClick={() => router.push('/sell/details')}>
           Back
         </Button>
         <Button
           variant="primary"
           size="lg"
-          fullWidth
+          fullWidth={false}
           disabled={!canPublish || publishing}
           onClick={handlePublish}
           className="sm:flex-1"

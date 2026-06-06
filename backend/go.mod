@@ -9,12 +9,15 @@ require (
 )
 
 require github.com/golang-jwt/jwt/v5 v5.3.1
+
+require github.com/gorilla/websocket v1.5.3 // indirect
+
 require (
 	github.com/cloudinary/cloudinary-go/v2 v2.15.0 // indirect
 	github.com/creasty/defaults v1.7.0 // indirect
-	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/schema v1.4.1 // indirect
 )
+
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect

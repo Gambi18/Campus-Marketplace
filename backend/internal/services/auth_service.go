@@ -8,16 +8,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	ActorTypeStudent = "student"
+	ActorTypeAdmin   = "admin"
+)
+
 type AuthService struct {
 	JWTSecret string
 }
-func NewAuthService(jwtSecret string) * AuthService {
-	return &AuthService {JWTSecret: jwtSecret}
+
+func NewAuthService(jwtSecret string) *AuthService {
+	return &AuthService{JWTSecret: jwtSecret}
 }
 
-// HashPassword takes a plain password and returns a bcrypt hash
-
-func (s *AuthService) HashPassword(password string) (string, error){
+func (s *AuthService) HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", fmt.Errorf("error hashing password : %w", err)
@@ -25,20 +29,26 @@ func (s *AuthService) HashPassword(password string) (string, error){
 	return string(bytes), nil
 }
 
-// CheckPassword compares a plain password against a hash
 func (s *AuthService) CheckPassword(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
 
-// GenerateToken creates a JWT token for a user
-func (s *AuthService) GenerateToken(userID, email, role string) (string, error) {
+func (s *AuthService) GenerateStudentToken(userID, email string) (string, error) {
+	return s.generateToken(userID, email, ActorTypeStudent)
+}
+
+func (s *AuthService) GenerateAdminToken(adminID, email string) (string, error) {
+	return s.generateToken(adminID, email, ActorTypeAdmin)
+}
+
+func (s *AuthService) generateToken(subjectID, email, actorType string) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id": userID,
-		"email":   email,
-		"role":    role,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
-		"iat":     time.Now().Unix(),
+		"user_id":    subjectID,
+		"email":      email,
+		"actor_type": actorType,
+		"exp":        time.Now().Add(24 * time.Hour).Unix(),
+		"iat":        time.Now().Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -49,7 +59,6 @@ func (s *AuthService) GenerateToken(userID, email, role string) (string, error) 
 	return signed, nil
 }
 
-// ValidateToken validates a JWT token and returns the claims
 func (s *AuthService) ValidateToken(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -69,4 +78,3 @@ func (s *AuthService) ValidateToken(tokenString string) (jwt.MapClaims, error) {
 
 	return claims, nil
 }
-
