@@ -12,6 +12,7 @@ export const Product: ProductCard = {
   seller_id: "seller-student-456",
   category: "Furniture",
   condition: "Like New",
+  status: "available",
   images: ["https://images.unsplash.com/photo-1505797149-43b0069ec26b?w=600&auto=format&fit=crop&q=60"],
   created_at: 1716912476000,
   updated_at: 1716912476000

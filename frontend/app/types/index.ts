@@ -11,25 +11,26 @@ export interface ProductCard {
   seller_id?: string;
   category?: string;
   condition?: ProductCondition | string;
+  status: 'available' | 'sold' | 'removed' ;
   images?: string[];
   created_at?: number;
   updated_at?: number;
 }
 
-export interface Product {
-  id: string;
-  /** API field: user who posted the listing (display as "Listed by", not "seller"). */
-  seller_id: string;
-  seller_name?: string;
-  category_id: number;
-  category_name?: string;
-  title: string;
-  description: string;
-  price: string;
-  image_url: string;
-  status: 'available' | 'sold' | 'removed' ;
-  created_at: string;
-}
+// export interface Product {
+//   id: string;
+//   /** API field: user who posted the listing (display as "Listed by", not "seller"). */
+//   seller_id: string;
+//   seller_name?: string;
+//   category_id: number;
+//   category_name?: string;
+//   title: string;
+//   description: string;
+//   price: string;
+//   image_url: string;
+//   status: 'available' | 'sold' | 'removed' ;
+//   created_at: string;
+// }
 
 export interface Category {
   id: number;
