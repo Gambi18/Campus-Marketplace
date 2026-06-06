@@ -13,5 +13,9 @@ CREATE INDEX IF NOT EXISTS idx_messages_receiver_id ON messages(receiver_id);
 CREATE INDEX IF NOT EXISTS idx_messages_product_id  ON messages(product_id);
 
 -- Prevent user from messaging themselves
-ALTER TABLE messages ADD CONSTRAINT check_sender_not_receiver 
-    CHECK (sender_id != receiver_id);
+DO $$ BEGIN
+    ALTER TABLE messages ADD CONSTRAINT check_sender_not_receiver
+        CHECK (sender_id != receiver_id);
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
