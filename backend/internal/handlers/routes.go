@@ -6,6 +6,8 @@ import (
 	"campus-marketplace/internal/services"
 
 	"github.com/gin-gonic/gin"
+	"campus-marketplace/internal/ws"
+
 )
 
 func SetupRoutes(
@@ -14,6 +16,7 @@ func SetupRoutes(
 	authService *services.AuthService,
 	productService *services.ProductService,
 	cloudinaryService *services.CloudinaryService, 
+	hub *ws.Hub,
 ) {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
@@ -22,12 +25,17 @@ func SetupRoutes(
 	productHandler := NewProductHandler(queries, productService)
 	categoryHandler := NewCategoryHandler(queries)
 	reportHandler := NewReportHandler(queries)
+	messageHandler := NewMessageHandler(queries, hub)
 
 	api := router.Group("/api/v1")
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
+
+
+
+	// Public routes — no auth required
 
 	auth := api.Group("/auth")
 	{
@@ -58,13 +66,19 @@ func SetupRoutes(
 	protected.Use(authMiddleware.RequireStudent())
 	{
 		protected.GET("/profile", authHandler.GetProfile)
-		protected.GET("/my-products", productHandler.GetMyProducts)
-		protected.POST("/products", productHandler.CreateProduct)
-		protected.PUT("/products/:id", productHandler.UpdateProduct)
-		protected.PATCH("/products/:id/status", productHandler.UpdateProductStatus)
-		protected.DELETE("/products/:id", productHandler.DeleteProduct)
-		protected.POST("/reports", reportHandler.CreateReport)
-		protected.GET("/my-reports", reportHandler.GetMyReports)
+
+		protected.GET("/my-products",               productHandler.GetMyProducts)
+		protected.POST("/products",                 productHandler.CreateProduct)
+		protected.PUT("/products/:id",              productHandler.UpdateProduct)
+		protected.PATCH("/products/:id/status",     productHandler.UpdateProductStatus)
+		protected.DELETE("/products/:id",           productHandler.DeleteProduct)
+		protected.POST("/reports",      reportHandler.CreateReport)
+		protected.GET("/my-reports",    reportHandler.GetMyReports)
+		protected.GET("/ws", messageHandler.HandleWebSocket)
+		protected.GET("/conversations",                        messageHandler.GetConversations)
+		protected.GET("/conversations/:product_id/:user_id",   messageHandler.GetMessages)
+		protected.GET("/unread-count",                         messageHandler.GetUnreadCount)
+
 	}
 
 	admin := api.Group("/admin")

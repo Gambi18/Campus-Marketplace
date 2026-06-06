@@ -357,3 +357,29 @@ func ToReporterReportResponse(r db.GetReportsByReporterIDRow) ReportResponse {
 		UpdatedAt:    r.UpdatedAt.String(),
 	}
 }
+
+// MESSAGE MODELS 
+
+type MessageResponse struct {
+	ID         string `json:"id"`
+	SenderID   string `json:"sender_id"`
+	SenderName string `json:"sender_name"`
+	ReceiverID string `json:"receiver_id"`
+	ProductID  string `json:"product_id"`
+	Content    string `json:"content"`
+	IsRead     bool   `json:"is_read"`
+	CreatedAt  string `json:"created_at"`
+}
+
+type ConversationResponse struct {
+	ID           string `json:"id"`
+	SenderID     string `json:"sender_id"`
+	SenderName   string `json:"sender_name"`
+	ReceiverID   string `json:"receiver_id"`
+	ProductID    string `json:"product_id"`
+	ProductTitle string `json:"product_title"`
+	ProductImage string `json:"product_image"`
+	Content      string `json:"content"`
+	IsRead       bool   `json:"is_read"`
+	CreatedAt    string `json:"created_at"`
+}

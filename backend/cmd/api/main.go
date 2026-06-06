@@ -11,6 +11,7 @@ import (
 	dbsqlc "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/handlers"
 	"campus-marketplace/internal/services"
+    "campus-marketplace/internal/ws"
 
 )
 
@@ -32,6 +33,13 @@ func main() {
 
     //  Initialize sqlc queries
     queries := dbsqlc.New(database)
+
+
+
+    hub := ws.NewHub()
+    go hub.Run()
+    
+	//  Initialize service
 
 	authService := services.NewAuthService(cfg.JWTSecret)
 	services.EnsureDefaultAdmin(context.Background(), queries, authService, cfg.AdminUsername, cfg.AdminEmail, cfg.AdminPassword)
@@ -57,7 +65,7 @@ func main() {
 	// Creates Gin router
 	router := gin.Default()
 
-	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService)
+	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, hub)
 
 
 	// Starts server
