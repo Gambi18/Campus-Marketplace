@@ -18,6 +18,16 @@ type Category struct {
 	CreatedAt   time.Time      `json:"created_at"`
 }
 
+type Message struct {
+	ID         uuid.UUID `json:"id"`
+	SenderID   uuid.UUID `json:"sender_id"`
+	ReceiverID uuid.UUID `json:"receiver_id"`
+	ProductID  uuid.UUID `json:"product_id"`
+	Content    string    `json:"content"`
+	IsRead     bool      `json:"is_read"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
 type Product struct {
 	ID          uuid.UUID `json:"id"`
 	SellerID    uuid.UUID `json:"seller_id"`
