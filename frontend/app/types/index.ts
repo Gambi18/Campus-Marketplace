@@ -27,7 +27,7 @@ export interface Product {
   description: string;
   price: string;
   image_url: string;
-  status: 'available' | 'sold' | 'removed';
+  status: 'available' | 'sold' | 'removed' ;
   created_at: string;
 }
 
