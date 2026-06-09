@@ -12,6 +12,7 @@ export default function Navbar() {
   const navLinks = [
     { label: 'Browse', href: '/' },
     { label: 'My Listings', href: '/mylistings' },
+        { label: 'Messages', href: '/conversations' },
   ];
 
   return (

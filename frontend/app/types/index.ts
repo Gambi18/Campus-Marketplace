@@ -9,10 +9,12 @@ export interface ProductCard {
   description?: string;
   price: number;
   seller_id?: string;
-  category?: string;
+  seller_name?: string;
+   category_id: number;
+   category_name?: string;
   condition?: ProductCondition | string;
   status: 'available' | 'sold' | 'removed' ;
-  images?: string[];
+  images?: string;
   created_at?: number;
   updated_at?: number;
 }
@@ -73,4 +75,54 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+}
+
+//
+export interface Message {
+  id: number;
+  text: string;
+  sender: 'seller' | 'buyer';
+  time: string;
+}
+
+export interface ProductItem {
+  title: string;
+  price: string;
+}
+
+export interface Conversation {
+  id: string;
+  userName: string;
+  itemTitle: string;
+  lastMessage: string;
+  timestamp: string;
+}
+
+export interface ChatThread {
+  userName: string;
+  sellerId?: string;
+  buyerId?: string;
+  productId?: string;
+  item: ProductItem;
+  messages: Message[];
+}
+
+export interface ReportPayload {
+  conversationId: string;
+  sellerId: string;
+  buyerId: string;
+  productId: string;
+  productName: string;
+  reason: 'prohibited' | 'scam' | 'behavior' | 'misleading' | 'other' | string;
+  details: string;
+}
+//
+export interface ConversationItem {
+  id: string | number;
+  userName: string;
+  avatarUrl?: string;
+  itemTitle: string;
+  lastMessage: string;
+  timestamp: string;
+  unread?: boolean;
 }
