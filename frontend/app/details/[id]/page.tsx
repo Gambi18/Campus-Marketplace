@@ -10,11 +10,12 @@ import Button from '../../components/Button';
 import Badge from '../../components/Badge';
 import { formatPrice, formatTimeAgo } from '../../utils/format';
 import { API_URL } from '../../utils/api';
-import type { Product, ProductCondition } from '../../types';
+import type { ProductCard } from '../../types';
+import { useRouter } from 'next/navigation';
 
-interface ProductDetail extends Product {
-  condition: ProductCondition | string;
+interface ProductDetail extends ProductCard {
   location: string;
+
 }
 
 const MOCK_PRODUCT: ProductDetail = {
@@ -26,21 +27,26 @@ const MOCK_PRODUCT: ProductDetail = {
   title: 'Engineering Textbooks Bundle (5 books)',
   description:
     'Complete set of 5 engineering textbooks for first and second year. All in good condition with minimal highlighting. Includes: Engineering Mathematics, Physics for Engineers, Materials Science, Circuit Analysis, and Thermodynamics. Perfect for students starting their engineering program.',
-  price: '80000',
-  image_url:
-    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80',
+  price: 80000,
+  images: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80',
   status: 'available',
-  created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+  created_at: (Date.now() - 5 * 60 * 60 * 1000),
   condition: 'Good',
   location: 'Library',
 };
 
 export default function ProductDetailsPage() {
+
+
   const params = useParams();
   const id = params.id as string;
   const [product, setProduct] = useState<ProductDetail>(MOCK_PRODUCT);
   const [loading, setLoading] = useState(true);
 
+  const router = useRouter()
+  const handleClick = () =>{
+   router.push('/conversations')
+  }
   useEffect(() => {
     async function load() {
       if (id === 'demo') {
@@ -50,7 +56,7 @@ export default function ProductDetailsPage() {
       try {
         const res = await fetch(`${API_URL}/api/v1/products/${id}`);
         if (res.ok) {
-          const data: Product = await res.json();
+          const data: ProductCard = await res.json();
           setProduct((prev) => ({
             ...prev,
             ...data,
@@ -65,7 +71,7 @@ export default function ProductDetailsPage() {
     load();
   }, [id]);
 
-  const price = parseFloat(product.price);
+  const price = product.price;
   const deposit = price / 2;
 
   if (loading) {
@@ -75,6 +81,7 @@ export default function ProductDetailsPage() {
       </div>
     );
   }
+ 
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc]">
@@ -94,7 +101,7 @@ export default function ProductDetailsPage() {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
           <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white aspect-square max-h-[520px]">
             <img
-              src={product.image_url}
+              src={product.images}
               alt={product.title}
               className="w-full h-full object-cover"
             />
@@ -118,7 +125,7 @@ export default function ProductDetailsPage() {
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Clock className="w-4 h-4" />
-                  {formatTimeAgo(product.created_at)}
+                  {formatTimeAgo(product.created_at || Date.now())}
                 </span>
               </div>
               <div className="mt-6 pt-6 border-t border-gray-100">
@@ -149,7 +156,7 @@ export default function ProductDetailsPage() {
                   <p className="text-sm text-text-muted mt-0.5">Campus student</p>
                 </div>
               </div>
-              <Button variant="outlined" fullWidth className="mt-4">
+              <Button onClick={handleClick} variant="outlined" fullWidth className="mt-4">
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Message
               </Button>

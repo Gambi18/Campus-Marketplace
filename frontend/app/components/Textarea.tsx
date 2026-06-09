@@ -2,7 +2,7 @@ import React from 'react';
 
 interface TextareaProps {
   label: string;
-  name: string;
+  name?: string;
   placeholder?: string;
   value?: string;
   required?: boolean;
