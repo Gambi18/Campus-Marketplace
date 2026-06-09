@@ -31,7 +31,7 @@ WHERE id = $1
 RETURNING *;
 
 -- name: GetAllUsers :many
-SELECT id, username, email, is_verified, created_at, updated_at, student_id_url, account_status FROM users
+SELECT * FROM users
 ORDER BY created_at DESC;
 
 -- name: GetPendingUsers :many

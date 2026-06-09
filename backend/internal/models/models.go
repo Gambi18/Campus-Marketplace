@@ -70,6 +70,12 @@ type AdminAuthResponse struct {
 	Admin AdminResponse `json:"admin"`
 }
 
+type CreateAdminRequest struct {
+	Username string `json:"username" binding:"required,min=3,max=50"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6,max=50"`
+}
+
 func ToUserResponse(u db.User) UserResponse {
 	return UserResponse{
 		ID:            u.ID.String(),
@@ -382,4 +388,32 @@ type ConversationResponse struct {
 	Content      string `json:"content"`
 	IsRead       bool   `json:"is_read"`
 	CreatedAt    string `json:"created_at"`
+}
+
+// NOTIFICATION MODELS
+
+type NotificationResponse struct {
+	ID        string      `json:"id"`
+	UserID    string      `json:"user_id"`
+	Type      string      `json:"type"`
+	Title     string      `json:"title"`
+	Message   string      `json:"message"`
+	IsRead    bool        `json:"is_read"`
+	CreatedAt string      `json:"created_at"`
+	Metadata  interface{} `json:"metadata,omitempty"`
+	Link      string      `json:"link,omitempty"`
+}
+
+func ToNotificationResponse(n db.Notification) NotificationResponse {
+	return NotificationResponse{
+		ID:        n.ID.String(),
+		UserID:    n.UserID.String(),
+		Type:      n.Type,
+		Title:     n.Title,
+		Message:   n.Message,
+		IsRead:    n.IsRead.Bool,
+		CreatedAt: n.CreatedAt.Time.String(),
+		Metadata:  n.Metadata.RawMessage,
+		Link:      n.Link.String,
+	}
 }

@@ -4,13 +4,15 @@ import "sync"
 
 // Message represents a WebSocket message passed through the hub
 type Message struct {
-	SenderID   string `json:"sender_id"`
-	ReceiverID string `json:"receiver_id"`
-	ProductID  string `json:"product_id"`
-	ProductTitle string `json:"product_title"`
-	Content    string `json:"content"`
-	SenderName string `json:"sender_name"`
-	CreatedAt  string `json:"created_at"`
+	Type         string      `json:"type"`
+	SenderID     string      `json:"sender_id,omitempty"`
+	ReceiverID   string      `json:"receiver_id,omitempty"`
+	ProductID    string      `json:"product_id,omitempty"`
+	ProductTitle string      `json:"product_title,omitempty"`
+	Content      string      `json:"content,omitempty"`
+	SenderName   string      `json:"sender_name,omitempty"`
+	CreatedAt    string      `json:"created_at,omitempty"`
+	Payload      interface{} `json:"payload,omitempty"`
 }
 
 // Hub maintains all active WebSocket clients and broadcasts messages
@@ -71,6 +73,24 @@ func (h *Hub) Run() {
 					h.mu.Unlock()
 				}
 			}
+		}
+	}
+}
+
+// BroadcastToUser sends a message to a specific user if they are online
+func (h *Hub) BroadcastToUser(userID string, message Message) {
+	h.mu.RLock()
+	client, online := h.clients[userID]
+	h.mu.RUnlock()
+
+	if online {
+		select {
+		case client.Send <- message:
+		default:
+			h.mu.Lock()
+			delete(h.clients, userID)
+			close(client.Send)
+			h.mu.Unlock()
 		}
 	}
 }
