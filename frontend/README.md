@@ -4,7 +4,7 @@ This is a Next.js frontend application for the Campus Marketplace platform.
 
 ## Tech Stack
 
-- **Framework**: Next.js 14
+- **Framework**: Next.js 16
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Package Manager**: npm
@@ -13,19 +13,28 @@ This is a Next.js frontend application for the Campus Marketplace platform.
 
 ```
 frontend/
-├── app/                 # Next.js app directory
-│   ├── components/      # Reusable React components
-│   ├── utils/          # Utility functions
-│   ├── types/          # TypeScript type definitions
-│   ├── layout.tsx      # Root layout
-│   ├── page.tsx        # Home page
-│   └── globals.css     # Global styles
-├── public/             # Static assets
-├── package.json        # Project dependencies
-├── tsconfig.json       # TypeScript configuration
-├── next.config.js      # Next.js configuration
-├── tailwind.config.js  # Tailwind CSS configuration
-└── postcss.config.js   # PostCSS configuration
+├── app/                     # Next.js app directory
+│   ├── admin/               # Admin dashboard (users, categories, reports)
+│   ├── components/          # Reusable React components
+│   ├── context/             # React context providers (Notification, ListingForm)
+│   ├── details/[id]/        # Product detail page
+│   ├── images/              # Static images
+│   ├── login/               # Login page
+│   ├── mylistings/          # Current user's listings
+│   ├── notifications/       # Notifications list page
+│   ├── register/            # Registration page
+│   ├── sell/                # 3-step listing wizard
+│   ├── types/               # TypeScript type definitions
+│   ├── utils/               # Utility functions (api.ts, adminApi.ts, format.ts)
+│   ├── layout.tsx           # Root layout
+│   ├── page.tsx             # Home page
+│   └── globals.css          # Global styles
+├── public/                  # Static assets
+├── package.json             # Project dependencies
+├── tsconfig.json            # TypeScript configuration
+├── next.config.js           # Next.js configuration
+├── tailwind.config.js       # Tailwind CSS configuration
+└── postcss.config.js        # PostCSS configuration
 ```
 
 ## Getting Started

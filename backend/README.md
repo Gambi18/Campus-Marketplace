@@ -4,9 +4,9 @@ A RESTful API backend for the Campus Marketplace platform built with Go and Gin.
 
 ## Tech Stack
 
-- **Language**: Go 1.21+
+- **Language**: Go 1.26+
 - **Framework**: Gin Web Framework
-- **Database**: PostgreSQL (or MongoDB)
+- **Database**: PostgreSQL
 - **Port**: 8080 (default)
 
 ## Project Structure
@@ -22,14 +22,14 @@ backend/
 │   ├── handlers/           # HTTP request handlers
 │   ├── middleware/         # Middleware functions
 │   ├── models/             # Data models
-│   ├── notification/       # Notification service
+│   ├── notification/       # Notification service + types
 │   ├── repository/         # Data access layer
-│   └── services/           # Business logic
+│   ├── services/           # Business logic
+│   └── ws/                 # WebSocket hub + client
 ├── pkg/
 │   └── utils/              # Public utility packages
 ├── migrations/             # Database migration files
 ├── tests/                  # Test files
-├── main.go                 # Main entry point
 ├── go.mod                  # Go module definition
 ├── go.sum                  # Go module checksums
 ├── .env.example            # Environment variables example
@@ -39,8 +39,8 @@ backend/
 ## Getting Started
 
 ### Prerequisites
-- Go 1.21 or higher
-- PostgreSQL or MongoDB (optional for development)
+- Go 1.26 or higher
+- PostgreSQL
 
 ### Installation
 
@@ -67,11 +67,6 @@ Update the `.env` file with your configuration.
 ### Running the Server
 
 Development mode:
-```bash
-go run main.go
-```
-
-Or from the cmd directory:
 ```bash
 go run ./cmd/api
 ```
@@ -131,7 +126,7 @@ go test -cover ./...
 2. Create repository in `internal/repository/`
 3. Implement service logic in `internal/services/`
 4. Add handlers in `internal/handlers/`
-5. Register routes in `cmd/api/main.go`
+5. Register routes in `internal/handlers/routes.go`
 
 ## API Documentation
 

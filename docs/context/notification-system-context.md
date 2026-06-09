@@ -57,7 +57,8 @@ CREATE TABLE notifications (
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW(),
     read_at TIMESTAMP NULL,
-    metadata JSONB
+    metadata JSONB,
+    link VARCHAR(255)
 );
 ```
 
@@ -151,26 +152,13 @@ internal/
 │
 ├── notification/
 │   │
-│   ├── service.go
-│   ├── repository.go
-│   ├── worker.go
-│   ├── types.go
-│   │
-│   ├── email/
-│   │   ├── sender.go
-│   │   ├── templates.go
-│   │   └── resend.go
-│   │
-│   ├── handlers/
-│   │   ├── message.go
-│   │   ├── offer.go
-│   │   └── auth.go
-│   │
-│   └── templates/
-│       ├── welcome.html
-│       ├── new_message.html
-│       ├── item_sold.html
-│       └── password_reset.html
+│   ├── service.go          # Notification creation, WebSocket broadcast, email queue
+│   └── types.go            # Notification type constants & metadata type
+│
+└── ws/
+    │
+    ├── hub.go              # WebSocket hub for managing connections
+    └── client.go           # WebSocket client connection handler
 ```
 
 ---
@@ -253,9 +241,10 @@ Laptop listing approved
 API Endpoints:
 
 ```http
-GET /api/v1/notifications
-GET /api/v1/notifications/unread-count
-PATCH /api/v1/notifications/:id/read
+GET    /api/v1/notifications
+GET    /api/v1/notifications/unread-count
+PATCH  /api/v1/notifications/:id/read
+POST   /api/v1/notifications/read-all
 ```
 
 ---

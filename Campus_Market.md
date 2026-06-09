@@ -70,7 +70,7 @@ Deployment: Vercel
 
 ## Backend
 
-- **Go** 1.21+
+- **Go** 1.26+
 - **Gin** web framework
 - **sqlc** — type-safe SQL queries
 - **golang-migrate** — database migrations
@@ -108,9 +108,8 @@ Students and platform admins are **different tables** with **different login end
 
 - Login via `POST /api/v1/admin/auth/login` only (not student login)
 - JWT `actor_type: admin` required for `/api/v1/admin/*`
-- First admin seeded from env when table is empty: `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`
-- Can: create new admins, view/block students, approve/reject sign-ups, manage categories
-- Reports & moderation UI — **planned** (API exists; dashboard placeholder)
+- First admin can be created via public `POST /api/v1/admin/create`, or seeded from env when table is empty: `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`
+- Can: create new admins, view/block students, approve/reject sign-ups, manage categories, manage reports
 
 **Admin UI:** `/admin/login` → `/admin/users`, `/admin/categories`, `/admin/reports`
 
@@ -193,16 +192,18 @@ backend/
 │   │   ├── migrations/      # SQL migrations
 │   │   ├── queries/         # sqlc query definitions
 │   │   └── sqlc/            # Generated Go code
-│   ├── handlers/            # HTTP handlers + routes
+│   ├── handlers/            # HTTP handlers + routes (`routes.go`)
 │   ├── middleware/          # Auth, CORS
 │   ├── models/              # DTOs & response mappers
+│   ├── notification/        # Notification service + types
 │   ├── repository/
-│   └── services/            # Auth, Product, Cloudinary
+│   ├── services/            # Auth, Product, Cloudinary, Admin seed
+│   └── ws/                  # WebSocket hub + client
 ├── pkg/utils/
 └── sqlc.yaml
 ```
 
-**Not used:** GORM, MongoDB, local `uploads/` folder (images go to Cloudinary).
+**Not used:** GORM, MongoDB, local `uploads/` folder (images go to Cloudinary), ORMs (raw SQL via sqlc).
 
 ---
 
@@ -270,6 +271,12 @@ Base URL: `http://localhost:8080` (configurable via `NEXT_PUBLIC_API_URL`)
 | PUT | `/api/v1/products/:id` | Update product (multipart) |
 | PATCH | `/api/v1/products/:id/status` | Update status JSON `{ "status": "..." }` |
 | DELETE | `/api/v1/products/:id` | Delete product |
+| POST | `/api/v1/reports` | Report a listing |
+| GET | `/api/v1/my-reports` | Current user's reports |
+| GET | `/api/v1/ws` | WebSocket connection for real-time updates |
+| GET | `/api/v1/conversations` | List conversations |
+| GET | `/api/v1/conversations/:product_id/:user_id` | Get messages for a conversation |
+| GET | `/api/v1/unread-count` | Unread message count |
 
 ## Admin auth (public)
 
@@ -343,10 +350,14 @@ frontend/app/
 │   └── pricing/page.tsx   # Step 3: Pricing & location
 ├── details/[id]/     # Product detail page
 ├── notifications/    # Notifications list page
-├── admin/            # Admin dashboard (users, categories, reports placeholder)
+├── admin/            # Admin dashboard (users, categories, reports)
+├── login/            # Login page
+├── register/         # Registration page
+├── mylistings/       # Current user's listings
 ├── context/          # NotificationContext, ListingFormContext (wizard state)
-├── types/
-└── utils/api.ts
+├── images/           # Static images
+├── types/            # TypeScript type definitions
+└── utils/            # API helpers (api.ts, adminApi.ts, format.ts)
 ```
 
 ---

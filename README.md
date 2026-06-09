@@ -9,14 +9,14 @@ Campus Marketplace is a modern web application that enables students to buy and 
 ## Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 14
+- **Framework**: Next.js 16
 - **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **State Management**: React Hooks
+- **Styling**: Tailwind CSS + daisyUI
+- **State Management**: React Hooks + Context
 - **HTTP Client**: Fetch API
 
 ### Backend
-- **Language**: Go 1.21+
+- **Language**: Go 1.26+
 - **Framework**: Gin Web Framework
 - **Database**: PostgreSQL
 - **API**: RESTful API
@@ -45,7 +45,7 @@ Campus-Marketplace/
 ### Prerequisites
 
 - Node.js 18+ (for frontend)
-- Go 1.21+ (for backend)
+- Go 1.26+ (for backend)
 - Docker & Docker Compose (optional, for containerized development)
 - PostgreSQL 15+ (or use Docker)
 
