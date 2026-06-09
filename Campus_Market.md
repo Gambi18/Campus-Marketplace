@@ -109,7 +109,7 @@ Students and platform admins are **different tables** with **different login end
 - Login via `POST /api/v1/admin/auth/login` only (not student login)
 - JWT `actor_type: admin` required for `/api/v1/admin/*`
 - First admin seeded from env when table is empty: `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`
-- Can: view/block students, approve/reject sign-ups, manage categories
+- Can: create new admins, view/block students, approve/reject sign-ups, manage categories
 - Reports & moderation UI — **planned** (API exists; dashboard placeholder)
 
 **Admin UI:** `/admin/login` → `/admin/users`, `/admin/categories`, `/admin/reports`
@@ -139,6 +139,13 @@ Must be completed:
 - Search by title
 - Filter by category
 
+**Notifications:**
+
+- In-app notifications for messages and account status
+- WebSocket-based real-time updates
+- Email notifications (via queue)
+- **Frontend:** Integrated Notification Center in Navbar, dedicated Notifications Page (`/notifications`).
+
 **Categories:**
 
 - Public list of categories
@@ -167,7 +174,6 @@ Do NOT implement unless explicitly requested.
 - Mobile app
 - AI recommendations
 - Auctions
-- Real-time notifications
 - Location tracking
 - Recommendation engine
 
@@ -212,6 +218,18 @@ backend/
 
 - `id` (UUID), `username`, `email`, `password_hash`, timestamps
 - Separate credentials from students; not linked to `users`
+
+## notifications
+
+- `id` (UUID), `user_id` (FK), `type`, `title`, `message`, `is_read`, `created_at`, `read_at`, `metadata` (JSONB), `link`
+
+## email_queue
+
+- `id` (UUID), `notification_id` (FK), `recipient_email`, `subject`, `template_name`, `payload` (JSONB), `status`, `attempts`, `created_at`, `sent_at`
+
+## notification_preferences
+
+- `user_id` (PK), `email_messages`, `email_offers`, `email_sales`, `email_marketing`, `inapp_messages`, `inapp_offers`
 
 ## categories
 
@@ -264,6 +282,7 @@ Base URL: `http://localhost:8080` (configurable via `NEXT_PUBLIC_API_URL`)
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/v1/admin/profile` | Current admin |
+| POST | `/api/v1/admin/create` | Create new admin (requires existing admin) |
 | GET | `/api/v1/admin/users` | All students |
 | GET | `/api/v1/admin/pending-users` | Users awaiting ID verification |
 | PATCH | `/api/v1/admin/users/:id/approve` | Approve sign-up |
@@ -275,6 +294,15 @@ Base URL: `http://localhost:8080` (configurable via `NEXT_PUBLIC_API_URL`)
 | GET | `/api/v1/admin/reports` | List reports (UI planned) |
 | GET | `/api/v1/admin/reports/:id` | Report detail (UI planned) |
 | PATCH | `/api/v1/admin/reports/:id/status` | Update report status (UI planned) |
+
+## Notifications — student JWT (`actor_type: student`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/notifications` | List user notifications |
+| GET | `/api/v1/notifications/unread-count` | Unread notification count |
+| PATCH | `/api/v1/notifications/:id/read` | Mark notification as read |
+| POST | `/api/v1/notifications/read-all` | Mark all as read |
 
 ### User `account_status` values
 
@@ -308,14 +336,15 @@ Response shape (`ProductResponse`):
 
 ```text
 frontend/app/
-├── components/       # Navbar, Footer, Button, Input, Card, etc.
+├── components/       # Navbar, Footer, Button, Input, Card, NotificationCenter, etc.
 ├── sell/             # 3-step listing wizard
 │   ├── page.tsx           # Step 1: Upload photos
 │   ├── details/page.tsx   # Step 2: Item details
 │   └── pricing/page.tsx   # Step 3: Pricing & location
 ├── details/[id]/     # Product detail page
+├── notifications/    # Notifications list page
 ├── admin/            # Admin dashboard (users, categories, reports placeholder)
-├── context/          # ListingFormContext (wizard state)
+├── context/          # NotificationContext, ListingFormContext (wizard state)
 ├── types/
 └── utils/api.ts
 ```

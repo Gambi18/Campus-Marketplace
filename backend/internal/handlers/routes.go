@@ -3,11 +3,11 @@ package handlers
 import (
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/middleware"
+	"campus-marketplace/internal/notification"
 	"campus-marketplace/internal/services"
-
-	"github.com/gin-gonic/gin"
 	"campus-marketplace/internal/ws"
 
+	"github.com/gin-gonic/gin"
 )
 
 func SetupRoutes(
@@ -15,25 +15,25 @@ func SetupRoutes(
 	queries *db.Queries,
 	authService *services.AuthService,
 	productService *services.ProductService,
-	cloudinaryService *services.CloudinaryService, 
+	cloudinaryService *services.CloudinaryService,
+	notificationService *notification.NotificationService,
 	hub *ws.Hub,
 ) {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
 	authHandler := NewAuthHandler(queries, authService, cloudinaryService)
-	adminHandler := NewAdminHandler(queries, authService)
+	adminHandler := NewAdminHandler(queries, authService, notificationService)
 	productHandler := NewProductHandler(queries, productService)
 	categoryHandler := NewCategoryHandler(queries)
 	reportHandler := NewReportHandler(queries)
-	messageHandler := NewMessageHandler(queries, hub)
+	messageHandler := NewMessageHandler(queries, hub, notificationService)
+	notificationHandler := NewNotificationHandler(notificationService)
 
 	api := router.Group("/api/v1")
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
-
-
 
 	// Public routes — no auth required
 
@@ -67,18 +67,26 @@ func SetupRoutes(
 	{
 		protected.GET("/profile", authHandler.GetProfile)
 
-		protected.GET("/my-products",               productHandler.GetMyProducts)
-		protected.POST("/products",                 productHandler.CreateProduct)
-		protected.PUT("/products/:id",              productHandler.UpdateProduct)
-		protected.PATCH("/products/:id/status",     productHandler.UpdateProductStatus)
-		protected.DELETE("/products/:id",           productHandler.DeleteProduct)
-		protected.POST("/reports",      reportHandler.CreateReport)
-		protected.GET("/my-reports",    reportHandler.GetMyReports)
+		protected.GET("/my-products", productHandler.GetMyProducts)
+		protected.POST("/products", productHandler.CreateProduct)
+		protected.PUT("/products/:id", productHandler.UpdateProduct)
+		protected.PATCH("/products/:id/status", productHandler.UpdateProductStatus)
+		protected.DELETE("/products/:id", productHandler.DeleteProduct)
+		protected.POST("/reports", reportHandler.CreateReport)
+		protected.GET("/my-reports", reportHandler.GetMyReports)
 		protected.GET("/ws", messageHandler.HandleWebSocket)
-		protected.GET("/conversations",                        messageHandler.GetConversations)
-		protected.GET("/conversations/:product_id/:user_id",   messageHandler.GetMessages)
-		protected.GET("/unread-count",                         messageHandler.GetUnreadCount)
+		protected.GET("/conversations", messageHandler.GetConversations)
+		protected.GET("/conversations/:product_id/:user_id", messageHandler.GetMessages)
+		protected.GET("/unread-count", messageHandler.GetUnreadCount)
 
+		// Notification routes
+		notifications := protected.Group("/notifications")
+		{
+			notifications.GET("", notificationHandler.GetNotifications)
+			notifications.GET("/unread-count", notificationHandler.GetUnreadCount)
+			notifications.PATCH("/:id/read", notificationHandler.MarkAsRead)
+			notifications.POST("/read-all", notificationHandler.MarkAllAsRead)
+		}
 	}
 
 	admin := api.Group("/admin")
@@ -86,6 +94,7 @@ func SetupRoutes(
 	admin.Use(authMiddleware.RequireAdmin())
 	{
 		admin.GET("/profile", adminHandler.GetProfile)
+		admin.POST("/create", adminHandler.CreateAdmin)
 		admin.GET("/users", adminHandler.GetAllUsers)
 		admin.PATCH("/users/:id/block", adminHandler.BlockUser)
 		admin.GET("/pending-users", adminHandler.GetPendingUsers)

@@ -18,9 +18,11 @@ backend/
 │       └── main.go
 ├── internal/                # Private application code
 │   ├── config/             # Configuration management
+│   ├── db/                 # Database migrations and sqlc
 │   ├── handlers/           # HTTP request handlers
 │   ├── middleware/         # Middleware functions
 │   ├── models/             # Data models
+│   ├── notification/       # Notification service
 │   ├── repository/         # Data access layer
 │   └── services/           # Business logic
 ├── pkg/

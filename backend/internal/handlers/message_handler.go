@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/models"
+	"campus-marketplace/internal/notification"
 	"campus-marketplace/internal/ws"
 
 	"github.com/gin-gonic/gin"
@@ -24,14 +26,16 @@ var upgrader = websocket.Upgrader{
 }
 
 type MessageHandler struct {
-	queries *db.Queries
-	hub     *ws.Hub
+	queries             *db.Queries
+	hub                 *ws.Hub
+	notificationService *notification.NotificationService
 }
 
-func NewMessageHandler(queries *db.Queries, hub *ws.Hub) *MessageHandler {
+func NewMessageHandler(queries *db.Queries, hub *ws.Hub, notificationService *notification.NotificationService) *MessageHandler {
 	return &MessageHandler{
-		queries: queries,
-		hub:     hub,
+		queries:             queries,
+		hub:                 hub,
+		notificationService: notificationService,
 	}
 }
 
@@ -146,6 +150,7 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 
 		// Build broadcast message
 		broadcastMsg := ws.Message{
+			Type:       "chat",
 			SenderID:   saved.SenderID.String(),
 			ReceiverID: saved.ReceiverID.String(),
 			ProductID:  saved.ProductID.String(),
@@ -156,7 +161,22 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 		}
 
 		// Broadcast to receiver
-		h.hub.Broadcast <- broadcastMsg
+		h.hub.BroadcastToUser(broadcastMsg.ReceiverID, broadcastMsg)
+
+		// Create in-app notification for the receiver
+		_, _ = h.notificationService.Create(
+			context.Background(),
+			receiverID,
+			notification.NotificationNewMessage,
+			"New Message",
+			fmt.Sprintf("%s sent you a message regarding %s", sender.Username, product.Title),
+			notification.NotificationMetadata{
+				"sender_id":  senderID.String(),
+				"product_id": productID.String(),
+				"chat_id":    saved.ID.String(),
+			},
+			fmt.Sprintf("/conversations/%s/%s", productID.String(), senderID.String()),
+		)
 	}
 }
 

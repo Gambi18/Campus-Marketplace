@@ -5,6 +5,7 @@ import (
 
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/models"
+	"campus-marketplace/internal/notification"
 	"campus-marketplace/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -12,12 +13,17 @@ import (
 )
 
 type AdminHandler struct {
-	queries     *db.Queries
-	authService *services.AuthService
+	queries             *db.Queries
+	authService         *services.AuthService
+	notificationService *notification.NotificationService
 }
 
-func NewAdminHandler(queries *db.Queries, authService *services.AuthService) *AdminHandler {
-	return &AdminHandler{queries: queries, authService: authService}
+func NewAdminHandler(queries *db.Queries, authService *services.AuthService, notificationService *notification.NotificationService) *AdminHandler {
+	return &AdminHandler{
+		queries:             queries,
+		authService:         authService,
+		notificationService: notificationService,
+	}
 }
 
 func (h *AdminHandler) Login(c *gin.Context) {
@@ -48,6 +54,32 @@ func (h *AdminHandler) Login(c *gin.Context) {
 		Token: token,
 		Admin: models.ToAdminResponse(admin),
 	})
+}
+
+func (h *AdminHandler) CreateAdmin(c *gin.Context) {
+	var req models.CreateAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	hashedPassword, err := h.authService.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not process password"})
+		return
+	}
+
+	admin, err := h.queries.CreateAdmin(c.Request.Context(), db.CreateAdminParams{
+		Username:     req.Username,
+		Email:        req.Email,
+		PasswordHash: hashedPassword,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create admin"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, models.ToAdminResponse(admin))
 }
 
 func (h *AdminHandler) GetProfile(c *gin.Context) {
@@ -111,6 +143,17 @@ func (h *AdminHandler) ApproveUser(c *gin.Context) {
 		return
 	}
 
+	// Send notification
+	_, _ = h.notificationService.Create(
+		c.Request.Context(),
+		userID,
+		notification.NotificationListingApproved, // Account approved doesn't have a specific type yet, reusing
+		"Account Approved",
+		"Your student account has been approved. You can now start listing products.",
+		notification.NotificationMetadata{"user_id": userID.String()},
+		"/profile",
+	)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "user approved successfully",
 		"user":    models.ToUserResponse(user),
@@ -129,6 +172,17 @@ func (h *AdminHandler) RejectUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not reject user"})
 		return
 	}
+
+	// Send notification
+	_, _ = h.notificationService.Create(
+		c.Request.Context(),
+		userID,
+		notification.NotificationListingRejected,
+		"Account Rejected",
+		"Your student account verification was rejected. Please check your student ID and try again.",
+		notification.NotificationMetadata{"user_id": userID.String()},
+		"/profile",
+	)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "user rejected",

@@ -10,6 +10,7 @@ import (
     "campus-marketplace/internal/db"
 	dbsqlc "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/handlers"
+	"campus-marketplace/internal/notification"
 	"campus-marketplace/internal/services"
     "campus-marketplace/internal/ws"
 
@@ -55,7 +56,7 @@ func main() {
     }
 
     productService := services.NewProductService(queries, cloudinaryService)
-
+    notificationService := notification.NewNotificationService(queries, hub)
 
     // Sets gin mode based on environment
     if cfg.Env == "production" {
@@ -65,7 +66,7 @@ func main() {
 	// Creates Gin router
 	router := gin.Default()
 
-	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, hub)
+	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, notificationService, hub)
 
 
 	// Starts server

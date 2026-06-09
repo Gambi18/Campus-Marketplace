@@ -8,12 +8,17 @@ require (
 	github.com/joho/godotenv v1.5.1
 )
 
-require github.com/golang-jwt/jwt/v5 v5.3.1
-
-require github.com/gorilla/websocket v1.5.3 // indirect
+require (
+	github.com/cloudinary/cloudinary-go/v2 v2.15.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
+)
 
 require (
-	github.com/cloudinary/cloudinary-go/v2 v2.15.0 // indirect
+	github.com/gorilla/websocket v1.5.3
+	github.com/sqlc-dev/pqtype v0.3.0
+)
+
+require (
 	github.com/creasty/defaults v1.7.0 // indirect
 	github.com/gorilla/schema v1.4.1 // indirect
 )

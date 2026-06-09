@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { NotificationProvider } from "./context/NotificationContext";
 
 export const metadata: Metadata = {
     title: "Campus Marketplace",
@@ -13,7 +14,11 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en">
-            <body>{children}</body>
+            <body>
+                <NotificationProvider>
+                    {children}
+                </NotificationProvider>
+            </body>
         </html>
     );
 }

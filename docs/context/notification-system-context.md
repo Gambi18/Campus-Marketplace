@@ -9,7 +9,7 @@ The Campus Marketplace notification architecture is designed around a unified no
 - Future SMS Notifications
 - Future Push Notifications
 
-The system should follow an event-driven design where business events generate notifications, and notification delivery is handled independently of business logic.
+The system should follow an event-driven design where business events generate notifications, and notification delivery is handled independently of business logic. 
 
 ---
 
