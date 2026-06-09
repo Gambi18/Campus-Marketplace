@@ -276,13 +276,13 @@ Base URL: `http://localhost:8080` (configurable via `NEXT_PUBLIC_API_URL`)
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/api/v1/admin/auth/login` | Platform admin login → JWT `actor_type: admin` |
+| POST | `/api/v1/admin/create` | Create a new admin (public, no auth required) |
 
 ## Admin — platform JWT (`actor_type: admin`)
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/v1/admin/profile` | Current admin |
-| POST | `/api/v1/admin/create` | Create new admin (requires existing admin) |
 | GET | `/api/v1/admin/users` | All students |
 | GET | `/api/v1/admin/pending-users` | Users awaiting ID verification |
 | PATCH | `/api/v1/admin/users/:id/approve` | Approve sign-up |

@@ -48,6 +48,11 @@ func SetupRoutes(
 		adminAuth.POST("/login", adminHandler.Login)
 	}
 
+	adminCreate := api.Group("/admin")
+	{
+		adminCreate.POST("/create", adminHandler.CreateAdmin)
+	}
+
 	categories := api.Group("/categories")
 	{
 		categories.GET("", categoryHandler.GetAllCategories)
@@ -94,7 +99,6 @@ func SetupRoutes(
 	admin.Use(authMiddleware.RequireAdmin())
 	{
 		admin.GET("/profile", adminHandler.GetProfile)
-		admin.POST("/create", adminHandler.CreateAdmin)
 		admin.GET("/users", adminHandler.GetAllUsers)
 		admin.PATCH("/users/:id/block", adminHandler.BlockUser)
 		admin.GET("/pending-users", adminHandler.GetPendingUsers)
