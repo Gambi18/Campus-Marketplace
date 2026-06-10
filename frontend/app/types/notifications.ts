@@ -1,4 +1,4 @@
-export interface Notification {
+export interface AppNotification {
   id: string;
   user_id: string;
   type: string;
@@ -11,7 +11,7 @@ export interface Notification {
 }
 
 export interface NotificationResponse {
-  notifications: Notification[];
+  notifications: AppNotification[];
   count: number;
 }
 
