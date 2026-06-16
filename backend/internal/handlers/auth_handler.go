@@ -29,9 +29,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	username := c.PostForm("username")
 	email := c.PostForm("email")
 	password := c.PostForm("password")
+	fullName := c.PostForm("full_name")
 
-	if username == "" || email == "" || password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username, email and password are required"})
+	if username == "" || email == "" || password == "" || fullName == ""  {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username, full_name, email and password are required"})
 		return
 	}
 
@@ -69,6 +70,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Username:     username,
 		Email:        email,
 		PasswordHash: hashedPassword,
+		FullName:     fullName,
 		StudentIDUrl: studentIDUrl,
 	})
 	if err != nil {

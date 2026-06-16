@@ -51,6 +51,7 @@ type AuthResponse struct {
 
 type UserResponse struct {
 	ID            string `json:"id"`
+	FullName      string `json:"full_name"`
 	Username      string `json:"username"`
 	Email         string `json:"email"`
 	IsVerified    bool   `json:"is_verified"`
@@ -79,6 +80,7 @@ type CreateAdminRequest struct {
 func ToUserResponse(u db.User) UserResponse {
 	return UserResponse{
 		ID:            u.ID.String(),
+		FullName:      u.FullName,
 		Username:      u.Username,
 		Email:         u.Email,
 		IsVerified:    u.IsVerified,
