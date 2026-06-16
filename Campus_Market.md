@@ -109,7 +109,7 @@ Students and platform admins are **different tables** with **different login end
 - Login via `POST /api/v1/admin/auth/login` only (not student login)
 - JWT `actor_type: admin` required for `/api/v1/admin/*`
 - First admin can be created via public `POST /api/v1/admin/create`, or seeded from env when table is empty: `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`
-- Can: create new admins, view/block students, approve/reject sign-ups, manage categories, manage reports
+- Can: create new admins, view/block students, approve/reject sign-ups, manage categories, manage reports, view held payments in escrow
 
 **Admin UI:** `/admin/login` → `/admin/users`, `/admin/categories`, `/admin/reports`
 
@@ -154,10 +154,17 @@ Must be completed:
 
 - User's own products (`GET /api/v1/my-products`)
 
-**Planned (not yet in API):**
+**Payments:**
 
-- Student-to-student messaging about listings
-- Report listing + admin review
+- Escrow payment via CamPay mobile money (MTN & Orange)
+- Pay-to-chat: buyers must pay before messaging sellers
+- Buyer confirms delivery → payment released to seller (minus 3% fee)
+- Buyer cancels → automatic refund to buyer (minus 1% fee)
+- PDF receipt generated and stored on Cloudinary
+- Purchase history (`/my-purchases`) & sales history (`/my-sales`) pages
+
+**UI-only (not yet in API):**
+
 - Product `condition` field (UI collects in listing wizard; not persisted yet)
 - Meetup `location` field (UI only for now)
 - Multiple images per listing (UI supports grid; API accepts one `image` file)
@@ -168,7 +175,6 @@ Must be completed:
 
 Do NOT implement unless explicitly requested.
 
-- Payments / deposit / escrow
 - Delivery system
 - Mobile app
 - AI recommendations
@@ -211,7 +217,7 @@ backend/
 
 ## users (students only)
 
-- `id` (UUID), `username`, `email`, `password_hash`, `is_verified`, `student_id_url`, `account_status`, timestamps
+- `id` (UUID), `username`, `email`, `phone_number`, `password_hash`, `is_verified`, `student_id_url`, `account_status`, timestamps
 - `account_status`: `pending` | `approved` | `rejected` | `blocked`
 - No `role` column — students are the only kind of user in this table
 
@@ -242,6 +248,10 @@ backend/
 - `id` (UUID), `seller_id`, `category_id`, `title`, `description`, `price` (NUMERIC), `image_url`, `status`, timestamps
 - `status`: `available` | `sold` | `removed`
 
+## payments
+
+- `id` (UUID), `buyer_id` (FK), `seller_id` (FK), `product_id` (FK), `amount` (NUMERIC), `platform_fee` (NUMERIC), `net_amount` (NUMERIC), `phone_number`, `operator`, `reference`, `withdraw_reference`, `status` (`pending` | `held` | `released` | `refunded`), `receipt_number`, `receipt_pdf_url`, timestamps
+
 ---
 
 # API Endpoints (v1)
@@ -253,6 +263,7 @@ Base URL: `http://localhost:8080` (configurable via `NEXT_PUBLIC_API_URL`)
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Health check |
+| POST | `/webhook/campay` | CamPay payment webhook |
 | POST | `/api/v1/auth/register` | Register |
 | POST | `/api/v1/auth/login` | Login |
 | GET | `/api/v1/categories` | List categories |
@@ -277,6 +288,13 @@ Base URL: `http://localhost:8080` (configurable via `NEXT_PUBLIC_API_URL`)
 | GET | `/api/v1/conversations` | List conversations |
 | GET | `/api/v1/conversations/:product_id/:user_id` | Get messages for a conversation |
 | GET | `/api/v1/unread-count` | Unread message count |
+| POST | `/api/v1/payments/initiate` | Initiate payment via CamPay mobile money |
+| GET | `/api/v1/payments/:id/status` | Check payment status |
+| POST | `/api/v1/payments/:id/confirm` | Confirm delivery & release payment to seller |
+| POST | `/api/v1/payments/:id/reject` | Cancel & refund (1% fee) |
+| GET | `/api/v1/payments/:id/receipt` | Get receipt PDF URL |
+| GET | `/api/v1/my-purchases` | Current user's purchases |
+| GET | `/api/v1/my-sales` | Current user's sales |
 
 ## Admin auth (public)
 
@@ -301,6 +319,7 @@ Base URL: `http://localhost:8080` (configurable via `NEXT_PUBLIC_API_URL`)
 | GET | `/api/v1/admin/reports` | List reports (UI planned) |
 | GET | `/api/v1/admin/reports/:id` | Report detail (UI planned) |
 | PATCH | `/api/v1/admin/reports/:id/status` | Update report status (UI planned) |
+| GET | `/api/v1/admin/payments/held` | List all held payments in escrow |
 
 ## Notifications — student JWT (`actor_type: student`)
 

@@ -31,6 +31,7 @@ type Querier interface {
 	GetAdminByID(ctx context.Context, id uuid.UUID) (Admin, error)
 	GetAllCategories(ctx context.Context) ([]Category, error)
 	GetAllHeldPayments(ctx context.Context) ([]GetAllHeldPaymentsRow, error)
+	HasActivePayment(ctx context.Context, arg HasActivePaymentParams) (bool, error)
 	GetAllProducts(ctx context.Context) ([]GetAllProductsRow, error)
 	GetAllReports(ctx context.Context) ([]GetAllReportsRow, error)
 	GetAllUsers(ctx context.Context) ([]User, error)

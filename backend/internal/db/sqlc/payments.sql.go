@@ -325,6 +325,28 @@ type GetPaymentByReferenceRow struct {
 	ProductTitle      string         `json:"product_title"`
 }
 
+const hasActivePayment = `-- name: HasActivePayment :one
+SELECT EXISTS(
+    SELECT 1 FROM payments
+    WHERE product_id = $1
+      AND ((buyer_id = $2 AND seller_id = $3) OR (seller_id = $2 AND buyer_id = $3))
+      AND status IN ('held', 'released')
+) AS exists
+`
+
+type HasActivePaymentParams struct {
+	ProductID uuid.UUID `json:"product_id"`
+	UserID1   uuid.UUID `json:"user_id_1"`
+	UserID2   uuid.UUID `json:"user_id_2"`
+}
+
+func (q *Queries) HasActivePayment(ctx context.Context, arg HasActivePaymentParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, hasActivePayment, arg.ProductID, arg.UserID1, arg.UserID2)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 func (q *Queries) GetPaymentByReference(ctx context.Context, reference sql.NullString) (GetPaymentByReferenceRow, error) {
 	row := q.db.QueryRowContext(ctx, getPaymentByReference, reference)
 	var i GetPaymentByReferenceRow

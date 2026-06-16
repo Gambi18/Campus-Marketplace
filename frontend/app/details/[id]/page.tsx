@@ -3,19 +3,20 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Clock, MapPin, MessageCircle, ShieldCheck } from 'lucide-react';
+import { Clock, MapPin, MessageCircle, ShieldCheck, Smartphone } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
+import Input from '../../components/Input';
 import { formatPrice, formatTimeAgo } from '../../utils/format';
 import { API_URL } from '../../utils/api';
+import { initiatePayment, checkPaymentStatus } from '../../utils/paymentApi';
 import type { ProductCard } from '../../types';
 import { useRouter } from 'next/navigation';
 
 interface ProductDetail extends ProductCard {
   location: string;
-
 }
 
 const MOCK_PRODUCT: ProductDetail = {
@@ -36,17 +37,24 @@ const MOCK_PRODUCT: ProductDetail = {
 };
 
 export default function ProductDetailsPage() {
-
-
   const params = useParams();
   const id = params.id as string;
   const [product, setProduct] = useState<ProductDetail>(MOCK_PRODUCT);
   const [loading, setLoading] = useState(true);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [paying, setPaying] = useState(false);
+  const [paymentRef, setPaymentRef] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const router = useRouter()
-  const handleClick = () =>{
-   router.push('/conversations')
-  }
+  const router = useRouter();
+
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem('token'));
+  }, []);
+
   useEffect(() => {
     async function load() {
       if (id === 'demo') {
@@ -71,8 +79,44 @@ export default function ProductDetailsPage() {
     load();
   }, [id]);
 
+  useEffect(() => {
+    if (!paymentRef || paymentStatus === 'SUCCESSFUL') return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await checkPaymentStatus(paymentRef);
+        setPaymentStatus(res.status);
+        if (res.status === 'SUCCESSFUL') {
+          clearInterval(interval);
+          setTimeout(() => router.push(`/conversations`), 1500);
+        }
+      } catch {
+        // retry
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [paymentRef, paymentStatus, router]);
+
   const price = product.price;
-  const deposit = price / 2;
+  const commission = Math.round(price * 0.03);
+  const sellerReceives = price - commission;
+
+  const handlePayToChat = async () => {
+    if (!phoneNumber.trim() || paying) return;
+    setPaying(true);
+    setPaymentError(null);
+    try {
+      const res = await initiatePayment({
+        product_id: id,
+        phone_number: phoneNumber,
+      });
+      setPaymentRef(res.reference);
+      setPaymentStatus('pending');
+    } catch (err) {
+      setPaymentError(err instanceof Error ? err.message : 'Payment failed');
+    } finally {
+      setPaying(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -81,7 +125,6 @@ export default function ProductDetailsPage() {
       </div>
     );
   }
- 
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc]">
@@ -156,29 +199,92 @@ export default function ProductDetailsPage() {
                   <p className="text-sm text-text-muted mt-0.5">Campus student</p>
                 </div>
               </div>
-              <Button onClick={handleClick} variant="outlined" fullWidth className="mt-4">
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Message
+              <Button
+                onClick={() => setShowPaymentModal(true)}
+                variant="outlined"
+                fullWidth
+                className="mt-4"
+              >
+                <Smartphone className="w-4 h-4 mr-2" />
+                Pay to Chat ({formatPrice(price)})
               </Button>
             </div>
 
-            <div className="rounded-xl bg-blue-50/80 border border-blue-100 p-5 flex gap-3">
-              <ShieldCheck className="w-6 h-6 text-brand-primary flex-shrink-0" />
+            <div className="rounded-xl bg-amber-50/80 border border-amber-100 p-5 flex gap-3">
+              <ShieldCheck className="w-6 h-6 text-amber-600 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-brand-neutral">Safe Transaction</h3>
+                <h3 className="font-semibold text-brand-neutral">Pay before you chat</h3>
                 <p className="text-sm text-text-muted mt-1 leading-relaxed">
-                  Pay 50% deposit to reserve. Meet on campus for verification via QR code scan.
-                  Complete payment after verification.
+                  You must pay before you can message the seller. A 3% platform fee applies on completion.
+                  If you cancel, a 1% fee applies on the refund.
                 </p>
               </div>
             </div>
-
-            <Button variant="form" size="lg">
-              Reserve & Pay Deposit ({formatPrice(deposit)})
-            </Button>
           </div>
         </div>
       </main>
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            {!paymentRef ? (
+              <>
+                <h3 className="text-lg font-bold text-brand-neutral mb-2">Pay to Chat</h3>
+                <p className="text-sm text-text-muted mb-4">
+                  Enter your MTN or Orange Money number to pay {formatPrice(price)}.
+                  You will receive a USSD prompt on your phone to confirm.
+                </p>
+
+                <Input
+                  label="Mobile Money Number"
+                  name="phone"
+                  placeholder="237XXXXXXXXX"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                />
+
+                <p className="text-xs text-text-muted mt-2 mb-4">
+                  A 3% commission ({formatPrice(commission)}) is deducted on completion.
+                  You will receive a prompt on your phone to confirm payment.
+                </p>
+
+                {paymentError && (
+                  <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-3 mb-4">
+                    {paymentError}
+                  </p>
+                )}
+
+                <div className="flex gap-3">
+                  <Button variant="outlined" onClick={() => setShowPaymentModal(false)} fullWidth>
+                    Cancel
+                  </Button>
+                  <Button variant="primary" onClick={handlePayToChat} disabled={paying} fullWidth>
+                    {paying ? 'Processing…' : `Pay ${formatPrice(price)}`}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-6">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Smartphone className="w-8 h-8 text-brand-primary" />
+                </div>
+                <h3 className="text-lg font-bold text-brand-neutral mb-2">Check your phone</h3>
+                <p className="text-sm text-text-muted mb-2">
+                  You will receive a USSD prompt on <strong>{phoneNumber}</strong>.
+                  Confirm the payment to unlock the chat.
+                </p>
+                {paymentStatus === 'pending' && (
+                  <p className="text-xs text-amber-600">Waiting for confirmation…</p>
+                )}
+                {paymentStatus === 'SUCCESSFUL' && (
+                  <p className="text-sm text-green-600 font-semibold">Payment confirmed! Redirecting to chat…</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

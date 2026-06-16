@@ -103,3 +103,11 @@ SET
     updated_at = NOW()
 WHERE reference = $1
 RETURNING *;
+
+-- name: HasActivePayment :one
+SELECT EXISTS(
+    SELECT 1 FROM payments
+    WHERE product_id = $1
+      AND ((buyer_id = $2 AND seller_id = $3) OR (seller_id = $2 AND buyer_id = $3))
+      AND status IN ('held', 'released')
+) AS exists;
