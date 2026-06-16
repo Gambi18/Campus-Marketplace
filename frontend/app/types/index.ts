@@ -10,11 +10,11 @@ export interface ProductCard {
   price: number;
   seller_id?: string;
   seller_name?: string;
-   category_id: number;
+   category_id?: number;
    category_name?: string;
   condition?: ProductCondition | string;
   status: 'available' | 'sold' | 'removed' ;
-  images?: string;
+  images?: string[];
   created_at?: number;
   updated_at?: number;
 }

@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
-import { getMySales } from '../../utils/paymentApi';
-import type { Payment } from '../../types/payment';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { getMySales } from '../utils/paymentApi';
+import type { Payment } from '../types/payment';
 
 export default function SalesPage() {
   const [sales, setSales] = useState<Payment[]>([]);

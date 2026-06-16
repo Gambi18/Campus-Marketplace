@@ -71,12 +71,11 @@ func main() {
 
 	// Creates Gin router
 	router := gin.Default()
-
+   //CORS
+   router.Use(middleware.CORSMiddleware())
 
 	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, notificationService, hub, campayService, receiptService,)
 
-
-	handlers.SetupRoutes(router, queries, authService, productService, cloudinaryService, notificationService, hub)
 
 	// Starts server
 	log.Printf("Starting server on port %s", cfg.Port)
