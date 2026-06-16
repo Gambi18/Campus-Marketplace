@@ -133,4 +133,5 @@ type User struct {
 	StudentIDUrl  string    `json:"student_id_url"`
 	AccountStatus string    `json:"account_status"`
 	PhoneNumber   string    `json:"phone_number"`
+	FullName      string    `json:"full_name"`
 }

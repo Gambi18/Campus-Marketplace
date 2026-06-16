@@ -18,7 +18,7 @@ SET
     is_verified    = TRUE,
     updated_at     = NOW()
 WHERE id = $1
-RETURNING id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number
+RETURNING id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number, full_name
 `
 
 func (q *Queries) ApproveUser(ctx context.Context, id uuid.UUID) (User, error) {
@@ -35,6 +35,7 @@ func (q *Queries) ApproveUser(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.StudentIDUrl,
 		&i.AccountStatus,
 		&i.PhoneNumber,
+		&i.FullName,
 	)
 	return i, err
 }
@@ -45,7 +46,7 @@ SET
     account_status = 'blocked',
     updated_at     = NOW()
 WHERE id = $1
-RETURNING id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number
+RETURNING id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number, full_name
 `
 
 func (q *Queries) BlockUser(ctx context.Context, id uuid.UUID) (User, error) {
@@ -62,6 +63,7 @@ func (q *Queries) BlockUser(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.StudentIDUrl,
 		&i.AccountStatus,
 		&i.PhoneNumber,
+		&i.FullName,
 	)
 	return i, err
 }
@@ -71,18 +73,20 @@ INSERT INTO users (
     username,
     email,
     password_hash,
+    full_name,
     student_id_url,
     account_status
 ) VALUES (
-    $1, $2, $3, $4, 'pending'
+    $1, $2, $3, $4, $5, 'pending'
 )
-RETURNING id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number
+RETURNING id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number, full_name
 `
 
 type CreateUserParams struct {
 	Username     string `json:"username"`
 	Email        string `json:"email"`
 	PasswordHash string `json:"password_hash"`
+	FullName     string `json:"full_name"`
 	StudentIDUrl string `json:"student_id_url"`
 }
 
@@ -91,6 +95,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Username,
 		arg.Email,
 		arg.PasswordHash,
+		arg.FullName,
 		arg.StudentIDUrl,
 	)
 	var i User
@@ -105,12 +110,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.StudentIDUrl,
 		&i.AccountStatus,
 		&i.PhoneNumber,
+		&i.FullName,
 	)
 	return i, err
 }
 
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number FROM users
+SELECT id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number, full_name FROM users
 ORDER BY created_at DESC
 `
 
@@ -134,6 +140,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 			&i.StudentIDUrl,
 			&i.AccountStatus,
 			&i.PhoneNumber,
+			&i.FullName,
 		); err != nil {
 			return nil, err
 		}
@@ -149,7 +156,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 }
 
 const getPendingUsers = `-- name: GetPendingUsers :many
-SELECT id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number FROM users
+SELECT id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number, full_name FROM users
 WHERE account_status = 'pending'
 ORDER BY created_at ASC
 `
@@ -174,6 +181,7 @@ func (q *Queries) GetPendingUsers(ctx context.Context) ([]User, error) {
 			&i.StudentIDUrl,
 			&i.AccountStatus,
 			&i.PhoneNumber,
+			&i.FullName,
 		); err != nil {
 			return nil, err
 		}
@@ -189,7 +197,7 @@ func (q *Queries) GetPendingUsers(ctx context.Context) ([]User, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number FROM users
+SELECT id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number, full_name FROM users
 WHERE email = $1
 LIMIT 1
 `
@@ -208,12 +216,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.StudentIDUrl,
 		&i.AccountStatus,
 		&i.PhoneNumber,
+		&i.FullName,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number FROM users
+SELECT id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number, full_name FROM users
 WHERE id = $1
 LIMIT 1
 `
@@ -232,6 +241,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.StudentIDUrl,
 		&i.AccountStatus,
 		&i.PhoneNumber,
+		&i.FullName,
 	)
 	return i, err
 }
@@ -242,7 +252,7 @@ SET
     account_status = 'rejected',
     updated_at     = NOW()
 WHERE id = $1
-RETURNING id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number
+RETURNING id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number, full_name
 `
 
 func (q *Queries) RejectUser(ctx context.Context, id uuid.UUID) (User, error) {
@@ -259,6 +269,7 @@ func (q *Queries) RejectUser(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.StudentIDUrl,
 		&i.AccountStatus,
 		&i.PhoneNumber,
+		&i.FullName,
 	)
 	return i, err
 }
@@ -269,7 +280,7 @@ SET
     phone_number = $2,
     updated_at   = NOW()
 WHERE id = $1
-RETURNING id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number
+RETURNING id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number, full_name
 `
 
 type UpdateUserPhoneParams struct {
@@ -291,6 +302,7 @@ func (q *Queries) UpdateUserPhone(ctx context.Context, arg UpdateUserPhoneParams
 		&i.StudentIDUrl,
 		&i.AccountStatus,
 		&i.PhoneNumber,
+		&i.FullName,
 	)
 	return i, err
 }
@@ -301,7 +313,7 @@ SET
     is_verified = $2,
     updated_at = NOW()
 WHERE id = $1
-RETURNING id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number
+RETURNING id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number, full_name
 `
 
 type UpdateUserVerificationParams struct {
@@ -323,6 +335,7 @@ func (q *Queries) UpdateUserVerification(ctx context.Context, arg UpdateUserVeri
 		&i.StudentIDUrl,
 		&i.AccountStatus,
 		&i.PhoneNumber,
+		&i.FullName,
 	)
 	return i, err
 }
