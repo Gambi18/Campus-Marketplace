@@ -417,3 +417,128 @@ func ToNotificationResponse(n db.Notification) NotificationResponse {
 		Link:      n.Link.String,
 	}
 }
+
+type InitiatePaymentRequest struct {
+	ProductID   string `json:"product_id"   binding:"required"`
+	PhoneNumber string `json:"phone_number" binding:"required"`
+}
+
+type PaymentResponse struct {
+	ID                string `json:"id"`
+	BuyerID           string `json:"buyer_id"`
+	BuyerName         string `json:"buyer_name,omitempty"`
+	SellerID          string `json:"seller_id"`
+	SellerName        string `json:"seller_name,omitempty"`
+	ProductID         string `json:"product_id"`
+	ProductTitle      string `json:"product_title,omitempty"`
+	Amount            string `json:"amount"`
+	PlatformFee       string `json:"platform_fee"`
+	NetAmount         string `json:"net_amount"`
+	PhoneNumber       string `json:"phone_number"`
+	Operator          string `json:"operator"`
+	Reference         string `json:"reference"`
+	WithdrawReference string `json:"withdraw_reference"`
+	Status            string `json:"status"`
+	ReceiptNumber     string `json:"receipt_number"`
+	ReceiptPdfUrl     string `json:"receipt_pdf_url"`
+	CreatedAt         string `json:"created_at"`
+}
+
+func ToBasicPaymentResponse(p db.Payment) PaymentResponse {
+	return PaymentResponse{
+		ID:          p.ID.String(),
+		BuyerID:     p.BuyerID.String(),
+		SellerID:    p.SellerID.String(),
+		ProductID:   p.ProductID.String(),
+		Amount:      p.Amount,
+		PhoneNumber: p.PhoneNumber,
+		Operator:    p.Operator,
+		Reference:   p.Reference.String,
+		Status:      p.Status,
+		CreatedAt:   p.CreatedAt.String(),
+	}
+}
+
+func ToPaymentResponse(p db.Payment) PaymentResponse {
+	return PaymentResponse{
+		ID:                p.ID.String(),
+		BuyerID:           p.BuyerID.String(),
+		SellerID:          p.SellerID.String(),
+		ProductID:         p.ProductID.String(),
+		Amount:            p.Amount,
+		PlatformFee:       p.PlatformFee,
+		NetAmount:         p.NetAmount,
+		PhoneNumber:       p.PhoneNumber,
+		Operator:          p.Operator,
+		Reference:         p.Reference.String,
+		WithdrawReference: p.WithdrawReference.String,
+		Status:            p.Status,
+		ReceiptNumber:     p.ReceiptNumber.String,
+		ReceiptPdfUrl:     p.ReceiptPdfUrl.String,
+		CreatedAt:         p.CreatedAt.String(),
+	}
+}
+
+func ToBuyerPaymentResponse(p db.GetBuyerPaymentsRow) PaymentResponse {
+	return PaymentResponse{
+		ID:            p.ID.String(),
+		BuyerID:       p.BuyerID.String(),
+		SellerID:      p.SellerID.String(),
+		SellerName:    p.SellerName,
+		ProductID:     p.ProductID.String(),
+		ProductTitle:  p.ProductTitle,
+		Amount:        p.Amount,
+		PlatformFee:   p.PlatformFee,
+		NetAmount:     p.NetAmount,
+		PhoneNumber:   p.PhoneNumber,
+		Operator:      p.Operator,
+		Reference:     p.Reference.String,
+		Status:        p.Status,
+		ReceiptNumber: p.ReceiptNumber.String,
+		ReceiptPdfUrl: p.ReceiptPdfUrl.String,
+		CreatedAt:     p.CreatedAt.String(),
+	}
+}
+
+func ToSellerPaymentResponse(p db.GetSellerPaymentsRow) PaymentResponse {
+	return PaymentResponse{
+		ID:            p.ID.String(),
+		BuyerID:       p.BuyerID.String(),
+		BuyerName:     p.BuyerName,
+		SellerID:      p.SellerID.String(),
+		ProductID:     p.ProductID.String(),
+		ProductTitle:  p.ProductTitle,
+		Amount:        p.Amount,
+		PlatformFee:   p.PlatformFee,
+		NetAmount:     p.NetAmount,
+		PhoneNumber:   p.PhoneNumber,
+		Operator:      p.Operator,
+		Reference:     p.Reference.String,
+		Status:        p.Status,
+		ReceiptNumber: p.ReceiptNumber.String,
+		ReceiptPdfUrl: p.ReceiptPdfUrl.String,
+		CreatedAt:     p.CreatedAt.String(),
+	}
+}
+
+func ToHeldPaymentResponse(p db.GetAllHeldPaymentsRow) PaymentResponse {
+	return PaymentResponse{
+		ID:            p.ID.String(),
+		BuyerID:       p.BuyerID.String(),
+		BuyerName:     p.BuyerName,
+		SellerID:      p.SellerID.String(),
+		SellerName:    p.SellerName,
+		ProductID:     p.ProductID.String(),
+		ProductTitle:  p.ProductTitle,
+		Amount:        p.Amount,
+		PlatformFee:   p.PlatformFee,
+		NetAmount:     p.NetAmount,
+		PhoneNumber:   p.PhoneNumber,
+		Operator:      p.Operator,
+		Reference:     p.Reference.String,
+		Status:        p.Status,
+		ReceiptNumber: p.ReceiptNumber.String,
+		ReceiptPdfUrl: p.ReceiptPdfUrl.String,
+		CreatedAt:     p.CreatedAt.String(),
+	}
+}

@@ -101,3 +101,21 @@ func extractPublicID(url string) (string, error) {
 
 	return rest, nil
 }
+
+// upload PDF file to cloudinary
+func (s *CloudinaryService) UploadPDF(ctx context.Context, file multipart.File, folder string) (string, error) {
+	if file == nil {
+		return "", fmt.Errorf("file is nil")
+	}
+
+	result, err := s.client.Upload.Upload(ctx, file, uploader.UploadParams{
+		Folder:       "campus-marketplace/" + folder,
+		ResourceType: "image", 
+	})
+	if err != nil {
+		return "", fmt.Errorf("error uploading PDF: %w", err)
+	}
+	log.Printf("PDF uploaded: %s", result.SecureURL)
+
+	return result.SecureURL, nil
+}

@@ -51,8 +51,15 @@ func main() {
         cfg.CloudinaryAPIKey,
         cfg.CloudinaryAPISecret,
     )
+    campayService := services.NewCamPayService(
+    cfg.CamPayBaseURL,
+    cfg.CamPayAppUsername,
+    cfg.CamPayAppPassword,
+    cfg.CamPayPermanentToken,
+    )
+    receiptService := services.NewReceiptService(cloudinaryService)
     if err != nil {
-        log.Fatalf("❌ Cloudinary error: %v", err)
+        log.Fatalf("Cloudinary error: %v", err)
     }
 
     productService := services.NewProductService(queries, cloudinaryService)
@@ -66,7 +73,7 @@ func main() {
 	// Creates Gin router
 	router := gin.Default()
 
-	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, notificationService, hub)
+	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, notificationService, hub, campayService, receiptService,)
 
 
 	// Starts server
