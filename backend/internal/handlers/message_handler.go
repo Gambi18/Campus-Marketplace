@@ -129,6 +129,28 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 			continue
 		}
 
+		// Gate: check if sender has an active payment for this product with receiver
+		hasPayment, err := h.queries.HasActivePayment(context.Background(), db.HasActivePaymentParams{
+			ProductID: productID,
+			UserID1:   senderID,
+			UserID2:   receiverID,
+		})
+		if err != nil {
+			log.Printf("Error checking payment status: %v", err)
+			continue
+		}
+		if !hasPayment {
+			errMsg := ws.Message{
+				Type:    "error",
+				Content: "You must pay before you can message the seller. Initiate a payment on the product page.",
+			}
+			select {
+			case client.Send <- errMsg:
+			default:
+			}
+			continue
+		}
+
 		// Save message to PostgreSQL
 		saved, err := h.queries.CreateMessage(context.Background(),  db.CreateMessageParams{
 			SenderID:   senderID,
@@ -196,9 +218,18 @@ func (h *MessageHandler) GetConversations(c *gin.Context) {
 		return
 	}
 
-	response := make([]models.ConversationResponse, len(conversations))
-	for i, conv := range conversations {
-		response[i] = models.ConversationResponse{
+	response := make([]models.ConversationResponse, 0, len(conversations))
+	for _, conv := range conversations {
+		// Gate: only include if there's an active payment between the two users for this product
+		hasPayment, err := h.queries.HasActivePayment(c.Request.Context(), db.HasActivePaymentParams{
+			ProductID: conv.ProductID,
+			UserID1:   conv.SenderID,
+			UserID2:   conv.ReceiverID,
+		})
+		if err != nil || !hasPayment {
+			continue
+		}
+		response = append(response, models.ConversationResponse{
 			ID:           conv.ID.String(),
 			SenderID:     conv.SenderID.String(),
 			SenderName:   conv.SenderName,
@@ -209,7 +240,7 @@ func (h *MessageHandler) GetConversations(c *gin.Context) {
 			Content:      conv.Content,
 			IsRead:       conv.IsRead,
 			CreatedAt:    conv.CreatedAt.String(),
-		}
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -236,6 +267,17 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 	productID, err := uuid.Parse(c.Param("product_id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
+		return
+	}
+
+	// Gate: check if there's an active payment
+	hasPayment, err := h.queries.HasActivePayment(c.Request.Context(), db.HasActivePaymentParams{
+		ProductID: productID,
+		UserID1:   userID,
+		UserID2:   otherUserID,
+	})
+	if err != nil || !hasPayment {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you must pay before accessing this conversation"})
 		return
 	}
 

@@ -90,7 +90,7 @@ export default function SellPricingPage() {
           required
           placeholder="0.00"
           value={form.price}
-          helperText="The other party pays 50% deposit to reserve (when payments are enabled)."
+          helperText={`A 3% platform commission (${form.price ? Math.round(parseFloat(form.price) * 0.03).toLocaleString() : '0'} FCFA) is deducted from your sale. You will receive ${form.price ? Math.round(parseFloat(form.price) * 0.97).toLocaleString() : '0'} FCFA.`}
           onChange={(e) => updateForm({ price: e.target.value })}
         />
 

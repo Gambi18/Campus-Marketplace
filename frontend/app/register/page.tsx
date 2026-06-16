@@ -62,6 +62,7 @@ function page() {
                  <Input label="Username" name="username" placeholder="john_doe"/>
               <Input label="Full Name" name="name" placeholder="John Doe"/>
               <Input label="Email" type="email" name="email" placeholder="name@gmail.com"/>
+               <Input label="Phone Number (MTN or Orange)" name="phone" type="tel" placeholder="237XXXXXXXXX"/>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input label="Password" name="password" type="password" placeholder="........"/>
