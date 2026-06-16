@@ -1,11 +1,30 @@
+"use client"
+
 import Button from "@/components/Button"
 import Input from "@/components/Input"
 import Navbar from "@/components/Navbar"
 import registerImage from "../images/college students-rafiki.svg"
 import Link from "next/link"
 import ContinueWithGoogle from "@/components/ContinueWithGoogle"
-
+import { useRegister } from "../../customHooks/useRegister";
 function page() {
+    const {
+    fullName,
+    setFullName,
+    username,
+    setUsername,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    setStudentIdFile,
+    loading,
+    error,
+    handleSubmit,
+  } = useRegister();
+
   return (
     <>
       <Navbar/>
@@ -58,27 +77,51 @@ function page() {
               <div className="flex-grow border-t border-slate-100"></div>
             </div>
 
-            <div className="space-y-3.5">
-                 <Input label="Username" name="username" placeholder="john_doe"/>
-              <Input label="Full Name" name="name" placeholder="John Doe"/>
-              <Input label="Email" type="email" name="email" placeholder="name@gmail.com"/>
+            <form onSubmit={handleSubmit} className="space-y-3.5">
+                 <Input label="Username" disabled={loading} required={true} name="username" value={username} placeholder="john_doe"    onChange={(e) => setUsername(e.target.value)}/>
+              <Input required={true} disabled={loading} label="Full Name" name="name" value={fullName} placeholder="John Doe"    onChange={(e) => setFullName(e.target.value)}/>
+              <Input required={true} disabled={loading} label="Email" type="email" name="email" value={email} placeholder="name@gmail.com"    onChange={(e) => setEmail(e.target.value)}/>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input label="Password" name="password" type="password" placeholder="........"/>
-                <Input label="Confirm Password" name="confirmPassword" type="password" placeholder="........"/>
+                <Input required={true} disabled={loading} label="Password" name="password"    value={password} type="password" placeholder="........"    onChange={(e) => setPassword(e.target.value)}/>
+                <Input required={true} disabled={loading} label="Confirm Password" name="confirmPassword"    value={confirmPassword} type="password" placeholder="........"    onChange={(e) => setConfirmPassword(e.target.value)}/>
               </div>
-            </div>
-
-            <div className="flex items-start gap-2 mt-5 mb-6">
+                <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="student-id"
+                  className="block text-sm font-semibold text-brand-neutral"
+                >
+                  Student ID
+                </label>
+                <input
+                  id="student-id"
+                  type="file"
+                  required={true}
+                  disabled={loading}
+                  accept="image/*,application/pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    setStudentIdFile(file);
+                  }}
+                  className="w-full text-sm text-slate-700 border border-gray-200 rounded-lg p-3"
+                />
+              </div>
+               {error && <p className="text-sm text-red-600 font-medium mb-3">{error}</p>}
+               <div className="flex items-start gap-2 mt-5 mb-6">
+               
               <input type="checkbox" id="terms-agreement" className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5" />
               <label htmlFor="terms-agreement" className="text-xs text-slate-500 select-none">
                 I agree to the <span className="text-blue-600 cursor-pointer hover:underline font-medium">Terms of Service</span> and <span className="text-blue-600 cursor-pointer hover:underline font-medium">Privacy Policy</span>.
               </label>
             </div>
 
-            <Button type="submit" variant="form">
-              <span className="font-semibold py-1 block w-full text-center">Create Account</span>
+            <Button type="submit" variant="form" disabled={loading}>
+              <span className="font-semibold py-1 block w-full text-center">{loading ? "Creating Account..." : "Create Account"}</span>
             </Button>
+
+            </form>
+
+           
 
             {/* Navigation redirect option */}
             <p className="text-center text-xs text-slate-500 mt-5">
@@ -96,4 +139,4 @@ function page() {
   )
 }
 
-export default page
+export default page;

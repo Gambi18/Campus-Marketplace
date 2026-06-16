@@ -12,14 +12,15 @@ export async function apiCall<T>(
   if (typeof window !== 'undefined') {
     token = localStorage.getItem('token');
   }
+ const headers: Record<string, string> = {
+    ...(options?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...((options?.headers as Record<string, string>) ?? {}),
+  };
 
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      ...options?.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -37,21 +38,21 @@ export async function fetchAPI<T>(endpoint: string): Promise<T> {
 export async function postAPI<T>(endpoint: string, data?: unknown): Promise<T> {
   return apiCall<T>(endpoint, {
     method: 'POST',
-    body: data ? JSON.stringify(data) : undefined,
+    body: data instanceof FormData ? data : data? JSON.stringify(data) : undefined,
   });
 }
 
 export async function putAPI<T>(endpoint: string, data: unknown): Promise<T> {
   return apiCall<T>(endpoint, {
     method: 'PUT',
-    body: JSON.stringify(data),
+    body: data instanceof FormData ? data : JSON.stringify(data),
   });
 }
 
 export async function patchAPI<T>(endpoint: string, data?: unknown): Promise<T> {
   return apiCall<T>(endpoint, {
     method: 'PATCH',
-    body: data ? JSON.stringify(data) : undefined,
+    body:data instanceof FormData ? data : data ? JSON.stringify(data) : undefined,
   });
 }
 

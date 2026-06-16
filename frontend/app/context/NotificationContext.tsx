@@ -1,11 +1,15 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Notification, NotificationResponse, UnreadCountResponse } from '../types/notifications';
+import type {
+  AppNotification,
+  NotificationResponse,
+  UnreadCountResponse,
+} from '../types/notifications';
 import { fetchAPI, patchAPI, postAPI, API_URL } from '../utils/api';
 
 interface NotificationContextType {
-  notifications: Notification[];
+  notifications: AppNotification[];
   unreadCount: number;
   loading: boolean;
   fetchNotifications: () => Promise<void>;
@@ -16,7 +20,7 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -69,7 +73,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'notification') {
-        const newNotification = data.payload as Notification;
+      const newNotification = data.payload as AppNotification;
         setNotifications(prev => [newNotification, ...prev]);
         setUnreadCount(prev => prev + 1);
         
