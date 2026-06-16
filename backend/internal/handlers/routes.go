@@ -18,6 +18,8 @@ func SetupRoutes(
 	cloudinaryService *services.CloudinaryService,
 	notificationService *notification.NotificationService,
 	hub *ws.Hub,
+	campayService *services.CamPayService,      
+	receiptService *services.ReceiptService,
 ) {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
@@ -28,12 +30,20 @@ func SetupRoutes(
 	reportHandler := NewReportHandler(queries)
 	messageHandler := NewMessageHandler(queries, hub, notificationService)
 	notificationHandler := NewNotificationHandler(notificationService)
+	paymentHandler := NewPaymentHandler(
+    queries,
+    campayService,
+    receiptService,
+    cloudinaryService,
+    hub,
+    )
 
 	api := router.Group("/api/v1")
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
+	router.POST("/webhook/campay", paymentHandler.Webhook)
 
 	// Public routes — no auth required
 
@@ -83,6 +93,14 @@ func SetupRoutes(
 		protected.GET("/conversations", messageHandler.GetConversations)
 		protected.GET("/conversations/:product_id/:user_id", messageHandler.GetMessages)
 		protected.GET("/unread-count", messageHandler.GetUnreadCount)
+		protected.POST("/payments/initiate",          paymentHandler.InitiatePayment)
+		protected.GET("/payments/:id/status",         paymentHandler.CheckPaymentStatus)
+		protected.POST("/payments/:id/confirm",       paymentHandler.ConfirmDelivery)
+		protected.POST("/payments/:id/reject",        paymentHandler.RejectDelivery)
+		protected.GET("/payments/:id/receipt",        paymentHandler.GetReceipt)
+		protected.GET("/my-purchases",                paymentHandler.GetMyPurchases)
+		protected.GET("/my-sales",                    paymentHandler.GetMySales)
+
 
 		// Notification routes
 		notifications := protected.Group("/notifications")
@@ -110,5 +128,6 @@ func SetupRoutes(
 		admin.GET("/reports", reportHandler.GetAllReports)
 		admin.GET("/reports/:id", reportHandler.GetReportByID)
 		admin.PATCH("/reports/:id/status", reportHandler.UpdateReportStatus)
+		admin.GET("/payments/held",   paymentHandler.GetAllHeldPayments)
 	}
 }

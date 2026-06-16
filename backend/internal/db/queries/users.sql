@@ -63,3 +63,11 @@ SET
     updated_at     = NOW()
 WHERE id = $1
 RETURNING *;
+
+-- name: UpdateUserPhone :one
+UPDATE users
+SET
+    phone_number = $2,
+    updated_at   = NOW()
+WHERE id = $1
+RETURNING *;

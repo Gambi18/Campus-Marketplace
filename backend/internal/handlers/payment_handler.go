@@ -1,0 +1,583 @@
+package handlers
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+	"math"
+	"net/http"
+	"strconv"
+	"time"
+
+	db "campus-marketplace/internal/db/sqlc"
+	"campus-marketplace/internal/models"
+	"campus-marketplace/internal/services"
+	"campus-marketplace/internal/ws"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+type PaymentHandler struct {
+	queries        *db.Queries
+	campayService  *services.CamPayService
+	receiptService *services.ReceiptService
+	cloudinary     *services.CloudinaryService
+	hub            *ws.Hub
+}
+
+func NewPaymentHandler(
+	queries *db.Queries,
+	campayService *services.CamPayService,
+	receiptService *services.ReceiptService,
+	cloudinary *services.CloudinaryService,
+	hub *ws.Hub,
+) *PaymentHandler {
+	return &PaymentHandler{
+		queries:        queries,
+		campayService:  campayService,
+		receiptService: receiptService,
+		cloudinary:     cloudinary,
+		hub:            hub,
+	}
+}
+
+//INITIATE PAYMENT 
+
+func (h *PaymentHandler) InitiatePayment(c *gin.Context) {
+	// 1. Get buyer ID from JWT
+	buyerIDStr := c.GetString("user_id")
+	buyerID, err := uuid.Parse(buyerIDStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+		return
+	}
+
+	// 2. Parse request
+	var req models.InitiatePaymentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 3. Get product
+	productID, err := uuid.Parse(req.ProductID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
+		return
+	}
+
+	product, err := h.queries.GetProductByID(c.Request.Context(), productID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		return
+	}
+
+	// 4. Validate product is available
+	if product.Status != "available" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "product is not available for purchase"})
+		return
+	}
+
+	// 5. Prevent buyer from buying their own product
+	if product.SellerID == buyerID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "you cannot buy your own product"})
+		return
+	}
+
+	// 6. Call CamPay to collect payment
+	collectResp, err := h.campayService.CollectPayment(
+		product.Price,
+		req.PhoneNumber,
+		fmt.Sprintf("Payment for %s on Campus Marketplace", product.Title),
+		productID.String(),
+	)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 7. Determine operator from phone number
+	operator := collectResp.Operator
+	if operator == "" {
+		operator = detectOperator(req.PhoneNumber)
+	}
+
+	// 8. Save payment to DB
+	payment, err := h.queries.CreatePayment(c.Request.Context(), db.CreatePaymentParams{
+		BuyerID:     buyerID,
+		SellerID:    product.SellerID,
+		ProductID:   productID,
+		Amount:      product.Price,
+		PhoneNumber: req.PhoneNumber,
+		Operator:    operator,
+		Reference:   sql.NullString{String: collectResp.Reference, Valid: collectResp.Reference != ""},
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not save payment"})
+		return
+	}
+
+	// 9. Update product status to in_escrow
+	_, err = h.queries.UpdateProductStatus(c.Request.Context(), db.UpdateProductStatusParams{
+		ID:       productID,
+		SellerID: product.SellerID,
+		Status:   "in_escrow",
+	})
+	if err != nil {
+		log.Printf("error updating product status: %v", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "payment initiated successfully, please confirm on your phone",
+		"reference": collectResp.Reference,
+		"payment":   models.ToBasicPaymentResponse(payment),
+	})
+}
+
+// WEBHOOK 
+
+func (h *PaymentHandler) Webhook(c *gin.Context) {
+	var payload map[string]interface{}
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		return
+	}
+
+	reference, _ := payload["reference"].(string)
+	status, _ := payload["status"].(string)
+
+	if reference == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing reference"})
+		return
+	}
+
+	// Update payment to held if successful
+	if status == "SUCCESSFUL" {
+		_, err := h.queries.UpdatePaymentToHeld(c.Request.Context(),
+			sql.NullString{String: reference, Valid: true},
+		)
+		if err != nil {
+			log.Printf("webhook: error updating payment to held: %v", err)
+		}
+		log.Printf("Payment %s confirmed and held in escrow", reference)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "webhook received"})
+}
+
+// CHECK PAYMENT STATUS 
+
+func (h *PaymentHandler) CheckPaymentStatus(c *gin.Context) {
+	// Get payment ID from URL
+	paymentID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payment ID"})
+		return
+	}
+
+	// Fetch payment to get CamPay reference
+	payment, err := h.queries.GetPaymentByID(c.Request.Context(), paymentID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
+		return
+	}
+
+	// Check reference exists
+	if !payment.Reference.Valid || payment.Reference.String == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "payment has no CamPay reference yet"})
+		return
+	}
+
+	// Check status with CamPay
+	status, err := h.campayService.GetTransactionStatus(payment.Reference.String)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not check payment status"})
+		return
+	}
+
+	// If SUCCESSFUL and still pending — update to held
+	if status.Status == "SUCCESSFUL" && payment.Status == "pending" {
+		_, err = h.queries.UpdatePaymentToHeld(c.Request.Context(),
+			sql.NullString{String: payment.Reference.String, Valid: true},
+		)
+		if err != nil {
+			log.Printf("error updating payment to held: %v", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"payment_id": payment.ID.String(),
+		"reference":  payment.Reference.String,
+		"status":     status.Status,
+		"amount":     status.Amount,
+		"operator":   status.Operator,
+	})
+}
+
+//BUYER CONFIRMS 
+
+func (h *PaymentHandler) ConfirmDelivery(c *gin.Context) {
+	buyerIDStr := c.GetString("user_id")
+	buyerID, err := uuid.Parse(buyerIDStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+		return
+	}
+
+	paymentID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payment ID"})
+		return
+	}
+
+	// Get payment 
+	payment, err := h.queries.GetPaymentByID(c.Request.Context(), paymentID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
+		return
+	}
+
+	// Verify buyer owns this payment
+	if payment.BuyerID != buyerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you are not the buyer of this payment"})
+		return
+	}
+
+	// Verify payment is in held status
+	if payment.Status != "held" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "payment is not in escrow"})
+		return
+	}
+
+	//  fetch product 
+	product, err := h.queries.GetProductByID(c.Request.Context(), payment.ProductID)
+	if err != nil {
+		log.Printf("error fetching product details: %v", err)
+	}
+
+	// Calculate fees - 3% on sale
+	amount, _ := strconv.ParseFloat(payment.Amount, 64)
+	platformFee := math.Round(amount*0.03*100) / 100
+	netAmount := math.Round((amount-platformFee)*100) / 100
+
+	// Get seller phone number
+	seller, err := h.queries.GetUserByID(c.Request.Context(), payment.SellerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get seller details"})
+		return
+	}
+
+	// Withdraw to seller
+	withdrawResp, err := h.campayService.Withdraw(
+		fmt.Sprintf("%.0f", netAmount),
+		seller.PhoneNumber,
+		fmt.Sprintf("Payment for %s - Campus Marketplace", payment.ProductTitle),
+		payment.ID.String(),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not release payment to seller"})
+		return
+	}
+
+	// Generate receipt number
+	receiptNumber := fmt.Sprintf("CM-%d-%06d", time.Now().Year(), time.Now().UnixNano()%1000000)
+
+	// Generate PDF receipt
+	receiptURL, err := h.receiptService.GenerateAndUpload(c.Request.Context(), services.ReceiptData{
+		ReceiptNumber: receiptNumber,
+		Date:          time.Now(),
+		BuyerName:     payment.BuyerName,
+		SellerName:    payment.SellerName,
+		ProductTitle:  payment.ProductTitle,
+		CategoryName:  product.CategoryName,
+		Condition:     product.Condition,
+		Amount:        payment.Amount,
+		PlatformFee:   fmt.Sprintf("%.2f", platformFee),
+		NetAmount:     fmt.Sprintf("%.2f", netAmount),
+		PhoneNumber:   payment.PhoneNumber,
+		Operator:      payment.Operator,
+		Reference:     payment.Reference.String,
+		Status:        "PAYMENT SUCCESSFUL",
+	})
+	if err != nil {
+		log.Printf("error generating receipt: %v", err)
+		receiptURL = ""
+	}
+
+	// Update payment record
+	updated, err := h.queries.UpdatePaymentAfterRelease(c.Request.Context(), db.UpdatePaymentAfterReleaseParams{
+		ID:                payment.ID,
+		Status:            "released",
+		PlatformFee:       fmt.Sprintf("%.2f", platformFee),
+		NetAmount:         fmt.Sprintf("%.2f", netAmount),
+		WithdrawReference: sql.NullString{String: withdrawResp.Reference, Valid: true},
+		ReceiptNumber:     sql.NullString{String: receiptNumber, Valid: true},
+		ReceiptPdfUrl:     sql.NullString{String: receiptURL, Valid: receiptURL != ""},
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update payment record"})
+		return
+	}
+
+	// Update product to sold
+	_, err = h.queries.UpdateProductStatus(c.Request.Context(), db.UpdateProductStatusParams{
+		ID:       payment.ProductID,
+		SellerID: payment.SellerID,
+		Status:   "sold",
+	})
+	if err != nil {
+		log.Printf("error updating product to sold: %v", err)
+	}
+
+	// Notify seller via WebSocket
+	h.hub.Broadcast <- ws.Message{
+		SenderID:   buyerIDStr,
+		ReceiverID: payment.SellerID.String(),
+		Content:    fmt.Sprintf("Your item '%s' has been confirmed and payment of %.2f XAF has been sent to your account!", payment.ProductTitle, netAmount),
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "delivery confirmed, payment released to seller",
+		"receipt_number": receiptNumber,
+		"receipt_url":    receiptURL,
+		"payment":        models.ToPaymentResponse(updated),
+	})
+}
+
+//  BUYER REJECTS 
+
+func (h *PaymentHandler) RejectDelivery(c *gin.Context) {
+	buyerIDStr := c.GetString("user_id")
+	buyerID, err := uuid.Parse(buyerIDStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+		return
+	}
+
+	paymentID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payment ID"})
+		return
+	}
+
+	// Get payment
+	payment, err := h.queries.GetPaymentByID(c.Request.Context(), paymentID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
+		return
+	}
+
+	product, err := h.queries.GetProductByID(c.Request.Context(), payment.ProductID)
+	if err != nil {
+		log.Printf("error fetching product details: %v", err)
+	}
+
+	// Verify buyer owns this payment
+	if payment.BuyerID != buyerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you are not the buyer of this payment"})
+		return
+	}
+
+	// Verify payment is held
+	if payment.Status != "held" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "payment is not in escrow"})
+		return
+	}
+
+	// Calculate fees - 1% on refund
+	amount, _ := strconv.ParseFloat(payment.Amount, 64)
+	platformFee := math.Round(amount*0.01*100) / 100
+	netAmount := math.Round((amount-platformFee)*100) / 100
+
+	// Refund to buyer's payment phone number
+	withdrawResp, err := h.campayService.Withdraw(
+		fmt.Sprintf("%.0f", netAmount),
+		payment.PhoneNumber,
+		fmt.Sprintf("Refund for %s - Campus Marketplace", payment.ProductTitle),
+		payment.ID.String(),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not process refund"})
+		return
+	}
+
+	// Generate receipt number
+	receiptNumber := fmt.Sprintf("CM-REF-%d-%06d", time.Now().Year(), time.Now().UnixNano()%1000000)
+
+	// Generate PDF receipt
+	receiptURL, err := h.receiptService.GenerateAndUpload(c.Request.Context(), services.ReceiptData{
+		ReceiptNumber: receiptNumber,
+		Date:          time.Now(),
+		BuyerName:     payment.BuyerName,
+		SellerName:    payment.SellerName,
+		ProductTitle:  payment.ProductTitle,
+		CategoryName: product.CategoryName,
+		Condition:    product.Condition,
+		Amount:        payment.Amount,
+		PlatformFee:   fmt.Sprintf("%.2f", platformFee),
+		NetAmount:     fmt.Sprintf("%.2f", netAmount),
+		PhoneNumber:   payment.PhoneNumber,
+		Operator:      payment.Operator,
+		Reference:     payment.Reference.String,
+		Status:        "PAYMENT REFUNDED",
+	})
+	if err != nil {
+		log.Printf("error generating receipt: %v", err)
+		receiptURL = ""
+	}
+
+	// Update payment record
+	updated, err := h.queries.UpdatePaymentAfterRelease(c.Request.Context(), db.UpdatePaymentAfterReleaseParams{
+		ID:                payment.ID,
+		Status:            "refunded",
+		PlatformFee:       fmt.Sprintf("%.2f", platformFee),
+		NetAmount:         fmt.Sprintf("%.2f", netAmount),
+		WithdrawReference: sql.NullString{String: withdrawResp.Reference, Valid: true},
+		ReceiptNumber:     sql.NullString{String: receiptNumber, Valid: true},
+		ReceiptPdfUrl:     sql.NullString{String: receiptURL, Valid: receiptURL != ""},
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update payment record"})
+		return
+	}
+
+	// Put product back to available
+	_, err = h.queries.UpdateProductStatus(c.Request.Context(), db.UpdateProductStatusParams{
+		ID:       payment.ProductID,
+		SellerID: payment.SellerID,
+		Status:   "available",
+	})
+	if err != nil {
+		log.Printf("error updating product back to available: %v", err)
+	}
+
+	// Notify seller via WebSocket
+	h.hub.Broadcast <- ws.Message{
+		SenderID:   buyerIDStr,
+		ReceiverID: payment.SellerID.String(),
+		Content:    fmt.Sprintf("❌ Buyer rejected '%s'. The item is now available again.", payment.ProductTitle),
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "delivery rejected, refund processed",
+		"receipt_number": receiptNumber,
+		"receipt_url":    receiptURL,
+		"payment":        models.ToPaymentResponse(updated),
+	})
+}
+
+//  HISTORY 
+func (h *PaymentHandler) GetMyPurchases(c *gin.Context) {
+	buyerIDStr := c.GetString("user_id")
+	buyerID, err := uuid.Parse(buyerIDStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+		return
+	}
+
+	payments, err := h.queries.GetBuyerPayments(c.Request.Context(), buyerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch purchases"})
+		return
+	}
+
+	response := make([]models.PaymentResponse, len(payments))
+	for i, p := range payments {
+		response[i] = models.ToBuyerPaymentResponse(p)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"purchases": response,
+		"count":     len(response),
+	})
+}
+
+func (h *PaymentHandler) GetMySales(c *gin.Context) {
+	sellerIDStr := c.GetString("user_id")
+	sellerID, err := uuid.Parse(sellerIDStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+		return
+	}
+
+	payments, err := h.queries.GetSellerPayments(c.Request.Context(), sellerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch sales"})
+		return
+	}
+
+	response := make([]models.PaymentResponse, len(payments))
+	for i, p := range payments {
+		response[i] = models.ToSellerPaymentResponse(p)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"sales": response,
+		"count": len(response),
+	})
+}
+
+func (h *PaymentHandler) GetReceipt(c *gin.Context) {
+	paymentID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payment ID"})
+		return
+	}
+
+	payment, err := h.queries.GetPaymentByID(c.Request.Context(), paymentID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
+		return
+	}
+
+	if !payment.ReceiptPdfUrl.Valid || payment.ReceiptPdfUrl.String == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "receipt not available yet"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"receipt_number":  payment.ReceiptNumber.String,
+		"receipt_pdf_url": payment.ReceiptPdfUrl.String,
+		"status":          payment.Status,
+	})
+}
+
+// ─── ADMIN ────────────────────────────────────────────────────────────────────
+
+func (h *PaymentHandler) GetAllHeldPayments(c *gin.Context) {
+	payments, err := h.queries.GetAllHeldPayments(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch held payments"})
+		return
+	}
+
+	response := make([]models.PaymentResponse, len(payments))
+	for i, p := range payments {
+		response[i] = models.ToHeldPaymentResponse(p)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"payments": response,
+		"count":    len(response),
+	})
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+func detectOperator(phone string) string {
+	if len(phone) < 5 {
+		return "unknown"
+	}
+	prefix := phone[3:6]
+	mtnPrefixes := map[string]bool{
+		"650": true, "651": true, "652": true, "653": true,
+		"654": true, "670": true, "671": true, "672": true,
+		"673": true, "674": true, "675": true, "676": true,
+		"677": true, "678": true, "679": true,
+	}
+	if mtnPrefixes[prefix] {
+		return "MTN"
+	}
+	return "Orange"
+}
