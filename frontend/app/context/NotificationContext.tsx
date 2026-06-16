@@ -1,7 +1,11 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { AppNotification, NotificationResponse, UnreadCountResponse } from '../types/notifications';
+import type {
+  AppNotification,
+  NotificationResponse,
+  UnreadCountResponse,
+} from '../types/notifications';
 import { fetchAPI, patchAPI, postAPI, API_URL } from '../utils/api';
 
 interface NotificationContextType {
@@ -69,12 +73,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'notification') {
-        const newNotification = data.payload as AppNotification;
+      const newNotification = data.payload as AppNotification;
         setNotifications(prev => [newNotification, ...prev]);
         setUnreadCount(prev => prev + 1);
         
-        // Optional: show a browser notification
-        if (typeof window !== 'undefined' && 'Notification' in window && window.Notification.permission === 'granted') {
+        // Optional: show a toast or browser notification
+        if (Notification.permission === 'granted') {
           new window.Notification(newNotification.title, {
             body: newNotification.message,
           });

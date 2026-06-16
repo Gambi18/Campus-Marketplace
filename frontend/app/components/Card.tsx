@@ -10,10 +10,11 @@ export const Product: ProductCard = {
   description: "High-quality mesh office chair with adjustable lumbar support and 3D armrests. Perfect for long study sessions in the dorm. Only used for one semester.",
   price: 20000,
   seller_id: "seller-student-456",
-  category: "Furniture",
+  category_name: "Furniture",
+  category_id: 1,
   condition: "Like New",
   status: "available",
-  images: ["https://images.unsplash.com/photo-1505797149-43b0069ec26b?w=600&auto=format&fit=crop&q=60"],
+  images: "https://images.unsplash.com/photo-1505797149-43b0069ec26b?w=600&auto=format&fit=crop&q=60",
   created_at: 1716912476000,
   updated_at: 1716912476000
 };
@@ -25,7 +26,7 @@ interface ItemCardProps {
 export default function ItemCard({ item }: ItemCardProps) {
   const title = item?.title ?? Product.title;
   const price = item?.price ?? Product.price;
-  const category = item?.category ?? Product.category;
+  const category = item?.category_name ?? Product.category_name;
   const condition = item?.condition ?? Product.condition;
   const id = item?.id ?? Product.id;
   const createdAt = item?.created_at ?? Product.created_at;

@@ -6,12 +6,43 @@ import { Eye, LogIn } from 'lucide-react';
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import registerImage from "../images/college students-rafiki.svg";
+import { useRouter } from 'next/navigation';
+import { loginStudent } from '../../api/auth';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+       setError(null);
+    if (loading) return;
+ 
+    if (!email.trim() || !password) {
+      setError("Please enter both email and password");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response : any = await loginStudent(email, password);
+
+    if (response && response.token) {
+  localStorage.setItem("token", response.token);
+  router.push("/");
+} else {
+  setError("Login failed: invalid server response");
+}
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -79,6 +110,9 @@ export default function LoginPage() {
                 name="email"
                 required
                 placeholder="your.name@university.edu"
+                 value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
               />
 
               <div className="relative">
@@ -88,6 +122,9 @@ export default function LoginPage() {
                   name="password"
                   required
                   placeholder="••••••••"
+                   value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
                 />
                 
                 <div className="absolute top-0 right-0 h-5 flex items-center">
@@ -104,9 +141,11 @@ export default function LoginPage() {
                   <Eye className="w-4 h-4" />
                 </button>
               </div>
+               {error && <p className="text-sm text-red-600">{error}</p>}
 
-              <Button type="submit" variant="form" size="lg" className="w-full pt-3">
-                Login
+
+              <Button type="submit" variant="form" size="lg" className="w-full pt-3" disabled={loading}>
+                {loading ? "Logging in..." : "Login"}
               </Button>
 
               <div className="relative flex py-2 items-center">
