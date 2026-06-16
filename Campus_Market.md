@@ -16,6 +16,34 @@ Target completion time: 1 month.
 
 ---
 
+# Project Progress
+
+## Session: Payment System & Chat Gating (sprint)
+
+### Backend
+- **Payment handler** (`internal/handlers/payment_handler.go`): InitiatePayment, Webhook, CheckPaymentStatus, ConfirmDelivery, RejectDelivery, GetMyPurchases, GetMySales, GetAllHeldPayments
+- **CamPay service** (`internal/services/campay_service.go`): getToken, collect (USSD prompt), transaction status, withdraw (payout to seller)
+- **Receipt service** (`internal/services/receipt_service.go`): PDF receipt generation via gofpdf + Cloudinary upload
+- **Chat gating** (`internal/handlers/message_handler.go`): WS `readAndPersist` rejects messages without active payment; REST `GetConversations` filters unpaid conversations out; `GetMessages` blocks access to unpaid conversations
+- **Migration 010**: Added `phone_number` to `users` table
+- **Migration 011**: Created `payments` table with escrow workflow
+- `POST /api/v1/admin/create` moved outside admin-protected group to public
+
+### Frontend
+- **Product detail** (`app/details/[id]/page.tsx`): "Pay to Chat (price)" button replaces "Message" CTA; phone number modal; USSD status polling → auto-redirect to chat on success
+- **Sell pricing** (`app/sell/pricing/page.tsx`): Dynamic 3% commission helper text showing net amount
+- **Register** (`app/register/page.tsx`): Phone number input field added
+- **Purchases page** (`app/purchases/page.tsx`): Purchase history with confirm-delivery and cancel-refund buttons, receipt download
+- **Sales page** (`app/sales/page.tsx`): Sales history with fee breakdown and status badges
+- **Navbar**: Added Purchases and Sales links
+- **Payment types** (`app/types/payment.ts`): InitiatePaymentRequest, Payment, PaymentStatusResponse, ConfirmDeliveryResponse, etc.
+- **Payment API helpers** (`app/utils/paymentApi.ts`): initiatePayment, checkPaymentStatus, confirmDelivery, rejectDelivery, getMyPurchases, getMySales, getReceipt
+- **Notification type fix**: Renamed `Notification` → `AppNotification` to avoid browser API collision
+- **date-fns**: Installed missing dependency
+- **next.config.js**: Removed deprecated `swcMinify: true`
+
+---
+
 # Problem Statement
 
 Students frequently need to buy or sell:
@@ -165,9 +193,7 @@ Must be completed:
 
 **UI-only (not yet in API):**
 
-- Product `condition` field (UI collects in listing wizard; not persisted yet)
 - Meetup `location` field (UI only for now)
-- Multiple images per listing (UI supports grid; API accepts one `image` file)
 
 ---
 
@@ -203,7 +229,7 @@ backend/
 │   ├── models/              # DTOs & response mappers
 │   ├── notification/        # Notification service + types
 │   ├── repository/
-│   ├── services/            # Auth, Product, Cloudinary, Admin seed
+│   ├── services/            # Auth, Product, Cloudinary, Admin seed, CamPay, Receipt
 │   └── ws/                  # WebSocket hub + client
 ├── pkg/utils/
 └── sqlc.yaml
@@ -245,8 +271,8 @@ backend/
 
 ## products
 
-- `id` (UUID), `seller_id`, `category_id`, `title`, `description`, `price` (NUMERIC), `image_url`, `status`, timestamps
-- `status`: `available` | `sold` | `removed`
+- `id` (UUID), `seller_id`, `category_id`, `title`, `description`, `price` (NUMERIC), `condition` (VARCHAR), `image_url_1`..`image_url_4` (TEXT), `status`, timestamps
+- `status`: `available` | `sold` | `removed` | `in_escrow`
 
 ## payments
 
@@ -350,7 +376,11 @@ Response shape (`ProductResponse`):
   "title": "string",
   "description": "string",
   "price": "string",
-  "image_url": "string",
+  "condition": "string",
+  "image_url_1": "string",
+  "image_url_2": "string",
+  "image_url_3": "string",
+  "image_url_4": "string",
   "status": "available",
   "created_at": "timestamp"
 }
@@ -373,6 +403,8 @@ frontend/app/
 ├── login/            # Login page
 ├── register/         # Registration page
 ├── mylistings/       # Current user's listings
+├── purchases/        # Purchase history with confirm/reject actions
+├── sales/            # Sales history with fee breakdown
 ├── context/          # NotificationContext, ListingFormContext (wizard state)
 ├── images/           # Static images
 ├── types/            # TypeScript type definitions
@@ -385,9 +417,9 @@ frontend/app/
 
 Three-step flow aligned with designs:
 
-1. **Upload photos** — `/sell` — at least one image (up to 4 slots in UI; API stores one primary image).
-2. **Item details** — `/sell/details` — title, description, category, condition (UI state).
-3. **Pricing & location** — `/sell/pricing` — price (FCFA), meetup location (UI state), review summary, publish.
+1. **Upload photos** — `/sell` — at least one image (up to 4 slots; API stores up to 4 images in `image_url_1`..`image_url_4`).
+2. **Item details** — `/sell/details` — title, description, category, condition (persisted to DB).
+3. **Pricing & location** — `/sell/pricing` — price (FCFA), meetup location (UI state, not persisted), review summary, publish.
 
 On publish, frontend sends `POST /api/v1/products` with collected fields.
 
@@ -397,7 +429,7 @@ On publish, frontend sends `POST /api/v1/products` with collected fields.
 
 Route: `/details/[id]`
 
-Shows image, title, condition badge, price, location/time (mock or extended API later), description, category, **Listed by** card (poster name from `seller_name`; no ratings), safe-transaction info, **Message** CTA, and reserve/deposit CTA (visual only until payments are in scope).
+Shows image, title, condition badge, price, location/time (mock or extended API later), description, category, **Listed by** card (poster name from `seller_name`; no ratings), safe-transaction info, **Pay to Chat** button with phone-number modal. Payment required before messaging the seller.
 
 ---
 

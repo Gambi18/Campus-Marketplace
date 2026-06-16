@@ -22,10 +22,12 @@ frontend/
 │   ├── login/               # Login page
 │   ├── mylistings/          # Current user's listings
 │   ├── notifications/       # Notifications list page
+│   ├── purchases/           # Purchase history with confirm/reject
 │   ├── register/            # Registration page
+│   ├── sales/               # Sales history with fee breakdown
 │   ├── sell/                # 3-step listing wizard
 │   ├── types/               # TypeScript type definitions
-│   ├── utils/               # Utility functions (api.ts, adminApi.ts, format.ts)
+│   ├── utils/               # Utility functions (api.ts, adminApi.ts, paymentApi.ts, format.ts)
 │   ├── layout.tsx           # Root layout
 │   ├── page.tsx             # Home page
 │   └── globals.css          # Global styles
