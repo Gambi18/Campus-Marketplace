@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import { useNotifications } from '../context/NotificationContext';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
+import { Bell } from 'lucide-react';
 
 export default function NotificationsPage() {
   const { notifications, markAsRead, markAllAsRead, loading } = useNotifications();
@@ -13,7 +14,13 @@ export default function NotificationsPage() {
   return (
     <main className="min-h-screen bg-gray-50">
       <Navbar />
-      
+      <div className="max-w-3xl mx-auto px-4 py-6">
+  <div className="flex justify-center">
+    <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center shadow-sm">
+      <Bell className="w-10 h-10 text-brand-primary" />
+    </div>
+  </div>
+</div>
       <div className="max-w-3xl mx-auto px-4 py-12">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -40,9 +47,7 @@ export default function NotificationsPage() {
           ) : notifications.length === 0 ? (
             <div className="p-12 text-center">
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-text-muted">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-                </svg>
+               <Bell className="w-8 h-8 text-text-muted" />
               </div>
               <h3 className="font-semibold text-gray-900">No notifications yet</h3>
               <p className="text-text-muted text-sm mt-1">We'll notify you when something important happens.</p>

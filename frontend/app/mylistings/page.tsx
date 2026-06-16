@@ -1,32 +1,26 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import StatCard from '@/components/StatCard';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ItemCard from '@/components/Card';
 import CreateListingCard from '@/components/CreateListingCard';
 import NoCard from "../images/undraw_not-found_6bgl.svg"
-
-
-import { ProductCard } from '@/types'; 
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useMyProducts } from '../../customHooks/useGetProducts';
 
 export default function MyListingsDashboard() {
-  // 2. Set state array using the ProductCard type matching your component
-  // Clear out this array to test your "No items listed yet" empty state!
-  const [userListings, setUserListings] = useState<ProductCard[]>([
-    // {
-    //   id: "user-uploaded-1",
-    //   title: "Modern Walnut Study Desk",
-    //   price: 15000, 
-    //   category: "Furniture",
-    //   condition: "Good",
-    //   images: ["https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=600"],
-    //   created_at: Date.now(),
-    //   status: "available"
-    // }
-  ]);
+const router = useRouter();
+  const { products: userListings, loading, error } = useMyProducts();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!localStorage.getItem("token")) {
+      router.replace("/login");
+    }
+  }, [router]);
 
   return (
     <div>
@@ -37,7 +31,7 @@ export default function MyListingsDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <StatCard 
             label="Active Listings" 
-            value={userListings.length} 
+          value={String(userListings.length)}
             iconName="Package" 
             iconColorClass="text-blue-600" 
             iconBgClass="bg-blue-50" 
@@ -62,7 +56,17 @@ export default function MyListingsDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 items-start">
           
         
-          {userListings.length > 0 ? (
+          {
+            loading ? (
+            <div className="sm:col-span-1 md:col-span-2 lg:col-span-3 bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
+              <p className="text-sm text-text-muted">Loading your listings...</p>
+            </div>
+          ) : error ? (
+            <div className="sm:col-span-1 md:col-span-2 lg:col-span-3 bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          ) :
+          userListings.length > 0 ? (
             userListings.map((listing) => (
           
               <ItemCard key={listing.id} item={listing} />
