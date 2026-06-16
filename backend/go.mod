@@ -1,6 +1,6 @@
 module campus-marketplace
 
-go 1.26
+go 1.25.0
 
 require (
 	github.com/gin-gonic/gin v1.9.1
@@ -15,6 +15,7 @@ require (
 
 require (
 	github.com/gorilla/websocket v1.5.3
+	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/sqlc-dev/pqtype v0.3.0
 )
 

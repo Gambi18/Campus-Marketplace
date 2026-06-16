@@ -25,6 +25,12 @@ type Config struct {
 	AdminUsername       string
 	AdminEmail          string
 	AdminPassword       string
+	CamPayBaseURL     string
+	CamPayAppUsername string
+	CamPayAppPassword string
+	CamPayPermanentToken string
+	PlatformFeeOnSale   float64 
+	PlatformFeeOnRefund float64
 }
 
 func LoadConfig() *Config {
@@ -47,6 +53,12 @@ func LoadConfig() *Config {
 		AdminUsername:       getEnv("ADMIN_USERNAME", "admin"),
 		AdminEmail:          getEnv("ADMIN_EMAIL", ""),
 		AdminPassword:       getEnv("ADMIN_PASSWORD", ""),
+		CamPayBaseURL:     getEnv("CAMPAY_BASE_URL", "https://demo.campay.net/api"),
+		CamPayAppUsername: getEnv("CAMPAY_APP_USERNAME", ""),
+		CamPayAppPassword: getEnv("CAMPAY_APP_PASSWORD", ""),
+		CamPayPermanentToken: getEnv("CAMPAY_PERMANENT_TOKEN", ""),
+		PlatformFeeOnSale:   0.03,
+		PlatformFeeOnRefund: 0.01,
 	}
 }
 // added this cause Always built fresh from current field values

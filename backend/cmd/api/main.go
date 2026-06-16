@@ -43,15 +43,23 @@ func main() {
 	authService := services.NewAuthService(cfg.JWTSecret)
 	services.EnsureDefaultAdmin(context.Background(), queries, authService, cfg.AdminUsername, cfg.AdminEmail, cfg.AdminPassword)
 
-	// cloudinary  initialization
-	cloudinaryService, err := services.NewCloudinaryService(
-		cfg.CloudinaryCloudName,
-		cfg.CloudinaryAPIKey,
-		cfg.CloudinaryAPISecret,
-	)
-	if err != nil {
-		log.Fatalf("❌ Cloudinary error: %v", err)
-	}
+
+        // cloudinary  initialization
+    cloudinaryService, err := services.NewCloudinaryService(
+        cfg.CloudinaryCloudName,
+        cfg.CloudinaryAPIKey,
+        cfg.CloudinaryAPISecret,
+    )
+    campayService := services.NewCamPayService(
+    cfg.CamPayBaseURL,
+    cfg.CamPayAppUsername,
+    cfg.CamPayAppPassword,
+    cfg.CamPayPermanentToken,
+    )
+    receiptService := services.NewReceiptService(cloudinaryService)
+    if err != nil {
+        log.Fatalf("Cloudinary error: %v", err)
+    }
 
 	productService := services.NewProductService(queries, cloudinaryService)
 	notificationService := notification.NewNotificationService(queries, hub)
@@ -64,8 +72,9 @@ func main() {
 	// Creates Gin router
 	router := gin.Default()
 
-	//CORS setup
-	router.Use(middleware.CORSMiddleware())
+
+	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, notificationService, hub, campayService, receiptService,)
+
 
 	handlers.SetupRoutes(router, queries, authService, productService, cloudinaryService, notificationService, hub)
 

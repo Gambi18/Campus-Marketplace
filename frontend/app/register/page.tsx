@@ -76,11 +76,12 @@ function page() {
               <span className="flex-shrink mx-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Or sign up with email</span>
               <div className="flex-grow border-t border-slate-100"></div>
             </div>
-
             <form onSubmit={handleSubmit} className="space-y-3.5">
                  <Input label="Username" disabled={loading} required={true} name="username" value={username} placeholder="john_doe"    onChange={(e) => setUsername(e.target.value)}/>
               <Input required={true} disabled={loading} label="Full Name" name="name" value={fullName} placeholder="John Doe"    onChange={(e) => setFullName(e.target.value)}/>
               <Input required={true} disabled={loading} label="Email" type="email" name="email" value={email} placeholder="name@gmail.com"    onChange={(e) => setEmail(e.target.value)}/>
+                <Input label="Phone Number required={true} (MTN or Orange)" name="phone" type="tel" placeholder="237XXXXXXXXX"/>
+
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input required={true} disabled={loading} label="Password" name="password"    value={password} type="password" placeholder="........"    onChange={(e) => setPassword(e.target.value)}/>
