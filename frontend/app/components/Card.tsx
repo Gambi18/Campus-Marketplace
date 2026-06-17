@@ -14,7 +14,7 @@ export const Product: ProductCard = {
   category_id: 1,
   condition: "Like New",
   status: "available",
-  images: "https://images.unsplash.com/photo-1505797149-43b0069ec26b?w=600&auto=format&fit=crop&q=60",
+  image_url_1: "https://images.unsplash.com/photo-1505797149-43b0069ec26b?w=600&auto=format&fit=crop&q=60",
   created_at: 1716912476000,
   updated_at: 1716912476000
 };
@@ -31,9 +31,9 @@ export default function ItemCard({ item }: ItemCardProps) {
   const id = item?.id ?? Product.id;
   const createdAt = item?.created_at ?? Product.created_at;
 
-  const displayImage = item?.images && item.images.length > 0
-    ? item.images[0]
-    : Product.images?.[0];
+  const displayImage = item?.image_url_1 && item.image_url_1.length > 0
+    ? item.image_url_1
+    : Product.image_url_1;
 
   const formattedPrice = new Intl.NumberFormat('en-US', {
     style: 'currency',

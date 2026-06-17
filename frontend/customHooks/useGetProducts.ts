@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import type { ProductCard } from "../app/types";
-import { fetchProducts, fetchMyProducts } from "../api/product";
+import { fetchProducts, fetchMyProducts } from "../app/utils/productApi";
 
 export function useProducts() {
   const [products, setProducts] = useState<ProductCard[]>([]);

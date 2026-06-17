@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FolderTree, Flag, Users } from 'lucide-react';
+import { FolderTree, Flag, Users, CreditCard } from 'lucide-react';
 import { clearAdminToken } from '../../utils/adminApi';
 
 const NAV = [
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/categories', label: 'Categories', icon: FolderTree },
-  { href: '/admin/reports', label: 'Reports & moderation', icon: Flag, planned: true },
+  { href: '/admin/payments', label: 'Payments (Escrow)', icon: CreditCard },
+  { href: '/admin/reports', label: 'Reports & moderation', icon: Flag },
 ];
 
 export default function AdminSidebar() {
@@ -29,7 +30,7 @@ export default function AdminSidebar() {
       </div>
 
       <nav className="flex-1 p-4 space-y-1">
-        {NAV.map(({ href, label, icon: Icon, planned }) => {
+        {NAV.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
@@ -42,14 +43,6 @@ export default function AdminSidebar() {
             >
               <Icon className="w-4 h-4" />
               <span className="flex-1">{label}</span>
-              {planned && (
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded ${active ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-700'
-                    }`}
-                >
-                  Soon
-                </span>
-              )}
             </Link>
           );
         })}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/models"
@@ -130,25 +131,27 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 		}
 
 		// Gate: check if sender has an active payment for this product with receiver
-		hasPayment, err := h.queries.HasActivePayment(context.Background(), db.HasActivePaymentParams{
-			ProductID: productID,
-			UserID1:   senderID,
-			UserID2:   receiverID,
-		})
-		if err != nil {
-			log.Printf("Error checking payment status: %v", err)
-			continue
-		}
-		if !hasPayment {
-			errMsg := ws.Message{
-				Type:    "error",
-				Content: "You must pay before you can message the seller. Initiate a payment on the product page.",
+		if os.Getenv("DEV_BYPASS_PAYMENT") != "true" {
+			hasPayment, err := h.queries.HasActivePayment(context.Background(), db.HasActivePaymentParams{
+				ProductID: productID,
+				UserID1:   senderID,
+				UserID2:   receiverID,
+			})
+			if err != nil {
+				log.Printf("Error checking payment status: %v", err)
+				continue
 			}
-			select {
-			case client.Send <- errMsg:
-			default:
+			if !hasPayment {
+				errMsg := ws.Message{
+					Type:    "error",
+					Content: "You must pay before you can message the seller. Initiate a payment on the product page.",
+				}
+				select {
+				case client.Send <- errMsg:
+				default:
+				}
+				continue
 			}
-			continue
 		}
 
 		// Save message to PostgreSQL
@@ -220,14 +223,16 @@ func (h *MessageHandler) GetConversations(c *gin.Context) {
 
 	response := make([]models.ConversationResponse, 0, len(conversations))
 	for _, conv := range conversations {
-		// Gate: only include if there's an active payment between the two users for this product
-		hasPayment, err := h.queries.HasActivePayment(c.Request.Context(), db.HasActivePaymentParams{
-			ProductID: conv.ProductID,
-			UserID1:   conv.SenderID,
-			UserID2:   conv.ReceiverID,
-		})
-		if err != nil || !hasPayment {
-			continue
+		if os.Getenv("DEV_BYPASS_PAYMENT") != "true" {
+			// Gate: only include if there's an active payment between the two users for this product
+			hasPayment, err := h.queries.HasActivePayment(c.Request.Context(), db.HasActivePaymentParams{
+				ProductID: conv.ProductID,
+				UserID1:   conv.SenderID,
+				UserID2:   conv.ReceiverID,
+			})
+			if err != nil || !hasPayment {
+				continue
+			}
 		}
 		response = append(response, models.ConversationResponse{
 			ID:           conv.ID.String(),
@@ -271,14 +276,16 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 	}
 
 	// Gate: check if there's an active payment
-	hasPayment, err := h.queries.HasActivePayment(c.Request.Context(), db.HasActivePaymentParams{
-		ProductID: productID,
-		UserID1:   userID,
-		UserID2:   otherUserID,
-	})
-	if err != nil || !hasPayment {
-		c.JSON(http.StatusForbidden, gin.H{"error": "you must pay before accessing this conversation"})
-		return
+	if os.Getenv("DEV_BYPASS_PAYMENT") != "true" {
+		hasPayment, err := h.queries.HasActivePayment(c.Request.Context(), db.HasActivePaymentParams{
+			ProductID: productID,
+			UserID1:   userID,
+			UserID2:   otherUserID,
+		})
+		if err != nil || !hasPayment {
+			c.JSON(http.StatusForbidden, gin.H{"error": "you must pay before accessing this conversation"})
+			return
+		}
 	}
 
 	// Get messages

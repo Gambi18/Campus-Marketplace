@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createProduct } from "../api/product";
+import { createProduct } from "../app/utils/productApi";
 
 export function useCreateProduct() {
   const router = useRouter();

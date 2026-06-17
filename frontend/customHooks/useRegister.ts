@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { registerStudent } from "../api/auth";
+import { registerStudent } from "../app/utils/authApi";
 
 export function useRegister() {
   const router = useRouter();

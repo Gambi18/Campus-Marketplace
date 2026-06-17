@@ -1,15 +1,23 @@
 "use client";
 
-import React from 'react';
+import { useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useNotifications } from '../context/NotificationContext';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { Bell } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const { notifications, markAsRead, markAllAsRead, loading } = useNotifications();
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
+      router.replace("/login");
+    }
+  }, [router]);
 
   return (
     <main className="min-h-screen bg-gray-50">

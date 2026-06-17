@@ -5,7 +5,6 @@ import Input from "@/components/Input"
 import Navbar from "@/components/Navbar"
 import registerImage from "../images/college students-rafiki.svg"
 import Link from "next/link"
-import ContinueWithGoogle from "@/components/ContinueWithGoogle"
 import { useRegister } from "../../customHooks/useRegister";
 function page() {
     const {
@@ -48,7 +47,7 @@ function page() {
                 />
               </div>
 
-              <button type="button" className="mt-2 bg-[#2563eb] text-white text-xs font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm shadow-blue-200">
+              <button type="button" onClick={() => window.location.href = '/login'} className="mt-2 bg-[#2563eb] text-white text-xs font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm shadow-blue-200">
                 Join Now
               </button>
             </div>
@@ -65,12 +64,6 @@ function page() {
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Create your CampusMarket account</h2>
             <p className="text-xs text-slate-400 mt-1 mb-6">Join your campus marketplace and start buying and selling safely</p>
             
-            {/* Standard aligned button wrapping clean SVG identity marker */}
-            <Button variant="formLightBlue">
-              {/* //continue with gogle */}
-              <ContinueWithGoogle/>
-            </Button>
-
             <div className="relative flex py-5 items-center">
               <div className="flex-grow border-t border-slate-100"></div>
               <span className="flex-shrink mx-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Or sign up with email</span>

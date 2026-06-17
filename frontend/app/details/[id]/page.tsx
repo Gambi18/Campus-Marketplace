@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Clock, MapPin, MessageCircle, ShieldCheck, Smartphone } from 'lucide-react';
+import { Clock, MapPin, ShieldCheck, Smartphone } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import Button from '../../components/Button';
@@ -29,7 +29,7 @@ const MOCK_PRODUCT: ProductDetail = {
   description:
     'Complete set of 5 engineering textbooks for first and second year. All in good condition with minimal highlighting. Includes: Engineering Mathematics, Physics for Engineers, Materials Science, Circuit Analysis, and Thermodynamics. Perfect for students starting their engineering program.',
   price: 80000,
-  images: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80',
+  image_url_1: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80',
   status: 'available',
   created_at: (Date.now() - 5 * 60 * 60 * 1000),
   condition: 'Good',
@@ -47,12 +47,12 @@ export default function ProductDetailsPage() {
   const [paymentRef, setPaymentRef] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isDev, setIsDev] = useState(false);
 
   const router = useRouter();
 
   useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem('token'));
+    setIsDev(process.env.NEXT_PUBLIC_ENV === 'development');
   }, []);
 
   useEffect(() => {
@@ -98,7 +98,6 @@ export default function ProductDetailsPage() {
 
   const price = product.price;
   const commission = Math.round(price * 0.03);
-  const sellerReceives = price - commission;
 
   const handlePayToChat = async () => {
     if (!phoneNumber.trim() || paying) return;
@@ -144,7 +143,7 @@ export default function ProductDetailsPage() {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
           <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white aspect-square max-h-[520px]">
             <img
-              src={product.images}
+              src={product.image_url_1}
               alt={product.title}
               className="w-full h-full object-cover"
             />
@@ -223,6 +222,21 @@ export default function ProductDetailsPage() {
           </div>
         </div>
       </main>
+
+      {isDev && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <button
+            onClick={() => {
+              setPaymentRef('dev-bypass');
+              setPaymentStatus('SUCCESSFUL');
+              setTimeout(() => router.push('/conversations'), 1500);
+            }}
+            className="bg-yellow-400 text-black text-xs font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-yellow-300"
+          >
+            Bypass Payment (Dev)
+          </button>
+        </div>
+      )}
 
       {/* Payment Modal */}
       {showPaymentModal && (

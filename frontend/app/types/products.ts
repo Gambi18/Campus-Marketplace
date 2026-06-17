@@ -11,7 +11,7 @@ export const Products: ProductCard[] = [
     category_name: "Furniture & Home",
     condition: "like_new",
     status: "available",
-    images: ["https://images.unsplash.com/photo-1505797149-43b0069ec26b?w=600&auto=format&fit=crop&q=60"],
+    image_url_1: "https://images.unsplash.com/photo-1505797149-43b0069ec26b?w=600&auto=format&fit=crop&q=60",
     created_at: 1716912476000,
     updated_at: 1716912476000
   },
@@ -25,7 +25,7 @@ export const Products: ProductCard[] = [
     category_name: "Electronics",
     condition: "good",
     status: "available",
-    images: ["https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=600&auto=format&fit=crop&q=60"],
+    image_url_1: "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=600&auto=format&fit=crop&q=60",
     created_at: 1717005200000,
     updated_at: 1717005200000
   },
@@ -39,7 +39,7 @@ export const Products: ProductCard[] = [
     category_name: "Academic Materials",
     condition: "good",
     status: "available",
-    images: ["https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600&auto=format&fit=crop&q=60"],
+    image_url_1: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600&auto=format&fit=crop&q=60",
     created_at: 1717081100000,
     updated_at: 1717081100000
   },
@@ -53,7 +53,7 @@ export const Products: ProductCard[] = [
     category_name: "Furniture & Home",
     condition: "like_new",
     status: "available",
-    images: ["https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=600&auto=format&fit=crop&q=60"],
+    image_url_1: "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=600&auto=format&fit=crop&q=60",
     created_at: 1717154300000,
     updated_at: 1717154300000
   },
@@ -67,7 +67,7 @@ export const Products: ProductCard[] = [
     category_name: "Electronics",
     condition: "fair",
     status: "available",
-    images: ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=60"],
+    image_url_1: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=60",
     created_at: 1717219800000,
     updated_at: 1717224000000
   },
@@ -81,7 +81,7 @@ export const Products: ProductCard[] = [
     category_name: "Sports & Fitness",
     condition: "fair",
     status: "available",
-    images: ["https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=600&auto=format&fit=crop&q=60"],
+    image_url_1: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=600&auto=format&fit=crop&q=60",
     created_at: 1717315600000,
     updated_at: 1717315600000
   }

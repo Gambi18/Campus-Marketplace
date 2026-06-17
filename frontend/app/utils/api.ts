@@ -24,6 +24,11 @@ export async function apiCall<T>(
   });
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+      throw new Error('Session expired');
+    }
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || `API call failed: ${response.statusText}`);
   }

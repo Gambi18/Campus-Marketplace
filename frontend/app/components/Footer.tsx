@@ -1,8 +1,13 @@
+"use client";
 
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Logo from './Logo';
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname !== '/') return null;
+
   const currentYear = new Date().getFullYear();
 
   const marketplaceLinks = [
@@ -98,17 +103,6 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-muted">
           <div>
             &copy; {currentYear} CampusMarket. All rights reserved.
-          </div>
-          <div className="flex items-center space-x-6">
-            <Link href="/legal/privacy" className="hover:text-brand-primary transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="/legal/cookies" className="hover:text-brand-primary transition-colors">
-              Cookie Settings
-            </Link>
-            <Link href="/accessibility" className="hover:text-brand-primary transition-colors">
-              Accessibility
-            </Link>
           </div>
         </div>
       </div>

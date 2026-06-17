@@ -27,6 +27,10 @@ export default function SellPricingPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
+      router.replace("/login");
+      return;
+    }
     if (!form.title) router.replace('/sell/details');
   }, [form.title, router]);
 

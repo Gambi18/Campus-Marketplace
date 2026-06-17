@@ -1,4 +1,4 @@
-
+import { Suspense } from 'react';
 import CardGrid from "./components/CardGrid";
 import Footer from "./components/Footer";
 import Hero from "./components/Hero";
@@ -14,7 +14,9 @@ export default function Home() {
                 <Hero/>
                 <Toolbar/>
                  <ItemCategory/>
+                 <Suspense fallback={<div className="p-8 text-sm text-text-muted">Loading products...</div>}>
                   <CardGrid/>
+                 </Suspense>
                  <Footer/>
             </div>
         </main>

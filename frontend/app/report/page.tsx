@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Button from '@/components/Button';
 import Footer from '@/components/Footer';
 import { ReportPayload } from '@/types';
-// import Textarea from '@/components/Textarea';
+import { postAPI } from '../utils/api';
 
 
 function ReportContent() {
@@ -32,12 +32,17 @@ function ReportContent() {
     setIsSubmitting(true);
 
     try {
-      
-      }
-      
-     catch  {
-
-     }
+      await postAPI('/api/v1/reports', {
+        reason: selectedReason,
+        details: additionalDetails,
+      });
+      setIsSubmitting(false);
+      alert('Report submitted successfully.');
+      router.push('/');
+    } catch (err) {
+      setIsSubmitting(false);
+      alert(err instanceof Error ? err.message : 'Failed to submit report');
+    }
       
     
   };

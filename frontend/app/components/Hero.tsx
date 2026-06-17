@@ -1,7 +1,11 @@
+"use client";
+
+import { useRouter } from 'next/navigation';
 import Button from "./Button"
 
-
 function Hero() {
+  const router = useRouter();
+
   return (
     <div className="bg-gradient-to-r from-brand-primary to-purple-600 min-h-[500px] flex flex-col justify-center items-center p-8md:p-20 text-white">
        <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-1.5 rounded-full text-xs font-medium mb-6">
@@ -14,8 +18,8 @@ function Hero() {
             List what you do not need and pick up what you do—all in one peer-to-peer campus marketplace.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 p-4">
-            <Button variant="secondary"><span>Start Browsing</span></Button>
-         <Button variant="outlined"><span>Sell an Item</span></Button>
+            <Button variant="secondary" onClick={() => router.push('/')}><span>Start Browsing</span></Button>
+            <Button variant="outlined" onClick={() => router.push('/sell')}><span>Sell an Item</span></Button>
         </div>
         
     </div>
