@@ -6,7 +6,9 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	db "campus-marketplace/internal/db/sqlc"
@@ -85,25 +87,32 @@ func (h *PaymentHandler) InitiatePayment(c *gin.Context) {
 		return
 	}
 
-	// 6. Call CamPay to collect payment
-	collectResp, err := h.campayService.CollectPayment(
-		product.Price,
-		req.PhoneNumber,
-		fmt.Sprintf("Payment for %s on Campus Marketplace", product.Title),
-		productID.String(),
-	)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// 6. Collect payment (skip CamPay in dev bypass mode)
+	var reference string
+	var operator string
 
-	// 7. Determine operator from phone number
-	operator := collectResp.Operator
-	if operator == "" {
+	if os.Getenv("DEV_BYPASS_PAYMENT") == "true" {
+		reference = "dev-bypass-" + uuid.New().String()
 		operator = detectOperator(req.PhoneNumber)
+	} else {
+		collectResp, err := h.campayService.CollectPayment(
+			product.Price,
+			req.PhoneNumber,
+			fmt.Sprintf("Payment for %s on Campus Marketplace", product.Title),
+			productID.String(),
+		)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		reference = collectResp.Reference
+		operator = collectResp.Operator
+		if operator == "" {
+			operator = detectOperator(req.PhoneNumber)
+		}
 	}
 
-	// 8. Save payment to DB
+	// 7. Save payment to DB
 	payment, err := h.queries.CreatePayment(c.Request.Context(), db.CreatePaymentParams{
 		BuyerID:     buyerID,
 		SellerID:    product.SellerID,
@@ -111,7 +120,7 @@ func (h *PaymentHandler) InitiatePayment(c *gin.Context) {
 		Amount:      product.Price,
 		PhoneNumber: req.PhoneNumber,
 		Operator:    operator,
-		Reference:   sql.NullString{String: collectResp.Reference, Valid: collectResp.Reference != ""},
+		Reference:   sql.NullString{String: reference, Valid: reference != ""},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not save payment"})
@@ -128,9 +137,19 @@ func (h *PaymentHandler) InitiatePayment(c *gin.Context) {
 		log.Printf("error updating product status: %v", err)
 	}
 
+	// In dev bypass mode, auto-confirm the payment to "held" status
+	if os.Getenv("DEV_BYPASS_PAYMENT") == "true" {
+		_, err = h.queries.UpdatePaymentToHeld(c.Request.Context(),
+			sql.NullString{String: reference, Valid: true},
+		)
+		if err != nil {
+			log.Printf("dev-bypass: error updating payment to held: %v", err)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "payment initiated successfully, please confirm on your phone",
-		"reference": collectResp.Reference,
+		"reference": reference,
 		"payment":   models.ToBasicPaymentResponse(payment),
 	})
 }
@@ -186,6 +205,18 @@ func (h *PaymentHandler) CheckPaymentStatus(c *gin.Context) {
 	// Check reference exists
 	if !payment.Reference.Valid || payment.Reference.String == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "payment has no CamPay reference yet"})
+		return
+	}
+
+	// Dev bypass: use local DB status instead of calling CamPay
+	if os.Getenv("DEV_BYPASS_PAYMENT") == "true" && strings.HasPrefix(payment.Reference.String, "dev-bypass-") {
+		c.JSON(http.StatusOK, gin.H{
+			"payment_id": payment.ID.String(),
+			"reference":  payment.Reference.String,
+			"status":     "SUCCESSFUL",
+			"amount":     payment.Amount,
+			"operator":   payment.Operator,
+		})
 		return
 	}
 

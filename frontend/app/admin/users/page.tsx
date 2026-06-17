@@ -117,18 +117,23 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap justify-end gap-2">
-                        {tab === 'pending' && user.account_status === 'pending' && (
+                        {user.student_id_url && (
+                          <a
+                            href={user.student_id_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0"
+                            title="View student ID document"
+                          >
+                            <img
+                              src={user.student_id_url}
+                              alt="Student ID"
+                              className="w-10 h-10 rounded-lg border border-gray-200 object-cover hover:ring-2 hover:ring-brand-primary transition-all cursor-pointer"
+                            />
+                          </a>
+                        )}
+                        {user.account_status === 'pending' && (
                           <>
-                            {user.student_id_url && (
-                              <a
-                                href={user.student_id_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-brand-primary hover:underline self-center mr-1"
-                              >
-                                View ID
-                              </a>
-                            )}
                             <Button
                               size="sm"
                               variant="primary"

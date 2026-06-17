@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lightbulb, ShieldCheck } from 'lucide-react';
 import Button from '../components/Button';
@@ -12,6 +13,12 @@ import { useListingForm } from '../context/ListingFormContext';
 export default function SellUploadPage() {
   const router = useRouter();
   const { form, updateForm, primaryPhoto } = useListingForm();
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
+      router.replace("/login");
+    }
+  }, [router]);
 
   const handleContinue = () => {
     if (!primaryPhoto) return;

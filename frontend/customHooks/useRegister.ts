@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { registerStudent } from "../api/auth";
+import { registerStudent } from "../app/utils/authApi";
 
 export function useRegister() {
   const router = useRouter();
@@ -91,7 +91,7 @@ export function useRegister() {
   }
 
     const formData = new FormData();
-    formData.append("fullname", fullName);
+    formData.append("full_name", fullName);
     formData.append("username", username);
     formData.append("email", email);
     formData.append("password", password);
@@ -100,7 +100,7 @@ export function useRegister() {
     setLoading(true);
     try {
       await registerStudent(formData);
-      router.push("/login");
+      router.push("/login?registered=true");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {

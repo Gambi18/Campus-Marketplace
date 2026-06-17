@@ -1,0 +1,1178 @@
+{
+  "info": {
+    "name": "Campus Marketplace API",
+    "description": "Full API collection for Campus Marketplace — a peer-to-peer student marketplace with escrow payments.\n\nBase URL: http://localhost:8080\n\nAuth: student JWT via POST /api/v1/auth/login → use the `token` in Authorization: Bearer header.\nAdmin auth: separate POST /api/v1/admin/auth/login → admin token.\n\nStudent ID file upload is required for registration.\nProduct images are uploaded as multipart/form-data fields (image_1 required, image_2-4 optional).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "opencode"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": [
+            {
+              "name": "OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"ok\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth (Student)",
+      "item": [
+        {
+          "name": "POST /api/v1/auth/register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "username", "value": "john_doe", "type": "text" },
+                { "key": "email", "value": "john@university.edu", "type": "text" },
+                { "key": "password", "value": "secret123", "type": "text" },
+                { "key": "full_name", "value": "John Doe", "type": "text" },
+                { "key": "student_id", "value": "", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Register a new student account. Requires a student ID image/PDF file."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "code": 201,
+              "body": "{\n  \"message\": \"registration successful, please come back after 24 hours for verification\",\n  \"user\": {\n    \"id\": \"uuid\",\n    \"full_name\": \"John Doe\",\n    \"username\": \"john_doe\",\n    \"email\": \"john@university.edu\",\n    \"is_verified\": false,\n    \"account_status\": \"pending\",\n    \"student_id_url\": \"https://res.cloudinary.com/.../student-ids/...\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@university.edu\",\n  \"password\": \"secret123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Login as a student. Returns a JWT token to use in Authorisation: Bearer header."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"token\": \"jwt_token_here\",\n  \"user\": {\n    \"id\": \"uuid\",\n    \"full_name\": \"John Doe\",\n    \"username\": \"john_doe\",\n    \"email\": \"john@university.edu\",\n    \"is_verified\": false,\n    \"account_status\": \"approved\"\n  }\n}"
+            },
+            {
+              "name": "403 Forbidden (pending)",
+              "code": 403,
+              "body": "{\n  \"error\": \"your account is pending verification, please check back after 24 hours\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth (Admin)",
+      "item": [
+        {
+          "name": "POST /api/v1/admin/create",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"email\": \"admin@campus.edu\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "create"]
+            },
+            "description": "Create an admin account (seed once, or protect this route in production)."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "code": 201,
+              "body": "{\n  \"id\": \"uuid\",\n  \"username\": \"admin\",\n  \"email\": \"admin@campus.edu\",\n  \"created_at\": \"2026-06-17 12:00:00 +0000 UTC\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/admin/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@campus.edu\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "auth", "login"]
+            },
+            "description": "Login as an admin. Returns a separate admin JWT."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"token\": \"admin_jwt_token_here\",\n  \"admin\": {\n    \"id\": \"uuid\",\n    \"username\": \"admin\",\n    \"email\": \"admin@campus.edu\",\n    \"created_at\": \"2026-06-17 12:00:00 +0000 UTC\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Categories (Public)",
+      "item": [
+        {
+          "name": "GET /api/v1/categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "categories"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"categories\": [\n    { \"id\": 1, \"name\": \"Electronics\", \"description\": \"Phones, laptops, gadgets\" }\n  ],\n  \"count\": 1\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/categories/:id/products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/categories/1/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "categories", "1", "products"]
+            },
+            "description": "Get all products in a category. :id is the numeric category ID (1-6)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"products\": [...],\n  \"count\": 5\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Products (Public)",
+      "item": [
+        {
+          "name": "GET /api/v1/products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"products\": [\n    {\n      \"id\": \"uuid\",\n      \"seller_id\": \"uuid\",\n      \"seller_name\": \"John Doe\",\n      \"category_id\": 1,\n      \"category_name\": \"Electronics\",\n      \"title\": \"MacBook Air\",\n      \"description\": \"...\",\n      \"price\": \"450000\",\n      \"condition\": \"good\",\n      \"image_url_1\": \"https://res.cloudinary.com/...\",\n      \"image_url_2\": \"\",\n      \"image_url_3\": \"\",\n      \"image_url_4\": \"\",\n      \"status\": \"available\",\n      \"created_at\": \"2026-06-17 12:00:00 +0000 UTC\"\n    }\n  ],\n  \"count\": 10\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/products/search?q=",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/search?q=macbook",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "search"],
+              "query": [{ "key": "q", "value": "macbook" }]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"products\": [...],\n  \"count\": 2,\n  \"keyword\": \"macbook\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/products/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/demo",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "demo"]
+            },
+            "description": "Get a single product by UUID. Returns full ProductResponse with seller info."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"uuid\",\n  \"seller_id\": \"uuid\",\n  \"seller_name\": \"Jane Seller\",\n  \"category_id\": 1,\n  \"category_name\": \"Electronics\",\n  \"title\": \"MacBook Air M1\",\n  \"description\": \"...\",\n  \"price\": \"450000\",\n  \"condition\": \"good\",\n  \"image_url_1\": \"https://...\",\n  \"status\": \"available\",\n  \"created_at\": \"...\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CamPay Webhook",
+      "item": [
+        {
+          "name": "POST /webhook/campay",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reference\": \"campay_reference_string\",\n  \"status\": \"SUCCESSFUL\",\n  \"amount\": \"450000\",\n  \"operator\": \"MTN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhook/campay",
+              "host": ["{{base_url}}"],
+              "path": ["webhook", "campay"]
+            },
+            "description": "CamPay webhook callback. Updates payment to 'held' when status is SUCCESSFUL."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Student — Profile & Account",
+      "item": [
+        {
+          "name": "GET /api/v1/profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "profile"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"uuid\",\n  \"full_name\": \"John Doe\",\n  \"username\": \"john_doe\",\n  \"email\": \"john@university.edu\",\n  \"is_verified\": true,\n  \"account_status\": \"approved\",\n  \"student_id_url\": \"https://...\",\n  \"phone_number\": \"237650000000\",\n  \"created_at\": \"...\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Student — Products (CRUD)",
+      "item": [
+        {
+          "name": "GET /api/v1/my-products",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/my-products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "my-products"]
+            },
+            "description": "Get all products belonging to the authenticated student."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"products\": [...],\n  \"count\": 3\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/products",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "MacBook Air M1", "type": "text" },
+                { "key": "description", "value": "Great condition, 88% battery health", "type": "text" },
+                { "key": "price", "value": "450000", "type": "text" },
+                { "key": "category_id", "value": "1", "type": "text" },
+                { "key": "condition", "value": "good", "type": "text" },
+                { "key": "image_1", "value": "", "type": "file", "src": "" },
+                { "key": "image_2", "value": "", "type": "file", "src": "", "optional": true },
+                { "key": "image_3", "value": "", "type": "file", "src": "", "optional": true },
+                { "key": "image_4", "value": "", "type": "file", "src": "", "optional": true }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products"]
+            },
+            "description": "Create a product. Requires at least image_1. Valid conditions: brand_new, like_new, good, fair."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "code": 201,
+              "body": "{\n  \"message\": \"product created successfully\",\n  \"product\": {\n    \"id\": \"uuid\",\n    \"seller_id\": \"uuid\",\n    \"category_id\": 1,\n    \"title\": \"MacBook Air M1\",\n    \"description\": \"...\",\n    \"price\": \"450000\",\n    \"condition\": \"good\",\n    \"image_url_1\": \"https://...\",\n    \"status\": \"available\",\n    \"created_at\": \"...\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT /api/v1/products/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Updated Title", "type": "text" },
+                { "key": "description", "value": "Updated description", "type": "text" },
+                { "key": "price", "value": "400000", "type": "text" },
+                { "key": "category_id", "value": "1", "type": "text" },
+                { "key": "condition", "value": "fair", "type": "text" },
+                { "key": "image_1", "value": "", "type": "file", "src": "", "optional": true },
+                { "key": "image_2", "value": "", "type": "file", "src": "", "optional": true },
+                { "key": "image_3", "value": "", "type": "file", "src": "", "optional": true },
+                { "key": "image_4", "value": "", "type": "file", "src": "", "optional": true }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/uuid-here",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "uuid-here"]
+            },
+            "description": "Update a product. Omitted image fields keep existing URLs."
+          }
+        },
+        {
+          "name": "PATCH /api/v1/products/:id/status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"sold\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/uuid-here/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "uuid-here", "status"]
+            },
+            "description": "Update product status. Valid: available, sold, removed."
+          }
+        },
+        {
+          "name": "DELETE /api/v1/products/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/uuid-here",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "uuid-here"]
+            },
+            "description": "Delete a product (seller only). Also removes images from Cloudinary."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"product deleted successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Student — Messaging",
+      "item": [
+        {
+          "name": "GET /api/v1/conversations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations"]
+            },
+            "description": "Get all conversations for the authenticated user. Filters out unpaid conversations (unless DEV_BYPASS_PAYMENT=true)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"conversations\": [\n    {\n      \"id\": \"uuid\",\n      \"sender_id\": \"uuid\",\n      \"sender_name\": \"Alice\",\n      \"receiver_id\": \"uuid\",\n      \"product_id\": \"uuid\",\n      \"product_title\": \"MacBook Air\",\n      \"product_image\": \"https://...\",\n      \"content\": \"Last message text\",\n      \"is_read\": false,\n      \"created_at\": \"...\"\n    }\n  ],\n  \"count\": 1\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/conversations/:product_id/:user_id",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/{{product_id}}/{{other_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", "{{product_id}}", "{{other_user_id}}"]
+            },
+            "description": "Get all messages in a conversation between the authenticated user and another user for a specific product."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"messages\": [\n    {\n      \"id\": \"uuid\",\n      \"sender_id\": \"uuid\",\n      \"sender_name\": \"Alice\",\n      \"receiver_id\": \"uuid\",\n      \"product_id\": \"uuid\",\n      \"content\": \"Hey, is this still available?\",\n      \"is_read\": true,\n      \"created_at\": \"...\"\n    }\n  ],\n  \"count\": 2\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/unread-count",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/unread-count",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "unread-count"]
+            },
+            "description": "Get total unread message count across all conversations."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"unread_count\": 3\n}"
+            }
+          ]
+        },
+        {
+          "name": "WS /api/v1/ws (WebSocket)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "ws://localhost:8080/api/v1/ws",
+              "host": ["ws://localhost:8080"],
+              "path": ["api", "v1", "ws"]
+            },
+            "description": "WebSocket endpoint for real-time messaging. Connect with the student JWT as a query param or header. Send JSON: { \"type\": \"chat\", \"receiver_id\": \"uuid\", \"product_id\": \"uuid\", \"content\": \"message text\" }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Student — Payments",
+      "item": [
+        {
+          "name": "POST /api/v1/payments/initiate",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"uuid-here\",\n  \"phone_number\": \"237650000000\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments/initiate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments", "initiate"]
+            },
+            "description": "Initiate payment for pay-to-chat. Buyer enters their MTN/Orange phone number. Triggers CamPay USSD prompt."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"payment initiated successfully, please confirm on your phone\",\n  \"reference\": \"campay_ref\",\n  \"payment\": {\n    \"id\": \"uuid\",\n    \"buyer_id\": \"uuid\",\n    \"seller_id\": \"uuid\",\n    \"product_id\": \"uuid\",\n    \"amount\": \"450000\",\n    \"phone_number\": \"237650000000\",\n    \"operator\": \"MTN\",\n    \"reference\": \"campay_ref\",\n    \"status\": \"pending\",\n    \"created_at\": \"...\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/payments/:id/status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments/uuid-here/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments", "uuid-here", "status"]
+            },
+            "description": "Check payment status with CamPay. Auto-updates to 'held' if CamPay reports SUCCESSFUL."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"payment_id\": \"uuid\",\n  \"reference\": \"campay_ref\",\n  \"status\": \"SUCCESSFUL\",\n  \"amount\": \"450000\",\n  \"operator\": \"MTN\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/payments/:id/confirm",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments/uuid-here/confirm",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments", "uuid-here", "confirm"]
+            },
+            "description": "Buyer confirms delivery. Releases payment to seller (minus 3% fee). Generates PDF receipt."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"delivery confirmed, payment released to seller\",\n  \"receipt_number\": \"CM-2026-000001\",\n  \"receipt_url\": \"https://res.cloudinary.com/...pdf\",\n  \"payment\": { ... }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/payments/:id/reject",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments/uuid-here/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments", "uuid-here", "reject"]
+            },
+            "description": "Buyer rejects delivery. Refunds buyer (minus 1% fee). Product goes back to 'available'."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"delivery rejected, refund processed\",\n  \"receipt_number\": \"CM-REF-2026-000001\",\n  \"receipt_url\": \"https://...\",\n  \"payment\": { ... }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/payments/:id/receipt",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/payments/uuid-here/receipt",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "payments", "uuid-here", "receipt"]
+            },
+            "description": "Get receipt URL for a completed/refunded payment."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"receipt_number\": \"CM-2026-000001\",\n  \"receipt_pdf_url\": \"https://res.cloudinary.com/...\",\n  \"status\": \"released\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/my-purchases",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/my-purchases",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "my-purchases"]
+            },
+            "description": "Get all payments where the authenticated user is the buyer."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"purchases\": [\n    {\n      \"id\": \"uuid\",\n      \"buyer_id\": \"uuid\",\n      \"seller_id\": \"uuid\",\n      \"seller_name\": \"Jane\",\n      \"product_id\": \"uuid\",\n      \"product_title\": \"MacBook Air\",\n      \"amount\": \"450000\",\n      \"platform_fee\": \"13500\",\n      \"net_amount\": \"436500\",\n      \"phone_number\": \"237650000000\",\n      \"operator\": \"MTN\",\n      \"reference\": \"campay_ref\",\n      \"status\": \"held\",\n      \"receipt_number\": \"\",\n      \"receipt_pdf_url\": \"\",\n      \"created_at\": \"...\"\n    }\n  ],\n  \"count\": 1\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/my-sales",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/my-sales",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "my-sales"]
+            },
+            "description": "Get all payments where the authenticated user is the seller."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"sales\": [...],\n  \"count\": 1\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Student — Reports",
+      "item": [
+        {
+          "name": "POST /api/v1/reports",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"uuid-here\",\n  \"reason\": \"fake_listing\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/reports",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reports"]
+            },
+            "description": "Report a product. Valid reasons: fake_listing, wrong_price, scam, inappropriate, other."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "code": 201,
+              "body": "{\n  \"message\": \"report submitted successfully\",\n  \"report\": {\n    \"id\": \"uuid\",\n    \"reporter_id\": \"uuid\",\n    \"product_id\": \"uuid\",\n    \"reason\": \"fake_listing\",\n    \"status\": \"pending\",\n    \"created_at\": \"...\",\n    \"updated_at\": \"...\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/my-reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/my-reports",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "my-reports"]
+            },
+            "description": "Get all reports submitted by the authenticated user."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"reports\": [\n    {\n      \"id\": \"uuid\",\n      \"reporter_id\": \"uuid\",\n      \"reporter_name\": \"John Doe\",\n      \"product_id\": \"uuid\",\n      \"product_title\": \"MacBook Air\",\n      \"reason\": \"fake_listing\",\n      \"status\": \"pending\",\n      \"created_at\": \"...\",\n      \"updated_at\": \"...\"\n    }\n  ],\n  \"count\": 1\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Student — Notifications",
+      "item": [
+        {
+          "name": "GET /api/v1/notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "notifications"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"notifications\": [\n    {\n      \"id\": \"uuid\",\n      \"user_id\": \"uuid\",\n      \"type\": \"new_message\",\n      \"title\": \"New Message\",\n      \"message\": \"Alice sent you a message regarding MacBook Air\",\n      \"is_read\": false,\n      \"created_at\": \"...\",\n      \"metadata\": { \"sender_id\": \"uuid\", \"product_id\": \"uuid\" },\n      \"link\": \"/conversations/uuid/uuid\"\n    }\n  ],\n  \"count\": 5\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/notifications/unread-count",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/unread-count",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "notifications", "unread-count"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"unread_count\": 3\n}"
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/notifications/:id/read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/uuid-here/read",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "notifications", "uuid-here", "read"]
+            },
+            "description": "Mark a single notification as read."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"notification marked as read\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/notifications/read-all",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{student_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/notifications/read-all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "notifications", "read-all"]
+            },
+            "description": "Mark all notifications as read."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"all notifications marked as read\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin — Profile & Users",
+      "item": [
+        {
+          "name": "GET /api/v1/admin/profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "profile"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"uuid\",\n  \"username\": \"admin\",\n  \"email\": \"admin@campus.edu\",\n  \"created_at\": \"...\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "users"]
+            },
+            "description": "Get all registered users."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"users\": [\n    {\n      \"id\": \"uuid\",\n      \"full_name\": \"John Doe\",\n      \"username\": \"john_doe\",\n      \"email\": \"john@university.edu\",\n      \"is_verified\": false,\n      \"account_status\": \"pending\",\n      \"student_id_url\": \"https://...\"\n    }\n  ],\n  \"count\": 10\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/pending-users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/pending-users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "pending-users"]
+            },
+            "description": "Get all users with pending account status."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"users\": [...],\n  \"count\": 2\n}"
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/users/:id/approve",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/uuid-here/approve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "users", "uuid-here", "approve"]
+            },
+            "description": "Approve a pending student account. Sends in-app notification."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"user approved successfully\",\n  \"user\": { ... }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/users/:id/reject",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/uuid-here/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "users", "uuid-here", "reject"]
+            },
+            "description": "Reject a pending student account. Sends in-app notification."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"user rejected\",\n  \"user\": { ... }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/users/:id/block",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/uuid-here/block",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "users", "uuid-here", "block"]
+            },
+            "description": "Block an approved user."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"user blocked successfully\",\n  \"user\": { ... }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin — Categories",
+      "item": [
+        {
+          "name": "POST /api/v1/admin/categories",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Books\",\n  \"description\": \"Textbooks, novels, and study materials\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "categories"]
+            },
+            "description": "Create a new category."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "code": 201,
+              "body": "{\n  \"id\": 7,\n  \"name\": \"Books\",\n  \"description\": \"Textbooks, novels, and study materials\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT /api/v1/admin/categories/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Books & Materials\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/categories/7",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "categories", "7"]
+            },
+            "description": "Update a category by numeric ID."
+          }
+        },
+        {
+          "name": "DELETE /api/v1/admin/categories/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/categories/7",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "categories", "7"]
+            },
+            "description": "Delete a category."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"category deleted successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin — Reports",
+      "item": [
+        {
+          "name": "GET /api/v1/admin/reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/reports?status=pending",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "reports"],
+              "query": [{ "key": "status", "value": "pending", "optional": true }]
+            },
+            "description": "Get all reports. Optional ?status=pending|reviewed|resolved filter."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"reports\": [\n    {\n      \"id\": \"uuid\",\n      \"reporter_id\": \"uuid\",\n      \"reporter_name\": \"John Doe\",\n      \"product_id\": \"uuid\",\n      \"product_title\": \"MacBook Air\",\n      \"reason\": \"fake_listing\",\n      \"status\": \"pending\",\n      \"created_at\": \"...\",\n      \"updated_at\": \"...\"\n    }\n  ],\n  \"count\": 3\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/admin/reports/:id",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/reports/uuid-here",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "reports", "uuid-here"]
+            },
+            "description": "Get a single report by ID."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"id\": \"uuid\",\n  \"reporter_id\": \"uuid\",\n  \"reporter_name\": \"John Doe\",\n  \"product_id\": \"uuid\",\n  \"product_title\": \"MacBook Air\",\n  \"reason\": \"fake_listing\",\n  \"status\": \"pending\",\n  \"created_at\": \"...\",\n  \"updated_at\": \"...\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/admin/reports/:id/status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"resolved\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/reports/uuid-here/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "reports", "uuid-here", "status"]
+            },
+            "description": "Update report status. Valid: pending, reviewed, resolved."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"report status updated successfully\",\n  \"report\": { ... }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin — Payments (Escrow)",
+      "item": [
+        {
+          "name": "GET /api/v1/admin/payments/held",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/payments/held",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "payments", "held"]
+            },
+            "description": "Get all payments currently in escrow (held status) for admin monitoring."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "code": 200,
+              "body": "{\n  \"payments\": [\n    {\n      \"id\": \"uuid\",\n      \"buyer_id\": \"uuid\",\n      \"buyer_name\": \"John Doe\",\n      \"seller_id\": \"uuid\",\n      \"seller_name\": \"Jane Smith\",\n      \"product_id\": \"uuid\",\n      \"product_title\": \"MacBook Air\",\n      \"amount\": \"450000\",\n      \"platform_fee\": \"13500\",\n      \"net_amount\": \"436500\",\n      \"phone_number\": \"237650000000\",\n      \"operator\": \"MTN\",\n      \"reference\": \"campay_ref\",\n      \"status\": \"held\",\n      \"created_at\": \"...\"\n    }\n  ],\n  \"count\": 1\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "student_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "other_user_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

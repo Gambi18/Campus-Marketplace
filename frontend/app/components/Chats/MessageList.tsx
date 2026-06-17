@@ -15,7 +15,7 @@ interface MessageListProps {
 
 export function MessageList({ messages, item, onItemClick }: MessageListProps) {
   return (
-    <div className="flex-1 p-4 bg-gray-50/50 min-h-[400px] overflow-y-auto space-y-6">
+    <div className="flex-1 p-4 bg-gray-50/50 min-h-[250px] md:min-h-[400px] overflow-y-auto space-y-6">
       
       {/* Mini Product Showcase Card */}
       <div 
@@ -23,11 +23,17 @@ export function MessageList({ messages, item, onItemClick }: MessageListProps) {
         className="flex items-center justify-between p-3 bg-blue-50/40 border border-blue-100/50 rounded-xl hover:bg-blue-50 transition cursor-pointer"
       >
         <div className="flex items-center gap-3">
-          <img 
-            src={item.imageUrl || "/api/placeholder/56/56"} 
-            alt={item.title} 
-            className="w-14 h-14 rounded-lg object-cover border border-gray-200"
-          />
+          {item.imageUrl ? (
+            <img 
+              src={item.imageUrl} 
+              alt={item.title} 
+              className="w-14 h-14 rounded-lg object-cover border border-gray-200"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-xs text-gray-400">
+              No img
+            </div>
+          )}
           <div>
             <span className="text-[10px] font-bold tracking-wider text-blue-600 uppercase">Item For Sale</span>
             <h4 className="text-sm font-medium text-gray-900">{item.title}</h4>

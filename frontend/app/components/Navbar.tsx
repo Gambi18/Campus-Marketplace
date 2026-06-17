@@ -7,16 +7,31 @@ import Button from './Button';
 import NotificationCenter from './NotificationCenter';
 import { useEffect, useState } from 'react';
 import { Menu, X, LogOut } from 'lucide-react';
+import { fetchAPI } from '../utils/api';
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
     setIsLoggedIn(!!localStorage.getItem("token"));
   }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const fetchUnread = async () => {
+      try {
+        const res = await fetchAPI<{ count: number }>('/api/v1/unread-count');
+        setUnreadMessages(res.count || 0);
+      } catch { /* ignore */ }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, [isLoggedIn]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -25,14 +40,15 @@ export default function Navbar() {
     router.push("/login");
   };
 
-  const navLinks = [
+  const navLinks: { label: string; href: string; badge?: number }[] = [
     { label: "Browse", href: "/" },
     ...(isLoggedIn
       ? [
           { label: "My Listings", href: "/mylistings" },
-          { label: "Messages", href: "/conversations" },
+          { label: "Messages", href: "/conversations", badge: unreadMessages },
           { label: "Purchases", href: "/purchases" },
           { label: "Sales", href: "/sales" },
+          { label: "Profile", href: "/profile" },
         ]
       : []),
   ];
@@ -57,6 +73,11 @@ export default function Navbar() {
                   }`}
                 >
                   {link.label}
+                  {link.badge && link.badge > 0 ? (
+                    <span className="ml-1.5 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
+                      {link.badge > 99 ? '99+' : link.badge}
+                    </span>
+                  ) : null}
                 </Link>
               ))}
             </div>
@@ -150,6 +171,11 @@ export default function Navbar() {
                 }`}
               >
                 {link.label}
+                {link.badge && link.badge > 0 ? (
+                  <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                    {link.badge > 99 ? '99+' : link.badge}
+                  </span>
+                ) : null}
               </Link>
             ))}
 

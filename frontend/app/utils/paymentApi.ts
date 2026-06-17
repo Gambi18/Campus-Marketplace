@@ -6,7 +6,6 @@ import type {
   ConfirmDeliveryResponse,
   PaymentListResponse,
   SalesListResponse,
-  Payment,
 } from '../types/payment';
 
 export async function initiatePayment(data: InitiatePaymentRequest): Promise<InitiatePaymentResponse> {

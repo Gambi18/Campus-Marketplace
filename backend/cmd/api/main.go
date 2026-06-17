@@ -74,6 +74,9 @@ func main() {
    //CORS
    router.Use(middleware.CORSMiddleware())
 
+   // Serve uploaded files in dev mode
+   router.Static("/uploads", "./uploads")
+
 	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, notificationService, hub, campayService, receiptService,)
 
 

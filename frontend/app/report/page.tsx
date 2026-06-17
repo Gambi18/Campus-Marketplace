@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Button from '@/components/Button';
 import Footer from '@/components/Footer';
 import { ReportPayload } from '@/types';
-// import Textarea from '@/components/Textarea';
+import { postAPI } from '../utils/api';
 
 
 function ReportContent() {
@@ -32,12 +32,17 @@ function ReportContent() {
     setIsSubmitting(true);
 
     try {
-      
-      }
-      
-     catch  {
-
-     }
+      await postAPI('/api/v1/reports', {
+        reason: selectedReason,
+        details: additionalDetails,
+      });
+      setIsSubmitting(false);
+      alert('Report submitted successfully.');
+      router.push('/');
+    } catch (err) {
+      setIsSubmitting(false);
+      alert(err instanceof Error ? err.message : 'Failed to submit report');
+    }
       
     
   };
@@ -46,7 +51,7 @@ function ReportContent() {
     <div className="min-h-screen bg-slate-50/50 flex flex-col justify-between">
       <Navbar />
 
-      <main className="max-w-xl mx-auto my-12 px-4 w-full flex-1">
+      <main className="max-w-xl mx-auto my-8 sm:my-12 px-4 sm:px-6 w-full flex-1">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Report Seller</h1>
           <p className="text-xs text-gray-500 mt-1">We take marketplace safety seriously. Tell us what happened.</p>

@@ -1,29 +1,61 @@
 'use client';
 
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ConversationList } from '@/components/Chats/ConversationList';
 import Navbar from '@/components/Navbar';
-import { Conversation } from '@/types';
-
-
-const MOCK_CONVERSATIONS : Conversation[] = [
-  { id: '1', userName: 'Rose Sharon', itemTitle: 'Advanced Calculus', lastMessage: "Is the textbook still 15,000 FCFA?", timestamp: '10:45 AM' },
-  { id: '2', userName: 'Theclaire', itemTitle: 'Study Desk', lastMessage: 'I can pick up the desk at 4pm.', timestamp: 'Yesterday' }
-];
+import { fetchAPI } from '../utils/api';
+import type { BackendConversation } from '@/types';
 
 export default function ConversationsLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const router = useRouter();
-  
-  // If conversationId exists in the URL, we are looking at a specific chat thread
-  const activeId = params?.conversationId as string | undefined;
+  const [conversations, setConversations] = useState<BackendConversation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
+      router.replace("/login");
+      return;
+    }
+
+    const fetchConversations = async () => {
+      try {
+        const res = await fetchAPI<{ conversations: BackendConversation[] }>('/api/v1/conversations');
+        setConversations(res.conversations || []);
+      } catch {
+        setConversations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConversations();
+
+    const handler = () => fetchConversations();
+    window.addEventListener('conversation-update', handler);
+    return () => window.removeEventListener('conversation-update', handler);
+  }, [router]);
+
+  const activeId = params?.productId as string | undefined;
+
+  const currentUserId = typeof window !== 'undefined' ? localStorage.getItem('user_id') : null;
+
+  const items = conversations.map((c) => ({
+    id: c.product_id,
+    userName: c.sender_name,
+    itemTitle: c.product_title,
+    lastMessage: c.content,
+    timestamp: new Date(c.created_at).toLocaleDateString(),
+    unread: !c.is_read,
+    otherUserId: c.sender_id === currentUserId ? c.receiver_id : c.sender_id,
+  }));
 
   return (
     <div>
         <Navbar/>
         <div className="flex w-full max-w-7xl mx-auto md:border md:border-gray-100 md:rounded-xl md:shadow-sm bg-white h-screen md:h-[calc(100vh-140px)] overflow-hidden">
-      
+
       {/* LEFT PANEL: Always visible on desktop. On mobile, hides if a chat is active */}
       <div className={`w-full md:w-80 md:border-r border-gray-100 flex flex-col bg-white ${
         activeId ? 'hidden md:flex' : 'flex'
@@ -32,11 +64,20 @@ export default function ConversationsLayout({ children }: { children: React.Reac
           <h2 className="text-lg font-bold text-gray-900">Messages</h2>
         </div>
         <div className="flex-1 overflow-y-auto p-2">
-          <ConversationList 
-            conversations={MOCK_CONVERSATIONS} 
-            activeConversationId={activeId}
-            onSelectConversation={(id) => router.push(`/conversations/${id}`)}
-          />
+          {loading ? (
+            <div className="p-4 text-sm text-gray-400 text-center">Loading...</div>
+          ) : (
+            <ConversationList
+              conversations={items}
+              activeConversationId={activeId}
+              onSelectConversation={(id) => {
+                const conv = items.find(i => i.id === id);
+                if (conv) {
+                  router.push(`/conversations/${id}?user=${conv.otherUserId}`);
+                }
+              }}
+            />
+          )}
         </div>
       </div>
 

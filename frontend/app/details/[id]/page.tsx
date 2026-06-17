@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Clock, MapPin, MessageCircle, ShieldCheck, Smartphone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, MapPin, ShieldCheck, Smartphone } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import Button from '../../components/Button';
@@ -28,10 +28,10 @@ const MOCK_PRODUCT: ProductDetail = {
   title: 'Engineering Textbooks Bundle (5 books)',
   description:
     'Complete set of 5 engineering textbooks for first and second year. All in good condition with minimal highlighting. Includes: Engineering Mathematics, Physics for Engineers, Materials Science, Circuit Analysis, and Thermodynamics. Perfect for students starting their engineering program.',
-  price: 80000,
-  images: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80',
+  price: '80000',
+  image_url_1: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80',
   status: 'available',
-  created_at: (Date.now() - 5 * 60 * 60 * 1000),
+  created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
   condition: 'Good',
   location: 'Library',
 };
@@ -47,13 +47,16 @@ export default function ProductDetailsPage() {
   const [paymentRef, setPaymentRef] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isDev, setIsDev] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const router = useRouter();
 
   useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem('token'));
+    setIsDev(process.env.NODE_ENV === 'development');
   }, []);
+
+  const images = [product.image_url_1, product.image_url_2, product.image_url_3, product.image_url_4].filter((u): u is string => !!u);
 
   useEffect(() => {
     async function load() {
@@ -69,6 +72,7 @@ export default function ProductDetailsPage() {
             ...prev,
             ...data,
           }));
+          setSelectedImageIndex(0);
         }
       } catch {
         // keep mock on error
@@ -87,7 +91,7 @@ export default function ProductDetailsPage() {
         setPaymentStatus(res.status);
         if (res.status === 'SUCCESSFUL') {
           clearInterval(interval);
-          setTimeout(() => router.push(`/conversations`), 1500);
+          setTimeout(() => router.push(`/conversations/${id}?user=${product.seller_id}`), 1500);
         }
       } catch {
         // retry
@@ -96,9 +100,8 @@ export default function ProductDetailsPage() {
     return () => clearInterval(interval);
   }, [paymentRef, paymentStatus, router]);
 
-  const price = product.price;
+  const price = parseFloat(product.price) || 0;
   const commission = Math.round(price * 0.03);
-  const sellerReceives = price - commission;
 
   const handlePayToChat = async () => {
     if (!phoneNumber.trim() || paying) return;
@@ -142,12 +145,69 @@ export default function ProductDetailsPage() {
         </Link>
 
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-          <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white aspect-square max-h-[520px]">
-            <img
-              src={product.images}
-              alt={product.title}
-              className="w-full h-full object-cover"
-            />
+          <div className="space-y-3">
+            <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white aspect-square max-h-[520px] relative group">
+              {images.length > 0 ? (
+                <>
+                  <img
+                    src={images[selectedImageIndex]}
+                    alt={product.title}
+                    className="w-full h-full object-cover"
+                  />
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        onClick={() =>
+                          setSelectedImageIndex((prev) =>
+                            prev === 0 ? images.length - 1 : prev - 1,
+                          )
+                        }
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setSelectedImageIndex((prev) =>
+                            prev === images.length - 1 ? 0 : prev + 1,
+                          )
+                        }
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-text-muted text-sm">
+                  No image
+                </div>
+              )}
+            </div>
+            {images.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {images.map((url, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImageIndex(index)}
+                    className={`w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${
+                      index === selectedImageIndex
+                        ? 'border-brand-primary ring-1 ring-brand-primary'
+                        : 'border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    <img
+                      src={url}
+                      alt={`${product.title} ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-5">
@@ -210,19 +270,32 @@ export default function ProductDetailsPage() {
               </Button>
             </div>
 
-            <div className="rounded-xl bg-amber-50/80 border border-amber-100 p-5 flex gap-3">
-              <ShieldCheck className="w-6 h-6 text-amber-600 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-brand-neutral">Pay before you chat</h3>
-                <p className="text-sm text-text-muted mt-1 leading-relaxed">
-                  You must pay before you can message the seller. A 3% platform fee applies on completion.
-                  If you cancel, a 1% fee applies on the refund.
-                </p>
+            {!isDev && (
+              <div className="rounded-xl bg-amber-50/80 border border-amber-100 p-5 flex gap-3">
+                <ShieldCheck className="w-6 h-6 text-amber-600 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-brand-neutral">Pay before you chat</h3>
+                  <p className="text-sm text-text-muted mt-1 leading-relaxed">
+                    You must pay before you can message the seller. A 3% platform fee applies on completion.
+                    If you cancel, a 1% fee applies on the refund.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </main>
+
+      {isDev && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <button
+            onClick={() => router.push(`/conversations/${id}?user=${product.seller_id}`)}
+            className="bg-yellow-400 text-black text-xs font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-yellow-300"
+          >
+            Bypass Payment (Dev)
+          </button>
+        </div>
+      )}
 
       {/* Payment Modal */}
       {showPaymentModal && (

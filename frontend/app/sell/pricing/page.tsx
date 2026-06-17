@@ -27,6 +27,10 @@ export default function SellPricingPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
+      router.replace("/login");
+      return;
+    }
     if (!form.title) router.replace('/sell/details');
   }, [form.title, router]);
 
@@ -36,6 +40,13 @@ export default function SellPricingPage() {
     const res = await fetch(dataUrl);
     const blob = await res.blob();
     return new File([blob], filename, { type: blob.type || 'image/jpeg' });
+  };
+
+  const CONDITION_MAP: Record<string, string> = {
+    'Brand New': 'brand_new',
+    'Like New': 'like_new',
+    'Good': 'good',
+    'Fair': 'fair',
   };
 
   const handlePublish = async () => {
@@ -49,9 +60,18 @@ export default function SellPricingPage() {
       body.append('description', form.description);
       body.append('price', form.price);
       body.append('category_id', form.categoryId);
+      body.append('condition', CONDITION_MAP[form.condition] || 'good');
 
       const file = await dataUrlToFile(primaryPhoto, 'listing-photo.jpg');
-      body.append('image', file);
+      body.append('image_1', file);
+
+      for (let i = 1; i < form.photos.length; i++) {
+        const photo = form.photos[i];
+        if (photo) {
+          const f = await dataUrlToFile(photo, `listing-photo-${i + 1}.jpg`);
+          body.append(`image_${i + 1}`, f);
+        }
+      }
 
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const res = await fetch(`${API_URL}/api/v1/products`, {
@@ -65,9 +85,8 @@ export default function SellPricingPage() {
         throw new Error(data.error || 'Could not publish listing. Sign in and try again.');
       }
 
-      const data = await res.json();
       resetForm();
-      router.push(`/details/${data.product?.id ?? ''}`);
+      router.push('/mylistings');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to publish listing');
     } finally {

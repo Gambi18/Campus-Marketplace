@@ -1,27 +1,35 @@
 "use client";
 
-import React from 'react';
+import { useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useNotifications } from '../context/NotificationContext';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { Bell } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const { notifications, markAsRead, markAllAsRead, loading } = useNotifications();
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
+      router.replace("/login");
+    }
+  }, [router]);
 
   return (
     <main className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
   <div className="flex justify-center">
     <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center shadow-sm">
       <Bell className="w-10 h-10 text-brand-primary" />
     </div>
   </div>
 </div>
-      <div className="max-w-3xl mx-auto px-4 py-12">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>

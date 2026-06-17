@@ -7,16 +7,19 @@ export interface ProductCard {
   id: string;
   title: string;
   description?: string;
-  price: number;
+  price: string;
   seller_id?: string;
   seller_name?: string;
    category_id?: number;
    category_name?: string;
   condition?: ProductCondition | string;
-  status: 'available' | 'sold' | 'removed' ;
-  images?: string[];
-  created_at?: number;
-  updated_at?: number;
+  status: 'available' | 'sold' | 'removed' | 'in_escrow';
+  image_url_1: string;
+  image_url_2?: string;
+  image_url_3?: string;
+  image_url_4?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // export interface Product {
@@ -125,4 +128,28 @@ export interface ConversationItem {
   lastMessage: string;
   timestamp: string;
   unread?: boolean;
+}
+
+export interface BackendConversation {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  receiver_id: string;
+  product_id: string;
+  product_title: string;
+  product_image: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface BackendMessage {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  receiver_id: string;
+  product_id: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
 }

@@ -1,16 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { getMySales } from '../utils/paymentApi';
 import type { Payment } from '../types/payment';
 
 export default function SalesPage() {
+  const router = useRouter();
   const [sales, setSales] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
+      router.replace("/login");
+      return;
+    }
     (async () => {
       try {
         const res = await getMySales();
@@ -39,7 +45,9 @@ export default function SalesPage() {
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-6">
         <h1 className="text-2xl font-bold text-brand-neutral mb-6">My Sales</h1>
         {loading ? (
-          <p className="text-text-muted">Loading…</p>
+          <div className="flex justify-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent"></div>
+          </div>
         ) : sales.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-text-muted">No sales yet.</p>

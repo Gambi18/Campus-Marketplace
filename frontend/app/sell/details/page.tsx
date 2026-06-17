@@ -27,6 +27,10 @@ export default function SellDetailsPage() {
   const { form, updateForm, primaryPhoto } = useListingForm();
 
   useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
+      router.replace("/login");
+      return;
+    }
     if (!primaryPhoto) router.replace('/sell');
   }, [primaryPhoto, router]);
 
