@@ -7,7 +7,7 @@ A peer-to-peer marketplace for university students. Every student can list items
 ## Tech Stack
 
 - **Frontend:** Next.js 16, React 18, TypeScript, Tailwind CSS, lucide-react
-- **Backend:** Go 1.26+, Gin web framework, sqlc, golang-migrate, JWT auth, bcrypt, gofpdf
+- **Backend:** Go 1.25+, Gin web framework, sqlc, golang-migrate, JWT auth, bcrypt, gofpdf
 - **Database:** PostgreSQL (UUID primary keys)
 - **Infrastructure:** Docker, Vercel (frontend), Railway (backend), Cloudinary (images), CamPay (payments)
 
@@ -61,7 +61,7 @@ Campus-Marketplace/
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+, Go 1.26+, PostgreSQL 15+, Docker & Docker Compose (optional)
+- Node.js 18+, Go 1.25+, PostgreSQL 15+, Docker & Docker Compose (optional)
 
 ### Quick start (Docker)
 ```bash
@@ -113,10 +113,13 @@ See the route definitions in `backend/internal/handlers/routes.go` for the compl
 ## Environment Variables
 
 ### Backend (`backend/.env.example`)
-- `DATABASE_URL`, `JWT_SECRET`, `CLOUDINARY_*`, `CAMPAY_*`, `ADMIN_*`, `DEV_BYPASS_PAYMENT`
+- `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` (the DSN is built from these)
+- `JWT_SECRET` (**required** — the server refuses to start without it)
+- `ALLOWED_ORIGINS` (comma-separated CORS/WebSocket origin allow-list)
+- `CLOUDINARY_*` (optional — falls back to local `./uploads` if unset), `CAMPAY_*`, `ADMIN_*`, `DEV_BYPASS_PAYMENT`
 
 ### Frontend (`frontend/.env.example`)
-- `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_ENV`
+- `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`
 
 ## UI-only (not yet in API)
 - Meetup `location` field (collected in listing wizard, not persisted)

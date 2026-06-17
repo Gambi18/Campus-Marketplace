@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Clock, MapPin, ShieldCheck, Smartphone } from 'lucide-react';
@@ -149,10 +150,13 @@ export default function ProductDetailsPage() {
             <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white aspect-square max-h-[520px] relative group">
               {images.length > 0 ? (
                 <>
-                  <img
+                  <Image
                     src={images[selectedImageIndex]}
                     alt={product.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 520px"
+                    className="object-cover"
+                    priority
                   />
                   {images.length > 1 && (
                     <>
@@ -199,9 +203,11 @@ export default function ProductDetailsPage() {
                         : 'border-gray-200 hover:border-gray-400'
                     }`}
                   >
-                    <img
+                    <Image
                       src={url}
                       alt={`${product.title} ${index + 1}`}
+                      width={64}
+                      height={64}
                       className="w-full h-full object-cover"
                     />
                   </button>

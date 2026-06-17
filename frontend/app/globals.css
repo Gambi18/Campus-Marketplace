@@ -30,3 +30,19 @@ body {
   background-color: #ffffff;
   color: #000000;
 }
+
+/* Respect users who prefer reduced motion: disable smooth scroll and collapse
+   transitions/animations across the app (WCAG 2.3.3 / prefers-reduced-motion). */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

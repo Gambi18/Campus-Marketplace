@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
+import { Check } from 'lucide-react';
 import Button from "./Button"
 
 function Hero() {
@@ -9,7 +10,9 @@ function Hero() {
   return (
     <div className="bg-gradient-to-r from-brand-primary to-purple-600 min-h-[400px] md:min-h-[500px] flex flex-col justify-center items-center p-8 md:p-20 text-white">
        <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-1.5 rounded-full text-xs font-medium mb-6">
-        <span className="w-4 h-4 bg-white text-purple-600 rounded-full flex items-center justify-center text-[10px]">✓</span>
+        <span className="w-4 h-4 bg-white text-purple-600 rounded-full flex items-center justify-center">
+          <Check className="w-2.5 h-2.5" strokeWidth={3} aria-hidden="true" />
+        </span>
         <span>Trusted by 5,000+ students across campus</span>
       </div>
         <h2 className="font-bold text-2xl sm:text-3xl md:text-4xl text-center">Buy & Sell Safely Within Your Campus <br className="hidden sm:inline" />Community</h2>

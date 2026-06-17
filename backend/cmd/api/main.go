@@ -19,7 +19,12 @@ import (
 func main() {
 	// Iinsted of Loading environment variables, loaded config insted since everything is alredy set there
 	cfg := config.LoadConfig()
-	// temporary debug - remove after fixing
+
+	// Fail fast on an unset/placeholder JWT secret — signing tokens with an empty
+	// HMAC key lets anyone forge valid tokens.
+	if cfg.JWTSecret == "" || cfg.JWTSecret == "your_super_secret_key" {
+		log.Fatal("JWT_SECRET is not set (or still the example value) — refusing to start")
+	}
 
 	// Run migrations
 	if err := db.RunMigrations(cfg.DatabaseURL()); err != nil {
@@ -71,13 +76,13 @@ func main() {
 
 	// Creates Gin router
 	router := gin.Default()
-   //CORS
-   router.Use(middleware.CORSMiddleware())
+   //CORS — restricted to the configured allow-list
+   router.Use(middleware.CORSMiddleware(cfg.AllowedOrigins))
 
    // Serve uploaded files in dev mode
    router.Static("/uploads", "./uploads")
 
-	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, notificationService, hub, campayService, receiptService,)
+	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, notificationService, hub, campayService, receiptService, cfg.AllowedOrigins)
 
 
 	// Starts server

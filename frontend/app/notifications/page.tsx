@@ -58,7 +58,7 @@ export default function NotificationsPage() {
                <Bell className="w-8 h-8 text-text-muted" />
               </div>
               <h3 className="font-semibold text-gray-900">No notifications yet</h3>
-              <p className="text-text-muted text-sm mt-1">We'll notify you when something important happens.</p>
+              <p className="text-text-muted text-sm mt-1">We&apos;ll notify you when something important happens.</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">

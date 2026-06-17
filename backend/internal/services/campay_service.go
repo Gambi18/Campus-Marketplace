@@ -98,6 +98,11 @@ func (s *CamPayService) getToken() (string, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("CamPay token endpoint returned %d: %s", resp.StatusCode, string(body))
+	}
+
 	var tokenResp CamPayTokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
 		return "", fmt.Errorf("error decoding token response: %w", err)
@@ -120,8 +125,6 @@ func (s *CamPayService) doRequest(method, endpoint string, payload interface{}) 
 			return nil, err
 		}
 	}
-
-	log.Printf("Using token: %s...", token[:min(10, len(token))])
 
 	var bodyReader io.Reader
 	if payload != nil {
@@ -149,6 +152,13 @@ func (s *CamPayService) doRequest(method, endpoint string, payload interface{}) 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading response: %w", err)
+	}
+
+	// CamPay returns business errors (ER1xx/ER3xx) with a 200 body, but transport
+	// or auth failures come back as 4xx/5xx — surface those instead of trying to
+	// decode an error page as a success response.
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("CamPay %s %s returned %d: %s", method, endpoint, resp.StatusCode, string(respBody))
 	}
 
 	return respBody, nil
@@ -238,12 +248,5 @@ func (s *CamPayService) Withdraw(amount, phoneNumber, description, externalRef s
 	}
 
 	return &withdrawResp, nil
-}
-
-func min(a, b int) int {
-    if a < b {
-        return a
-    }
-    return b
 }
 

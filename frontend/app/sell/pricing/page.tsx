@@ -23,7 +23,7 @@ const LOCATION_OPTIONS = [
 
 export default function SellPricingPage() {
   const router = useRouter();
-  const { form, updateForm, resetForm, primaryPhoto } = useListingForm();
+  const { form, updateForm, resetForm, primaryPhoto, hydrated } = useListingForm();
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
@@ -33,10 +33,14 @@ export default function SellPricingPage() {
       router.replace("/login");
       return;
     }
-    if (!form.title) router.replace('/sell/details');
-  }, [form.title, router]);
+    // Wait for the draft to load before deciding whether to bounce back to step 1,
+    // otherwise a fresh reload of /sell/pricing redirects away from a valid draft.
+    if (hydrated && !form.title) router.replace('/sell/details');
+  }, [hydrated, form.title, router]);
 
-  const canPublish = form.price.trim() && parseFloat(form.price) > 0;
+  // Number() (unlike parseFloat) rejects "5abc", so partial-numeric input can't pass.
+  const priceNum = Number(form.price);
+  const canPublish = form.price.trim() !== '' && Number.isFinite(priceNum) && priceNum > 0;
 
   const dataUrlToFile = async (dataUrl: string, filename: string): Promise<File> => {
     const res = await fetch(dataUrl);

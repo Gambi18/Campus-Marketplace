@@ -1,4 +1,5 @@
 import { ProductCard } from '@/types';
+import Image from 'next/image';
 import Link from 'next/link';
 import { formatPrice } from '../utils/format';
 
@@ -55,11 +56,12 @@ export default function ItemCard({ item }: ItemCardProps) {
     >
       <div className="w-full aspect-square bg-gray-50 relative overflow-hidden">
 
-        <img
+        <Image
           src={displayImage}
           alt={title}
-          className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
-          loading="lazy"
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 240px"
+          className="object-cover group-hover:scale-102 transition-transform duration-300"
         />
 
         <span className="absolute top-2.5 left-2.5 px-1.5 py-0.5 bg-white/95 backdrop-blur-xs text-[9px] font-bold text-gray-700 rounded-md shadow-xs uppercase tracking-wider">

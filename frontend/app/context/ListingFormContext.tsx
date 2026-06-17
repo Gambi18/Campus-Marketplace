@@ -10,6 +10,8 @@ interface ListingFormContextValue {
   updateForm: (patch: Partial<ListingFormData>) => void;
   resetForm: () => void;
   primaryPhoto: string | null;
+  /** False until the draft has been loaded from storage; guard redirects on it. */
+  hydrated: boolean;
 }
 
 const ListingFormContext = createContext<ListingFormContextValue | null>(null);
@@ -51,8 +53,8 @@ export function ListingFormProvider({ children }: { children: React.ReactNode })
   const primaryPhoto = form.photos.find((p) => p !== null) ?? null;
 
   const value = useMemo(
-    () => ({ form, updateForm, resetForm, primaryPhoto }),
-    [form, updateForm, resetForm, primaryPhoto],
+    () => ({ form, updateForm, resetForm, primaryPhoto, hydrated }),
+    [form, updateForm, resetForm, primaryPhoto, hydrated],
   );
 
   return <ListingFormContext.Provider value={value}>{children}</ListingFormContext.Provider>;

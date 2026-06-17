@@ -133,9 +133,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 func (h *AuthHandler) GetProfile(c *gin.Context) {
-	userID := c.GetString("user_id")
+	userID, err := uuid.Parse(c.GetString("user_id"))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+		return
+	}
 
-	user, err := h.queries.GetUserByID(c.Request.Context(), uuid.MustParse(userID))
+	user, err := h.queries.GetUserByID(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return

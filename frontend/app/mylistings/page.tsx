@@ -127,7 +127,7 @@ const router = useRouter();
            
               <p className="text-sm text-slate-400 mt-1 max-w-sm leading-relaxed">
                
-                You haven't uploaded any products to the campus marketplace. Use the action card to create your first listing.
+                You haven&apos;t uploaded any products to the campus marketplace. Use the action card to create your first listing.
               </p>
                <Image src={NoCard} alt="No listings found" className="w-48 h-48 mx-auto" />
             </div>

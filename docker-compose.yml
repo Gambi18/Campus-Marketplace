@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Backend API
   backend:
@@ -13,11 +11,28 @@ services:
       - ENV=development
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=marketplace
-      - DB_PASSWORD=password
-      - DB_NAME=campus_marketplace
+      - DB_USER=${DB_USER:-marketplace}
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_NAME=${DB_NAME:-campus_marketplace}
+      # Required — the server refuses to start without a JWT secret. Override in a
+      # local .env (compose reads it automatically); the default is dev-only.
+      - JWT_SECRET=${JWT_SECRET:-dev-only-insecure-change-me}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
+      # Optional integrations — uploads fall back to local disk and payments can be
+      # bypassed for testing when these are unset.
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
+      - CAMPAY_BASE_URL=${CAMPAY_BASE_URL:-https://demo.campay.net/api}
+      - CAMPAY_APP_USERNAME=${CAMPAY_APP_USERNAME:-}
+      - CAMPAY_APP_PASSWORD=${CAMPAY_APP_PASSWORD:-}
+      - CAMPAY_PERMANENT_TOKEN=${CAMPAY_PERMANENT_TOKEN:-}
+      - DEV_BYPASS_PAYMENT=${DEV_BYPASS_PAYMENT:-true}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@campusmarket.local}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-password}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - ./backend:/app
     command: go run cmd/api/main.go
@@ -31,6 +46,7 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:8080
+      - NEXT_PUBLIC_WS_URL=ws://backend:8080
     depends_on:
       - backend
     volumes:
@@ -44,13 +60,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=marketplace
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=campus_marketplace
+      - POSTGRES_USER=${DB_USER:-marketplace}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-password}
+      - POSTGRES_DB=${DB_NAME:-campus_marketplace}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U marketplace"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-marketplace}"]
       interval: 10s
       timeout: 5s
       retries: 5
