@@ -82,9 +82,9 @@ export interface ApiResponse<T> {
 
 //
 export interface Message {
-  id: number;
+  id: string | number;
   text: string;
-  sender: 'seller' | 'buyer';
+  sender: 'self' | 'other';
   time: string;
 }
 

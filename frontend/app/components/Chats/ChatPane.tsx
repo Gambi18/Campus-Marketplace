@@ -5,8 +5,16 @@ import { useRouter } from "next/navigation";
 import { ChatHeader } from "./ChatHeader";
 import { ChatInputArea } from "./ChatInputArea";
 import { MessageList } from "./MessageList";
-import { fetchAPI } from '../../utils/api';
+import { API_URL, fetchAPI } from '../../utils/api';
 import type { BackendMessage } from "@/types";
+
+interface ProductDetail {
+  id: string;
+  title: string;
+  description: string;
+  price: string;
+  image_url_1: string;
+}
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080';
 
@@ -23,31 +31,45 @@ export function ChatPane({ productId, otherUserId, onBackAction }: ChatPaneProps
  const [error, setError] = useState<string | null>(null);
   const [needsPayment, setNeedsPayment] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [product, setProduct] = useState<ProductDetail | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
- // Fetch existing messages via REST
- useEffect(() => {
-   if (!productId || !otherUserId) return;
-   setLoading(true);
-   setError(null);
-   setNeedsPayment(false);
-   (async () => {
-     try {
-       const res = await fetchAPI<{ messages: BackendMessage[] }>(`/api/v1/conversations/${productId}/${otherUserId}`);
-       setMessages(res.messages || (Array.isArray(res) ? res : []));
-     } catch (err) {
-       const msg = err instanceof Error ? err.message : '';
-       if (msg.toLowerCase().includes('pay')) {
-         setNeedsPayment(true);
-       } else {
-         setError(msg || 'Could not load messages');
-       }
-     } finally {
-       setLoading(false);
-     }
-   })();
- }, [productId, otherUserId]);
+  // Fetch product details
+  useEffect(() => {
+    if (!productId) return;
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/products/${productId}`);
+        if (res.ok) setProduct(await res.json());
+      } catch {
+        // product details are non-critical
+      }
+    })();
+  }, [productId]);
+
+  // Fetch existing messages via REST
+  useEffect(() => {
+    if (!productId || !otherUserId) return;
+    setLoading(true);
+    setError(null);
+    setNeedsPayment(false);
+    (async () => {
+      try {
+        const res = await fetchAPI<{ messages: BackendMessage[] }>(`/api/v1/conversations/${productId}/${otherUserId}`);
+        setMessages(res.messages || (Array.isArray(res) ? res : []));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : '';
+        if (msg.toLowerCase().includes('pay')) {
+          setNeedsPayment(true);
+        } else {
+          setError(msg || 'Could not load messages');
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [productId, otherUserId]);
 
   // WebSocket connection for real-time messaging
   useEffect(() => {
@@ -125,7 +147,6 @@ export function ChatPane({ productId, otherUserId, onBackAction }: ChatPaneProps
         product_id: productId,
         content: text,
       }));
-      window.dispatchEvent(new CustomEvent('conversation-update'));
     }
   };
 
@@ -134,12 +155,12 @@ export function ChatPane({ productId, otherUserId, onBackAction }: ChatPaneProps
    router.push(`/report?sellerName=${encodeURIComponent(seller?.sender_name || '')}&productId=${productId}`);
  };
 
- const chatMessages = messages.map((m, i) => ({
-   id: i,
-   text: m.content,
-   sender: m.sender_id === otherUserId ? 'seller' as const : 'buyer' as const,
-   time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
- }));
+  const chatMessages = messages.map((m, i) => ({
+    id: i,
+    text: m.content,
+    sender: m.sender_id === otherUserId ? 'other' as const : 'self' as const,
+    time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  }));
 
  const sellerName = messages.find(m => m.sender_id === otherUserId)?.sender_name || 'Seller';
 
@@ -206,20 +227,23 @@ export function ChatPane({ productId, otherUserId, onBackAction }: ChatPaneProps
         />
       </div>
 
-     <div className="flex-1 overflow-y-auto min-h-0 bg-white">
-       <MessageList
-         messages={chatMessages}
-         item={{ title: '', price: '' }}
-       />
-     </div>
+      <div className="flex-1 overflow-y-auto min-h-0 bg-white">
+        <MessageList
+          messages={chatMessages}
+          item={{
+            title: product?.title || '',
+            price: product?.price || '',
+            imageUrl: product?.image_url_1 || undefined,
+          }}
+          onItemClick={() => router.push(`/details/${productId}`)}
+        />
+      </div>
 
-     <div className="flex-shrink-0 bg-white border-t border-gray-100 p-3 z-10">
-       <ChatInputArea
-         item={{ title: '', price: '' }}
-         onSendMessage={handleSendMessage}
-         onBuyAction={() => router.push(`/details/${productId}`)}
-       />
-     </div>
+      <div className="flex-shrink-0 bg-white border-t border-gray-100 p-3 z-10">
+        <ChatInputArea
+          onSendMessage={handleSendMessage}
+        />
+      </div>
    </div>
  );
 }

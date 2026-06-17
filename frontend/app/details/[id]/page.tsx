@@ -10,7 +10,7 @@ import Button from '../../components/Button';
 import Badge from '../../components/Badge';
 import Input from '../../components/Input';
 import { formatPrice, formatTimeAgo } from '../../utils/format';
-import { API_URL } from '../../utils/api';
+import { API_URL, postAPI } from '../../utils/api';
 import { initiatePayment, checkPaymentStatus } from '../../utils/paymentApi';
 import type { ProductCard } from '../../types';
 import { useRouter } from 'next/navigation';
@@ -289,7 +289,18 @@ export default function ProductDetailsPage() {
       {isDev && (
         <div className="fixed bottom-4 right-4 z-50">
           <button
-            onClick={() => router.push(`/conversations/${id}?user=${product.seller_id}`)}
+            onClick={async () => {
+              try {
+                await postAPI('/api/v1/messages', {
+                  receiver_id: product.seller_id,
+                  product_id: id,
+                  content: "Hello, I'm interested in this item.",
+                });
+              } catch {
+                // message may already exist, navigate anyway
+              }
+              router.push(`/conversations/${id}?user=${product.seller_id}`);
+            }}
             className="bg-yellow-400 text-black text-xs font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-yellow-300"
           >
             Bypass Payment (Dev)
