@@ -297,15 +297,18 @@ export default function ProductDetailsPage() {
           <button
             onClick={async () => {
               try {
-                await postAPI('/api/v1/messages', {
-                  receiver_id: product.seller_id,
+                // Create the escrow payment the pay-to-chat gate checks for.
+                // With DEV_BYPASS_PAYMENT=true the backend auto-confirms it to
+                // "held", so messaging unlocks and it shows in the admin escrow
+                // page. The dummy MTN number satisfies operator detection.
+                await postAPI('/api/v1/payments/initiate', {
                   product_id: id,
-                  content: "Hello, I'm interested in this item.",
+                  phone_number: '237670000000',
                 });
               } catch {
-                // message may already exist, navigate anyway
+                // payment may already exist (product in escrow), navigate anyway
               }
-              router.push(`/conversations/${id}?user=${product.seller_id}`);
+              router.push(`/conversations/${id}?user=${product.seller_id}&name=${encodeURIComponent(product.seller_name || '')}`);
             }}
             className="bg-yellow-400 text-black text-xs font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-yellow-300"
           >

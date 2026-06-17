@@ -137,6 +137,8 @@ export interface BackendConversation {
   receiver_id: string;
   /** Conversation partner relative to the requesting user, computed by the API. */
   other_user_id: string;
+  /** Partner's display name, regardless of who sent the last message. */
+  other_user_name: string;
   product_id: string;
   product_title: string;
   product_image: string;

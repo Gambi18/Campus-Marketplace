@@ -94,7 +94,8 @@ export default function ConversationsLayout({ children }: { children: React.Reac
 
   const items = conversations.map((c) => ({
     id: c.product_id,
-    userName: c.sender_name,
+    // Partner's name, computed by the API — never the requesting user's own name.
+    userName: c.other_user_name,
     itemTitle: c.product_title,
     lastMessage: c.content,
     timestamp: new Date(c.created_at).toLocaleDateString(),
@@ -125,7 +126,7 @@ export default function ConversationsLayout({ children }: { children: React.Reac
               onSelectConversation={(id) => {
                 const conv = items.find(i => i.id === id);
                 if (conv) {
-                  router.push(`/conversations/${id}?user=${conv.otherUserId}`);
+                  router.push(`/conversations/${id}?user=${conv.otherUserId}&name=${encodeURIComponent(conv.userName || '')}`);
                 }
               }}
             />

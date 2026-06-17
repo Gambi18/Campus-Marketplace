@@ -169,6 +169,7 @@ func (h *MessageHandler) persistAndBroadcast(msg ws.Message) {
 
 	broadcastMsg := ws.Message{
 		Type:         "chat",
+		ID:           saved.ID.String(),
 		SenderID:     saved.SenderID.String(),
 		ReceiverID:   saved.ReceiverID.String(),
 		ProductID:    saved.ProductID.String(),
@@ -288,6 +289,7 @@ func (h *MessageHandler) CreateMessageREST(c *gin.Context) {
 	// Broadcast via WebSocket
 	broadcastMsg := ws.Message{
 		Type:         "chat",
+		ID:           saved.ID.String(),
 		SenderID:     saved.SenderID.String(),
 		ReceiverID:   saved.ReceiverID.String(),
 		ProductID:    saved.ProductID.String(),
@@ -342,16 +344,25 @@ func (h *MessageHandler) GetConversations(c *gin.Context) {
 	response := make([]models.ConversationResponse, 0, len(conversations))
 	for _, conv := range conversations {
 		// The conversation partner is whichever side isn't the requesting user.
+		// conv.SenderName is the latest message's sender — that's the partner's
+		// name only when the partner sent it. When the requesting user sent the
+		// last message, look up the receiver so we never display the user's own
+		// name as the partner.
 		otherUserID := conv.SenderID
+		otherUserName := conv.SenderName
 		if conv.SenderID == userID {
 			otherUserID = conv.ReceiverID
+			if other, err := h.queries.GetUserByID(c.Request.Context(), conv.ReceiverID); err == nil {
+				otherUserName = other.Username
+			}
 		}
 		response = append(response, models.ConversationResponse{
-			ID:           conv.ID.String(),
-			SenderID:     conv.SenderID.String(),
-			SenderName:   conv.SenderName,
-			ReceiverID:   conv.ReceiverID.String(),
-			OtherUserID:  otherUserID.String(),
+			ID:            conv.ID.String(),
+			SenderID:      conv.SenderID.String(),
+			SenderName:    conv.SenderName,
+			ReceiverID:    conv.ReceiverID.String(),
+			OtherUserID:   otherUserID.String(),
+			OtherUserName: otherUserName,
 			ProductID:    conv.ProductID.String(),
 			ProductTitle: conv.ProductTitle,
 			ProductImage: conv.ProductImage,
