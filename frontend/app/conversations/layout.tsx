@@ -1,17 +1,31 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ConversationList } from '@/components/Chats/ConversationList';
 import Navbar from '@/components/Navbar';
 import { fetchAPI } from '../utils/api';
 import type { BackendConversation } from '@/types';
 
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080';
+
 export default function ConversationsLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const router = useRouter();
   const [conversations, setConversations] = useState<BackendConversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  const fetchConversations = async () => {
+    try {
+      const res = await fetchAPI<{ conversations: BackendConversation[] }>('/api/v1/conversations');
+      setConversations(res.conversations || []);
+    } catch {
+      setConversations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined" && !localStorage.getItem("token")) {
@@ -19,22 +33,48 @@ export default function ConversationsLayout({ children }: { children: React.Reac
       return;
     }
 
-    const fetchConversations = async () => {
-      try {
-        const res = await fetchAPI<{ conversations: BackendConversation[] }>('/api/v1/conversations');
-        setConversations(res.conversations || []);
-      } catch {
-        setConversations([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchConversations();
 
-    const handler = () => fetchConversations();
-    window.addEventListener('conversation-update', handler);
-    return () => window.removeEventListener('conversation-update', handler);
+    // Layout-level WebSocket for real-time conversation list updates
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    let cancelled = false;
+
+    function connectWs() {
+      if (cancelled) return;
+      const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${token}`);
+      wsRef.current = ws;
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'chat') {
+            fetchConversations();
+          }
+        } catch {
+          // ignore malformed messages
+        }
+      };
+
+      ws.onclose = () => {
+        wsRef.current = null;
+        if (!cancelled) {
+          setTimeout(connectWs, 3000);
+        }
+      };
+    }
+
+    connectWs();
+
+    return () => {
+      cancelled = true;
+      if (wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
   }, [router]);
 
   const activeId = params?.productId as string | undefined;

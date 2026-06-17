@@ -9,6 +9,7 @@ import ListingBackLink from '../../components/listing/ListingBackLink';
 import ListingProgress from '../../components/listing/ListingProgress';
 import ReviewSummary from '../../components/listing/ReviewSummary';
 import Select from '../../components/Select';
+import Toast from '../../components/Toast';
 import { useListingForm } from '../../context/ListingFormContext';
 import { API_URL } from '../../utils/api';
 
@@ -25,6 +26,7 @@ export default function SellPricingPage() {
   const { form, updateForm, resetForm, primaryPhoto } = useListingForm();
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined" && !localStorage.getItem("token")) {
@@ -86,7 +88,8 @@ export default function SellPricingPage() {
       }
 
       resetForm();
-      router.push('/mylistings');
+      setToastVisible(true);
+      setTimeout(() => router.push('/mylistings'), 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to publish listing');
     } finally {
@@ -148,6 +151,12 @@ export default function SellPricingPage() {
           {publishing ? 'Publishing…' : 'Publish Listing'}
         </Button>
       </div>
+
+      <Toast
+        message="Listing published successfully!"
+        visible={toastVisible}
+        onClose={() => setToastVisible(false)}
+      />
     </>
   );
 }

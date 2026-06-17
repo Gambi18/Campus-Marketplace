@@ -183,6 +183,109 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 
 //REST ENDPOINTS 
 
+func (h *MessageHandler) CreateMessageREST(c *gin.Context) {
+	userIDStr := c.GetString("user_id")
+	senderID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+		return
+	}
+
+	var req models.CreateMessageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	receiverID, err := uuid.Parse(req.ReceiverID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid receiver ID"})
+		return
+	}
+
+	productID, err := uuid.Parse(req.ProductID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
+		return
+	}
+
+	if senderID == receiverID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot message yourself"})
+		return
+	}
+
+	product, err := h.queries.GetProductByID(c.Request.Context(), productID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		return
+	}
+
+	// Verify receiver exists
+	_, err = h.queries.GetUserByID(c.Request.Context(), receiverID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "receiver not found"})
+		return
+	}
+
+	saved, err := h.queries.CreateMessage(c.Request.Context(), db.CreateMessageParams{
+		SenderID:   senderID,
+		ReceiverID: receiverID,
+		ProductID:  productID,
+		Content:    req.Content,
+	})
+	if err != nil {
+		log.Printf("Error saving message: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not save message"})
+		return
+	}
+
+	sender, err := h.queries.GetUserByID(c.Request.Context(), senderID)
+	if err != nil {
+		log.Printf("Error getting sender: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get sender"})
+		return
+	}
+
+	// Broadcast via WebSocket
+	broadcastMsg := ws.Message{
+		Type:         "chat",
+		SenderID:     saved.SenderID.String(),
+		ReceiverID:   saved.ReceiverID.String(),
+		ProductID:    saved.ProductID.String(),
+		ProductTitle: product.Title,
+		Content:      saved.Content,
+		SenderName:   sender.Username,
+		CreatedAt:    saved.CreatedAt.String(),
+	}
+	h.hub.BroadcastToUser(broadcastMsg.ReceiverID, broadcastMsg)
+	h.hub.BroadcastToUser(broadcastMsg.SenderID, broadcastMsg)
+
+	// Notification for receiver
+	_, _ = h.notificationService.Create(
+		c.Request.Context(),
+		receiverID,
+		notification.NotificationNewMessage,
+		"New Message",
+		fmt.Sprintf("%s sent you a message regarding %s", sender.Username, product.Title),
+		notification.NotificationMetadata{
+			"sender_id":  senderID.String(),
+			"product_id": productID.String(),
+		},
+		fmt.Sprintf("/conversations/%s/%s", productID.String(), senderID.String()),
+	)
+
+	c.JSON(http.StatusCreated, gin.H{"message": models.MessageResponse{
+		ID:         saved.ID.String(),
+		SenderID:   saved.SenderID.String(),
+		SenderName: sender.Username,
+		ReceiverID: saved.ReceiverID.String(),
+		ProductID:  saved.ProductID.String(),
+		Content:    saved.Content,
+		IsRead:     saved.IsRead,
+		CreatedAt:  saved.CreatedAt.String(),
+	}})
+}
+
 func (h *MessageHandler) GetConversations(c *gin.Context) {
 	userIDStr := c.GetString("user_id")
 	userID, err := uuid.Parse(userIDStr)

@@ -366,6 +366,12 @@ func ToReporterReportResponse(r db.GetReportsByReporterIDRow) ReportResponse {
 	}
 }
 
+type CreateMessageRequest struct {
+	ReceiverID string `json:"receiver_id" binding:"required"`
+	ProductID  string `json:"product_id"  binding:"required"`
+	Content    string `json:"content"     binding:"required"`
+}
+
 // MESSAGE MODELS 
 
 type MessageResponse struct {

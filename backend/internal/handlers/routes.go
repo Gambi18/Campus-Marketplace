@@ -90,6 +90,7 @@ func SetupRoutes(
 		protected.POST("/reports", reportHandler.CreateReport)
 		protected.GET("/my-reports", reportHandler.GetMyReports)
 		protected.GET("/ws", messageHandler.HandleWebSocket)
+		protected.POST("/messages", messageHandler.CreateMessageREST)
 		protected.GET("/conversations", messageHandler.GetConversations)
 		protected.GET("/conversations/:product_id/:user_id", messageHandler.GetMessages)
 		protected.GET("/unread-count", messageHandler.GetUnreadCount)
