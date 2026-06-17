@@ -37,11 +37,17 @@ export function ConversationList({
             >
               {/* User Avatar */}
               <div className="relative flex-shrink-0">
-                <img
-                  src={chat.avatarUrl || "/api/placeholder/44/44"}
-                  alt={chat.userName}
-                  className="w-11 h-11 rounded-full object-cover border border-gray-100"
-                />
+                {chat.avatarUrl ? (
+                  <img
+                    src={chat.avatarUrl}
+                    alt={chat.userName}
+                    className="w-11 h-11 rounded-full object-cover border border-gray-100"
+                  />
+                ) : (
+                  <div className="w-11 h-11 rounded-full bg-blue-100 border border-gray-100 flex items-center justify-center text-sm font-bold text-blue-600">
+                    {chat.userName?.charAt(0)?.toUpperCase() || '?'}
+                  </div>
+                )}
                 {chat.unread && (
                   <span className="absolute top-0 right-0 w-3 h-3 bg-blue-600 border-2 border-white rounded-full"></span>
                 )}

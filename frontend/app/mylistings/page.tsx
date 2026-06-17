@@ -85,11 +85,11 @@ const router = useRouter();
         
           {
             loading ? (
-            <div className="sm:col-span-1 md:col-span-2 lg:col-span-3 bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
+            <div className="col-span-full bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
               <p className="text-sm text-text-muted">Loading your listings...</p>
             </div>
           ) : error ? (
-            <div className="sm:col-span-1 md:col-span-2 lg:col-span-3 bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
+            <div className="col-span-full bg-white border border-slate-100 rounded-2xl p-8 shadow-sm">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           ) :
@@ -122,7 +122,7 @@ const router = useRouter();
               </div>
             ))
           ) : (
-            <div className="sm:col-span-1 md:col-span-2 lg:col-span-3 bg-white border border-slate-100 rounded-2xl p-8 flex flex-col justify-center h-full min-h-[280px] shadow-sm">
+            <div className="col-span-full bg-white border border-slate-100 rounded-2xl p-8 flex flex-col justify-center h-full min-h-[280px] shadow-sm">
               <h3 className="text-lg font-bold text-slate-800">No items listed yet</h3>
            
               <p className="text-sm text-slate-400 mt-1 max-w-sm leading-relaxed">

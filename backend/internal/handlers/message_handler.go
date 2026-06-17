@@ -130,30 +130,6 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 			continue
 		}
 
-		// Gate: check if sender has an active payment for this product with receiver
-		if os.Getenv("DEV_BYPASS_PAYMENT") != "true" {
-			hasPayment, err := h.queries.HasActivePayment(context.Background(), db.HasActivePaymentParams{
-				ProductID: productID,
-				UserID1:   senderID,
-				UserID2:   receiverID,
-			})
-			if err != nil {
-				log.Printf("Error checking payment status: %v", err)
-				continue
-			}
-			if !hasPayment {
-				errMsg := ws.Message{
-					Type:    "error",
-					Content: "You must pay before you can message the seller. Initiate a payment on the product page.",
-				}
-				select {
-				case client.Send <- errMsg:
-				default:
-				}
-				continue
-			}
-		}
-
 		// Save message to PostgreSQL
 		saved, err := h.queries.CreateMessage(context.Background(),  db.CreateMessageParams{
 			SenderID:   senderID,
@@ -185,8 +161,9 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 			CreatedAt:  saved.CreatedAt.String(),
 		}
 
-		// Broadcast to receiver
+		// Broadcast to both receiver and sender
 		h.hub.BroadcastToUser(broadcastMsg.ReceiverID, broadcastMsg)
+		h.hub.BroadcastToUser(broadcastMsg.SenderID, broadcastMsg)
 
 		// Create in-app notification for the receiver
 		_, _ = h.notificationService.Create(
@@ -273,19 +250,6 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
 		return
-	}
-
-	// Gate: check if there's an active payment
-	if os.Getenv("DEV_BYPASS_PAYMENT") != "true" {
-		hasPayment, err := h.queries.HasActivePayment(c.Request.Context(), db.HasActivePaymentParams{
-			ProductID: productID,
-			UserID1:   userID,
-			UserID2:   otherUserID,
-		})
-		if err != nil || !hasPayment {
-			c.JSON(http.StatusForbidden, gin.H{"error": "you must pay before accessing this conversation"})
-			return
-		}
 	}
 
 	// Get messages

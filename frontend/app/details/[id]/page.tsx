@@ -91,7 +91,7 @@ export default function ProductDetailsPage() {
         setPaymentStatus(res.status);
         if (res.status === 'SUCCESSFUL') {
           clearInterval(interval);
-          setTimeout(() => router.push(`/conversations`), 1500);
+          setTimeout(() => router.push(`/conversations/${id}?user=${product.seller_id}`), 1500);
         }
       } catch {
         // retry
@@ -287,11 +287,7 @@ export default function ProductDetailsPage() {
       {isDev && (
         <div className="fixed bottom-4 right-4 z-50">
           <button
-            onClick={() => {
-              setPaymentRef('dev-bypass');
-              setPaymentStatus('SUCCESSFUL');
-              setTimeout(() => router.push('/conversations'), 1500);
-            }}
+            onClick={() => router.push(`/conversations/${id}?user=${product.seller_id}`)}
             className="bg-yellow-400 text-black text-xs font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-yellow-300"
           >
             Bypass Payment (Dev)

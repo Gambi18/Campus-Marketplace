@@ -22,14 +22,14 @@ export default function NotificationsPage() {
   return (
     <main className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
   <div className="flex justify-center">
     <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center shadow-sm">
       <Bell className="w-10 h-10 text-brand-primary" />
     </div>
   </div>
 </div>
-      <div className="max-w-3xl mx-auto px-4 py-12">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>

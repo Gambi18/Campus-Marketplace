@@ -36,6 +36,7 @@ function LoginForm() {
 
       if (response && response.token) {
         localStorage.setItem("token", response.token);
+        if (response.user?.id) localStorage.setItem("user_id", response.user.id);
         router.push("/");
       } else {
         setError("Login failed: invalid server response");
