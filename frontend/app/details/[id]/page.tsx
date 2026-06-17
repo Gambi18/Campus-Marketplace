@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Clock, MapPin, ShieldCheck, Smartphone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, MapPin, ShieldCheck, Smartphone } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import Button from '../../components/Button';
@@ -48,12 +48,15 @@ export default function ProductDetailsPage() {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [isDev, setIsDev] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const router = useRouter();
 
   useEffect(() => {
-    setIsDev(process.env.NEXT_PUBLIC_ENV === 'development');
+    setIsDev(process.env.NODE_ENV === 'development');
   }, []);
+
+  const images = [product.image_url_1, product.image_url_2, product.image_url_3, product.image_url_4].filter((u): u is string => !!u);
 
   useEffect(() => {
     async function load() {
@@ -69,6 +72,7 @@ export default function ProductDetailsPage() {
             ...prev,
             ...data,
           }));
+          setSelectedImageIndex(0);
         }
       } catch {
         // keep mock on error
@@ -141,15 +145,68 @@ export default function ProductDetailsPage() {
         </Link>
 
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-          <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white aspect-square max-h-[520px]">
-            {product.image_url_1 ? (
-              <img
-                src={product.image_url_1}
-                alt={product.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-100 text-text-muted text-sm">No image</div>
+          <div className="space-y-3">
+            <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white aspect-square max-h-[520px] relative group">
+              {images.length > 0 ? (
+                <>
+                  <img
+                    src={images[selectedImageIndex]}
+                    alt={product.title}
+                    className="w-full h-full object-cover"
+                  />
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        onClick={() =>
+                          setSelectedImageIndex((prev) =>
+                            prev === 0 ? images.length - 1 : prev - 1,
+                          )
+                        }
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setSelectedImageIndex((prev) =>
+                            prev === images.length - 1 ? 0 : prev + 1,
+                          )
+                        }
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-text-muted text-sm">
+                  No image
+                </div>
+              )}
+            </div>
+            {images.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {images.map((url, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImageIndex(index)}
+                    className={`w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${
+                      index === selectedImageIndex
+                        ? 'border-brand-primary ring-1 ring-brand-primary'
+                        : 'border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    <img
+                      src={url}
+                      alt={`${product.title} ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
