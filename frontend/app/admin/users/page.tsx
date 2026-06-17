@@ -122,9 +122,14 @@ export default function AdminUsersPage() {
                             href={user.student_id_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-brand-primary hover:underline self-center mr-1"
+                            className="shrink-0"
+                            title="View student ID document"
                           >
-                            View ID
+                            <img
+                              src={user.student_id_url}
+                              alt="Student ID"
+                              className="w-10 h-10 rounded-lg border border-gray-200 object-cover hover:ring-2 hover:ring-brand-primary transition-all cursor-pointer"
+                            />
                           </a>
                         )}
                         {user.account_status === 'pending' && (

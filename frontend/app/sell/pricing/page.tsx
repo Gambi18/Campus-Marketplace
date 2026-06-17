@@ -85,9 +85,8 @@ export default function SellPricingPage() {
         throw new Error(data.error || 'Could not publish listing. Sign in and try again.');
       }
 
-      const data = await res.json();
       resetForm();
-      router.push(`/details/${data.product?.id ?? ''}`);
+      router.push('/mylistings');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to publish listing');
     } finally {

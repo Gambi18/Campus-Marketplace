@@ -1,27 +1,32 @@
-
 import { ProductCard } from '@/types';
 import Link from 'next/link';
-
-
+import { formatPrice } from '../utils/format';
 
 export const Product: ProductCard = {
   id: "default-1",
   title: "Premium Ergonomic Office Chair",
   description: "High-quality mesh office chair with adjustable lumbar support and 3D armrests. Perfect for long study sessions in the dorm. Only used for one semester.",
-  price: 20000,
+  price: "20000",
   seller_id: "seller-student-456",
   category_name: "Furniture",
   category_id: 1,
   condition: "Like New",
   status: "available",
   image_url_1: "https://images.unsplash.com/photo-1505797149-43b0069ec26b?w=600&auto=format&fit=crop&q=60",
-  created_at: 1716912476000,
-  updated_at: 1716912476000
+  created_at: new Date(Date.now() - 86400000).toISOString(),
+  updated_at: new Date(Date.now() - 86400000).toISOString()
 };
 
 interface ItemCardProps {
   item?: Partial<ProductCard>;
 }
+
+const CONDITION_LABELS: Record<string, string> = {
+  'brand_new': 'Brand New',
+  'like_new': 'Like New',
+  'good': 'Good',
+  'fair': 'Fair',
+};
 
 export default function ItemCard({ item }: ItemCardProps) {
   const title = item?.title ?? Product.title;
@@ -35,10 +40,7 @@ export default function ItemCard({ item }: ItemCardProps) {
     ? item.image_url_1
     : Product.image_url_1;
 
-  const formattedPrice = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'XAF',
-  }).format(price);
+  const displayCondition = condition ? CONDITION_LABELS[condition.toLowerCase()] || condition : 'Good';
 
   const formattedDate = new Date(createdAt ?? Date.now()).toLocaleDateString('en-US', {
     month: 'short',
@@ -49,7 +51,7 @@ export default function ItemCard({ item }: ItemCardProps) {
   return (
     <Link
       href={`/details/${id}`}
-      className="group block bg-white rounded-lg border border-gray-100 overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 relative bg-clip-border max-w-[280px] w-full"
+      className="group block bg-white rounded-lg border border-gray-100 overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 relative bg-clip-border w-full"
     >
       <div className="w-full aspect-square bg-gray-50 relative overflow-hidden">
 
@@ -61,7 +63,7 @@ export default function ItemCard({ item }: ItemCardProps) {
         />
 
         <span className="absolute top-2.5 left-2.5 px-1.5 py-0.5 bg-white/95 backdrop-blur-xs text-[9px] font-bold text-gray-700 rounded-md shadow-xs uppercase tracking-wider">
-          {condition}
+          {displayCondition}
         </span>
       </div>
 
@@ -75,7 +77,7 @@ export default function ItemCard({ item }: ItemCardProps) {
         </h3>
 
         <p className="text-sm font-bold text-brand-primary">
-          {formattedPrice}
+          {formatPrice(price)}
         </p>
 
         <div className="flex flex-col space-y-0.5 pt-1.5 border-t border-gray-50 text-[10px] text-text-muted font-medium">

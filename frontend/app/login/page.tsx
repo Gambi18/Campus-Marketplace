@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { Eye, LogIn } from 'lucide-react';
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import registerImage from "../images/college students-rafiki.svg";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { loginStudent } from '../utils/authApi';
 
-export default function LoginPage() {
+function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const registered = searchParams.get('registered');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -95,6 +97,13 @@ export default function LoginPage() {
             <span>CampusMarket</span>
           </div>
 
+          {/* Registration success banner */}
+          {registered && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-800">
+              Account created successfully! Your registration is pending admin verification. You will be able to log in once approved.
+            </div>
+          )}
+
           {/* Login Card Wrapper */}
           <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-xl shadow-slate-100/50">
             <div className="space-y-1 mb-6">
@@ -157,5 +166,13 @@ export default function LoginPage() {
       </div>
 
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen w-full flex bg-[#f8fafc] items-center justify-center"><p className="text-text-muted">Loading...</p></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

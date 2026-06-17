@@ -23,7 +23,7 @@ function Toolbar() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4">
+    <div className="w-full">
       <div className="flex flex-col sm:flex-row items-center gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
         
         <div onKeyDown={handleKeyDown} className="w-full">

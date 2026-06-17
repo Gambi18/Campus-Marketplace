@@ -53,7 +53,7 @@ const router = useRouter();
   return (
     <div>
       <Navbar />
-      <div className="p-6 bg-[#f8fafc] space-y-6 min-h-[80vh]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6 min-h-[80vh]">
         
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

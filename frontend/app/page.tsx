@@ -8,17 +8,17 @@ import Toolbar from "./components/Toolbar";
 
 export default function Home() {
     return (
-        <main className="flex min-h-screen flex-col items-center justify-between pb-12">
-            <div className="text-center">
-                <Navbar/>
-                <Hero/>
-                <Toolbar/>
-                 <ItemCategory/>
-                 <Suspense fallback={<div className="p-8 text-sm text-text-muted">Loading products...</div>}>
-                  <CardGrid/>
-                 </Suspense>
-                 <Footer/>
-            </div>
-        </main>
+        <div>
+            <Navbar />
+            <main className="max-w-6xl mx-auto px-4 sm:px-6 space-y-4 pb-12">
+                <Hero />
+                <Toolbar />
+                <ItemCategory />
+                <Suspense fallback={<div className="p-8 text-sm text-text-muted">Loading products...</div>}>
+                    <CardGrid />
+                </Suspense>
+            </main>
+            <Footer />
+        </div>
     );
 }

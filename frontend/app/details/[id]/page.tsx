@@ -28,10 +28,10 @@ const MOCK_PRODUCT: ProductDetail = {
   title: 'Engineering Textbooks Bundle (5 books)',
   description:
     'Complete set of 5 engineering textbooks for first and second year. All in good condition with minimal highlighting. Includes: Engineering Mathematics, Physics for Engineers, Materials Science, Circuit Analysis, and Thermodynamics. Perfect for students starting their engineering program.',
-  price: 80000,
+  price: '80000',
   image_url_1: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop&q=80',
   status: 'available',
-  created_at: (Date.now() - 5 * 60 * 60 * 1000),
+  created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
   condition: 'Good',
   location: 'Library',
 };
@@ -96,7 +96,7 @@ export default function ProductDetailsPage() {
     return () => clearInterval(interval);
   }, [paymentRef, paymentStatus, router]);
 
-  const price = product.price;
+  const price = parseFloat(product.price) || 0;
   const commission = Math.round(price * 0.03);
 
   const handlePayToChat = async () => {
@@ -142,11 +142,15 @@ export default function ProductDetailsPage() {
 
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
           <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white aspect-square max-h-[520px]">
-            <img
-              src={product.image_url_1}
-              alt={product.title}
-              className="w-full h-full object-cover"
-            />
+            {product.image_url_1 ? (
+              <img
+                src={product.image_url_1}
+                alt={product.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100 text-text-muted text-sm">No image</div>
+            )}
           </div>
 
           <div className="space-y-5">

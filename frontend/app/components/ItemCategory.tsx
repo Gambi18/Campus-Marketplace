@@ -16,8 +16,8 @@ export default function ItemCategory() {
   const router = useRouter();
 
   return (
-    <div className="w-full overflow-x-auto py-2">
-      <div className="flex items-center space-x-2.5 min-w-max px-1">
+    <div className="w-full overflow-x-auto">
+      <div className="flex items-center space-x-2.5 min-w-max">
         {CATEGORIES.map((category) => {
           const IconComponent = category.icon;
 

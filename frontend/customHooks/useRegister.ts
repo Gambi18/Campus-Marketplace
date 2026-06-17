@@ -100,7 +100,7 @@ export function useRegister() {
     setLoading(true);
     try {
       await registerStudent(formData);
-      router.push("/login");
+      router.push("/login?registered=true");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {

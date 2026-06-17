@@ -7,7 +7,7 @@ export interface ProductCard {
   id: string;
   title: string;
   description?: string;
-  price: number;
+  price: string;
   seller_id?: string;
   seller_name?: string;
    category_id?: number;
@@ -18,8 +18,8 @@ export interface ProductCard {
   image_url_2?: string;
   image_url_3?: string;
   image_url_4?: string;
-  created_at?: number;
-  updated_at?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // export interface Product {
