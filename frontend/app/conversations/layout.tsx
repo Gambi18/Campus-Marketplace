@@ -18,7 +18,8 @@ export default function ConversationsLayout({ children }: { children: React.Reac
       router.replace("/login");
       return;
     }
-    (async () => {
+
+    const fetchConversations = async () => {
       try {
         const res = await fetchAPI<{ conversations: BackendConversation[] }>('/api/v1/conversations');
         setConversations(res.conversations || []);
@@ -27,7 +28,13 @@ export default function ConversationsLayout({ children }: { children: React.Reac
       } finally {
         setLoading(false);
       }
-    })();
+    };
+
+    fetchConversations();
+
+    const handler = () => fetchConversations();
+    window.addEventListener('conversation-update', handler);
+    return () => window.removeEventListener('conversation-update', handler);
   }, [router]);
 
   const activeId = params?.productId as string | undefined;

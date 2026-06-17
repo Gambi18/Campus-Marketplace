@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"database/sql"
-	
+	"log"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -192,7 +192,8 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		image1, image2, image3, image4,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create product"})
+		log.Printf("CreateProduct error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

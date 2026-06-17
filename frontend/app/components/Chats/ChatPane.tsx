@@ -21,8 +21,10 @@ export function ChatPane({ productId, otherUserId, onBackAction }: ChatPaneProps
  const [messages, setMessages] = useState<BackendMessage[]>([]);
  const [loading, setLoading] = useState(true);
  const [error, setError] = useState<string | null>(null);
- const [needsPayment, setNeedsPayment] = useState(false);
- const wsRef = useRef<WebSocket | null>(null);
+  const [needsPayment, setNeedsPayment] = useState(false);
+  const [connected, setConnected] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
  // Fetch existing messages via REST
  useEffect(() => {
@@ -47,54 +49,85 @@ export function ChatPane({ productId, otherUserId, onBackAction }: ChatPaneProps
    })();
  }, [productId, otherUserId]);
 
- // WebSocket connection for real-time messaging
- useEffect(() => {
-   if (!productId || !otherUserId) return;
+  // WebSocket connection for real-time messaging
+  useEffect(() => {
+    if (!productId || !otherUserId) return;
 
-   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-   if (!token) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) return;
 
-   const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${token}`);
-   wsRef.current = ws;
+    let cancelled = false;
 
-   ws.onmessage = (event) => {
-     try {
-       const data = JSON.parse(event.data);
-       if (data.type === 'chat' && data.product_id === productId) {
-         setMessages((prev) => {
-           if (prev.some((m) => m.id === data.id)) return prev;
-           return [...prev, {
-             id: data.id,
-             sender_id: data.sender_id,
-             sender_name: data.sender_name || '',
-             receiver_id: data.receiver_id,
-             product_id: data.product_id,
-             content: data.content,
-             is_read: data.is_read || false,
-             created_at: data.created_at || new Date().toISOString(),
-           }];
-         });
-       }
-     } catch { /* ignore malformed messages */ }
-   };
+    function connect() {
+      if (cancelled) return;
+      const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${token}`);
+      wsRef.current = ws;
 
-   return () => {
-     ws.close();
-     wsRef.current = null;
-   };
- }, [productId, otherUserId]);
+      ws.onopen = () => {
+        if (cancelled) { ws.close(); return; }
+        setConnected(true);
+      };
 
- const handleSendMessage = (text: string) => {
-   const ws = wsRef.current;
-   if (ws && ws.readyState === WebSocket.OPEN) {
-     ws.send(JSON.stringify({
-       type: 'chat',
-       receiver_id: otherUserId,
-       product_id: productId,
-       content: text,
-     }));
-   }
- };
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'chat' && data.product_id === productId) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === data.id)) return prev;
+              return [...prev, {
+                id: data.id,
+                sender_id: data.sender_id,
+                sender_name: data.sender_name || '',
+                receiver_id: data.receiver_id,
+                product_id: data.product_id,
+                content: data.content,
+                is_read: data.is_read || false,
+                created_at: data.created_at || new Date().toISOString(),
+              }];
+            });
+          }
+        } catch { /* ignore malformed messages */ }
+      };
+
+      ws.onerror = () => {
+        // onerror will be followed by onclose
+      };
+
+      ws.onclose = () => {
+        setConnected(false);
+        wsRef.current = null;
+        if (!cancelled) {
+          reconnectTimeoutRef.current = setTimeout(connect, 2000);
+        }
+      };
+    }
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (wsRef.current) {
+        wsRef.current.onclose = null; // prevent reconnect on intentional close
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      setConnected(false);
+    };
+  }, [productId, otherUserId]);
+
+  const handleSendMessage = (text: string) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'chat',
+        receiver_id: otherUserId,
+        product_id: productId,
+        content: text,
+      }));
+      window.dispatchEvent(new CustomEvent('conversation-update'));
+    }
+  };
 
  const reportUser = () => {
    const seller = messages.find(m => m.sender_id === otherUserId);
@@ -156,16 +189,22 @@ export function ChatPane({ productId, otherUserId, onBackAction }: ChatPaneProps
    );
  }
 
- return (
-   <div className="flex-1 flex flex-col bg-slate-50/30 h-full overflow-hidden">
-     <div className="flex-shrink-0 bg-white z-10">
-       <ChatHeader
-         sellerName={sellerName}
-         itemTitle=""
-         onBackAction={onBackAction}
-         onReport={reportUser}
-       />
-     </div>
+  return (
+    <div className="flex-1 flex flex-col bg-slate-50/30 h-full overflow-hidden">
+      <div className="flex-shrink-0 bg-white z-10">
+        {!connected && (
+          <div className="px-4 py-1.5 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+            Reconnecting...
+          </div>
+        )}
+        <ChatHeader
+          sellerName={sellerName}
+          itemTitle=""
+          onBackAction={onBackAction}
+          onReport={reportUser}
+        />
+      </div>
 
      <div className="flex-1 overflow-y-auto min-h-0 bg-white">
        <MessageList

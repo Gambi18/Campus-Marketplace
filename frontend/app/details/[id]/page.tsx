@@ -270,16 +270,18 @@ export default function ProductDetailsPage() {
               </Button>
             </div>
 
-            <div className="rounded-xl bg-amber-50/80 border border-amber-100 p-5 flex gap-3">
-              <ShieldCheck className="w-6 h-6 text-amber-600 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-brand-neutral">Pay before you chat</h3>
-                <p className="text-sm text-text-muted mt-1 leading-relaxed">
-                  You must pay before you can message the seller. A 3% platform fee applies on completion.
-                  If you cancel, a 1% fee applies on the refund.
-                </p>
+            {!isDev && (
+              <div className="rounded-xl bg-amber-50/80 border border-amber-100 p-5 flex gap-3">
+                <ShieldCheck className="w-6 h-6 text-amber-600 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-brand-neutral">Pay before you chat</h3>
+                  <p className="text-sm text-text-muted mt-1 leading-relaxed">
+                    You must pay before you can message the seller. A 3% platform fee applies on completion.
+                    If you cancel, a 1% fee applies on the refund.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </main>

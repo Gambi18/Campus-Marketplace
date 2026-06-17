@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/models"
@@ -89,7 +88,7 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 		client.Conn.Close()
 	}()
 
-	client.Conn.SetReadLimit(512)
+	client.Conn.SetReadLimit(4096)
 
 	for {
 		var msg ws.Message
@@ -200,17 +199,6 @@ func (h *MessageHandler) GetConversations(c *gin.Context) {
 
 	response := make([]models.ConversationResponse, 0, len(conversations))
 	for _, conv := range conversations {
-		if os.Getenv("DEV_BYPASS_PAYMENT") != "true" {
-			// Gate: only include if there's an active payment between the two users for this product
-			hasPayment, err := h.queries.HasActivePayment(c.Request.Context(), db.HasActivePaymentParams{
-				ProductID: conv.ProductID,
-				UserID1:   conv.SenderID,
-				UserID2:   conv.ReceiverID,
-			})
-			if err != nil || !hasPayment {
-				continue
-			}
-		}
 		response = append(response, models.ConversationResponse{
 			ID:           conv.ID.String(),
 			SenderID:     conv.SenderID.String(),
