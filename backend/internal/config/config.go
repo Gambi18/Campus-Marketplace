@@ -1,10 +1,10 @@
 package config
 
 import (
-	
+	"fmt"
 	"log"
 	"os"
-	"fmt"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -29,8 +29,9 @@ type Config struct {
 	CamPayAppUsername string
 	CamPayAppPassword string
 	CamPayPermanentToken string
-	PlatformFeeOnSale   float64 
+	PlatformFeeOnSale   float64
 	PlatformFeeOnRefund float64
+	AllowedOrigins      []string
 }
 
 func LoadConfig() *Config {
@@ -59,7 +60,21 @@ func LoadConfig() *Config {
 		CamPayPermanentToken: getEnv("CAMPAY_PERMANENT_TOKEN", ""),
 		PlatformFeeOnSale:   0.03,
 		PlatformFeeOnRefund: 0.01,
+		AllowedOrigins:      parseOrigins(getEnv("ALLOWED_ORIGINS", "http://localhost:3000")),
 	}
+}
+
+// parseOrigins splits a comma-separated ALLOWED_ORIGINS env value into a
+// trimmed, non-empty slice used for both CORS and WebSocket origin checks.
+func parseOrigins(raw string) []string {
+	parts := strings.Split(raw, ",")
+	origins := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if trimmed := strings.TrimSpace(p); trimmed != "" {
+			origins = append(origins, trimmed)
+		}
+	}
+	return origins
 }
 // added this cause Always built fresh from current field values
 func (c *Config) DatabaseURL() string {

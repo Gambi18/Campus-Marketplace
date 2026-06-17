@@ -5,6 +5,7 @@ import "sync"
 // Message represents a WebSocket message passed through the hub
 type Message struct {
 	Type         string      `json:"type"`
+	ID           string      `json:"id,omitempty"`
 	SenderID     string      `json:"sender_id,omitempty"`
 	ReceiverID   string      `json:"receiver_id,omitempty"`
 	ProductID    string      `json:"product_id,omitempty"`

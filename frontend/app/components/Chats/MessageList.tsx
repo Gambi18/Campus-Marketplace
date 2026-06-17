@@ -1,4 +1,5 @@
 
+import Image from "next/image";
 import { Message } from "@/types";
 
 interface ItemDetails {
@@ -24,9 +25,11 @@ export function MessageList({ messages, item, onItemClick }: MessageListProps) {
       >
         <div className="flex items-center gap-3">
           {item.imageUrl ? (
-            <img 
-              src={item.imageUrl} 
-              alt={item.title} 
+            <Image
+              src={item.imageUrl}
+              alt={item.title}
+              width={56}
+              height={56}
               className="w-14 h-14 rounded-lg object-cover border border-gray-200"
             />
           ) : (

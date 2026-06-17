@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import Button from '../../components/Button';
 import { adminFetch } from '../../utils/adminApi';
 import type { AdminUser } from '../../types/admin';
@@ -125,9 +126,11 @@ export default function AdminUsersPage() {
                             className="shrink-0"
                             title="View student ID document"
                           >
-                            <img
+                            <Image
                               src={user.student_id_url}
                               alt="Student ID"
+                              width={40}
+                              height={40}
                               className="w-10 h-10 rounded-lg border border-gray-200 object-cover hover:ring-2 hover:ring-brand-primary transition-all cursor-pointer"
                             />
                           </a>

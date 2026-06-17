@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Clock, MapPin, ShieldCheck, Smartphone } from 'lucide-react';
@@ -149,10 +150,13 @@ export default function ProductDetailsPage() {
             <div className="rounded-2xl overflow-hidden border border-gray-200 bg-white aspect-square max-h-[520px] relative group">
               {images.length > 0 ? (
                 <>
-                  <img
+                  <Image
                     src={images[selectedImageIndex]}
                     alt={product.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 520px"
+                    className="object-cover"
+                    priority
                   />
                   {images.length > 1 && (
                     <>
@@ -199,9 +203,11 @@ export default function ProductDetailsPage() {
                         : 'border-gray-200 hover:border-gray-400'
                     }`}
                   >
-                    <img
+                    <Image
                       src={url}
                       alt={`${product.title} ${index + 1}`}
+                      width={64}
+                      height={64}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -291,15 +297,18 @@ export default function ProductDetailsPage() {
           <button
             onClick={async () => {
               try {
-                await postAPI('/api/v1/messages', {
-                  receiver_id: product.seller_id,
+                // Create the escrow payment the pay-to-chat gate checks for.
+                // With DEV_BYPASS_PAYMENT=true the backend auto-confirms it to
+                // "held", so messaging unlocks and it shows in the admin escrow
+                // page. The dummy MTN number satisfies operator detection.
+                await postAPI('/api/v1/payments/initiate', {
                   product_id: id,
-                  content: "Hello, I'm interested in this item.",
+                  phone_number: '237670000000',
                 });
               } catch {
-                // message may already exist, navigate anyway
+                // payment may already exist (product in escrow), navigate anyway
               }
-              router.push(`/conversations/${id}?user=${product.seller_id}`);
+              router.push(`/conversations/${id}?user=${product.seller_id}&name=${encodeURIComponent(product.seller_name || '')}`);
             }}
             className="bg-yellow-400 text-black text-xs font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-yellow-300"
           >

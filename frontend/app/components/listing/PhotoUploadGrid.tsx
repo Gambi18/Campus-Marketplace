@@ -23,6 +23,8 @@ export default function PhotoUploadGrid({ photos, onPhotoChange }: PhotoUploadGr
         <div key={index} className="relative aspect-square">
           {photo ? (
             <div className="relative w-full h-full rounded-xl overflow-hidden border border-gray-200 group">
+              {/* Local file preview is a base64 data: URL — next/image can't optimize those, so a plain img is correct. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={photo} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
               <button
                 type="button"

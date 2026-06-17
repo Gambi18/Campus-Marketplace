@@ -12,6 +12,7 @@ function ActiveChatContent({ params }: PageProps) {
   const { productId } = use(params);
   const searchParams = useSearchParams();
   const otherUserId = searchParams.get('user') || '';
+  const otherUserName = searchParams.get('name') || '';
   const router = useRouter();
 
   return (
@@ -19,6 +20,7 @@ function ActiveChatContent({ params }: PageProps) {
       <ChatPane
         productId={productId}
         otherUserId={otherUserId}
+        otherUserName={otherUserName}
         onBackAction={() => router.push('/conversations')}
       />
     </div>

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -164,19 +165,26 @@ func (h *PaymentHandler) Webhook(c *gin.Context) {
 	}
 
 	reference, _ := payload["reference"].(string)
-	status, _ := payload["status"].(string)
 
 	if reference == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "missing reference"})
 		return
 	}
 
-	// Update payment to held if successful
-	if status == "SUCCESSFUL" {
-		_, err := h.queries.UpdatePaymentToHeld(c.Request.Context(),
+	// SECURITY: this endpoint is public, so the payload's `status` field cannot be
+	// trusted — anyone could POST a forged "SUCCESSFUL" webhook. Re-query CamPay for
+	// the authoritative status using the reference before moving money into escrow.
+	txStatus, err := h.campayService.GetTransactionStatus(reference)
+	if err != nil {
+		log.Printf("webhook: could not verify transaction %s with CamPay: %v", reference, err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": "could not verify transaction"})
+		return
+	}
+
+	if txStatus.Status == "SUCCESSFUL" {
+		if _, err := h.queries.UpdatePaymentToHeld(c.Request.Context(),
 			sql.NullString{String: reference, Valid: true},
-		)
-		if err != nil {
+		); err != nil {
 			log.Printf("webhook: error updating payment to held: %v", err)
 		}
 		log.Printf("Payment %s confirmed and held in escrow", reference)
@@ -199,6 +207,13 @@ func (h *PaymentHandler) CheckPaymentStatus(c *gin.Context) {
 	payment, err := h.queries.GetPaymentByID(c.Request.Context(), paymentID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
+		return
+	}
+
+	// Only the buyer or seller may inspect a payment's details.
+	if callerID, err := uuid.Parse(c.GetString("user_id")); err != nil ||
+		(payment.BuyerID != callerID && payment.SellerID != callerID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you are not a party to this payment"})
 		return
 	}
 
@@ -281,20 +296,40 @@ func (h *PaymentHandler) ConfirmDelivery(c *gin.Context) {
 		return
 	}
 
-	//  fetch product 
+	// Atomically claim the payment so two concurrent confirmations cannot both
+	// trigger a withdrawal (double-spend). Only one caller transitions held -> releasing.
+	if _, err := h.queries.ClaimPaymentForRelease(c.Request.Context(), db.ClaimPaymentForReleaseParams{
+		ID:     payment.ID,
+		Status: "releasing",
+	}); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusConflict, gin.H{"error": "payment is already being processed"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not lock payment"})
+		return
+	}
+
+	//  fetch product
 	product, err := h.queries.GetProductByID(c.Request.Context(), payment.ProductID)
 	if err != nil {
 		log.Printf("error fetching product details: %v", err)
 	}
 
-	// Calculate fees - 3% on sale
-	amount, _ := strconv.ParseFloat(payment.Amount, 64)
-	platformFee := math.Round(amount*0.03*100) / 100
-	netAmount := math.Round((amount-platformFee)*100) / 100
+	// Calculate fees - 3% on sale (XAF has no minor units, so fees are whole numbers)
+	amount, err := strconv.ParseFloat(payment.Amount, 64)
+	if err != nil {
+		_, _ = h.queries.RevertPaymentToHeld(c.Request.Context(), payment.ID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid payment amount"})
+		return
+	}
+	platformFee := math.Round(amount * 0.03)
+	netAmount := amount - platformFee
 
 	// Get seller phone number
 	seller, err := h.queries.GetUserByID(c.Request.Context(), payment.SellerID)
 	if err != nil {
+		_, _ = h.queries.RevertPaymentToHeld(c.Request.Context(), payment.ID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not get seller details"})
 		return
 	}
@@ -307,6 +342,8 @@ func (h *PaymentHandler) ConfirmDelivery(c *gin.Context) {
 		payment.ID.String(),
 	)
 	if err != nil {
+		// Withdrawal failed — release the claim so the buyer can retry.
+		_, _ = h.queries.RevertPaymentToHeld(c.Request.Context(), payment.ID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not release payment to seller"})
 		return
 	}
@@ -416,10 +453,29 @@ func (h *PaymentHandler) RejectDelivery(c *gin.Context) {
 		return
 	}
 
-	// Calculate fees - 1% on refund
-	amount, _ := strconv.ParseFloat(payment.Amount, 64)
-	platformFee := math.Round(amount*0.01*100) / 100
-	netAmount := math.Round((amount-platformFee)*100) / 100
+	// Atomically claim the payment so concurrent reject/confirm requests cannot
+	// both move money. Only one caller transitions held -> refunding.
+	if _, err := h.queries.ClaimPaymentForRelease(c.Request.Context(), db.ClaimPaymentForReleaseParams{
+		ID:     payment.ID,
+		Status: "refunding",
+	}); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusConflict, gin.H{"error": "payment is already being processed"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not lock payment"})
+		return
+	}
+
+	// Calculate fees - 1% on refund (XAF has no minor units)
+	amount, err := strconv.ParseFloat(payment.Amount, 64)
+	if err != nil {
+		_, _ = h.queries.RevertPaymentToHeld(c.Request.Context(), payment.ID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid payment amount"})
+		return
+	}
+	platformFee := math.Round(amount * 0.01)
+	netAmount := amount - platformFee
 
 	// Refund to buyer's payment phone number
 	withdrawResp, err := h.campayService.Withdraw(
@@ -429,6 +485,8 @@ func (h *PaymentHandler) RejectDelivery(c *gin.Context) {
 		payment.ID.String(),
 	)
 	if err != nil {
+		// Refund failed — release the claim so it can be retried.
+		_, _ = h.queries.RevertPaymentToHeld(c.Request.Context(), payment.ID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not process refund"})
 		return
 	}
@@ -559,6 +617,13 @@ func (h *PaymentHandler) GetReceipt(c *gin.Context) {
 	payment, err := h.queries.GetPaymentByID(c.Request.Context(), paymentID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
+		return
+	}
+
+	// Only the buyer or seller may fetch a payment's receipt.
+	if callerID, err := uuid.Parse(c.GetString("user_id")); err != nil ||
+		(payment.BuyerID != callerID && payment.SellerID != callerID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you are not a party to this payment"})
 		return
 	}
 

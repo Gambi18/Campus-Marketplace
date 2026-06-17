@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"time"
+
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/middleware"
 	"campus-marketplace/internal/notification"
@@ -18,8 +20,9 @@ func SetupRoutes(
 	cloudinaryService *services.CloudinaryService,
 	notificationService *notification.NotificationService,
 	hub *ws.Hub,
-	campayService *services.CamPayService,      
+	campayService *services.CamPayService,
 	receiptService *services.ReceiptService,
+	allowedOrigins []string,
 ) {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
@@ -28,7 +31,7 @@ func SetupRoutes(
 	productHandler := NewProductHandler(queries, productService)
 	categoryHandler := NewCategoryHandler(queries)
 	reportHandler := NewReportHandler(queries)
-	messageHandler := NewMessageHandler(queries, hub, notificationService)
+	messageHandler := NewMessageHandler(queries, hub, notificationService, allowedOrigins)
 	notificationHandler := NewNotificationHandler(notificationService)
 	paymentHandler := NewPaymentHandler(
     queries,
@@ -47,15 +50,18 @@ func SetupRoutes(
 
 	// Public routes — no auth required
 
+	// Throttle credential endpoints against brute-force / credential-stuffing.
+	loginRateLimit := middleware.RateLimit(10, time.Minute)
+
 	auth := api.Group("/auth")
 	{
 		auth.POST("/register", authHandler.Register)
-		auth.POST("/login", authHandler.Login)
+		auth.POST("/login", loginRateLimit, authHandler.Login)
 	}
 
 	adminAuth := api.Group("/admin/auth")
 	{
-		adminAuth.POST("/login", adminHandler.Login)
+		adminAuth.POST("/login", loginRateLimit, adminHandler.Login)
 	}
 
 	adminCreate := api.Group("/admin")

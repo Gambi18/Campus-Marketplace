@@ -27,10 +27,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await fetchAPI<NotificationResponse>('/api/v1/notifications');
+      // Fetch the list and unread count concurrently instead of sequentially.
+      const [data, unreadData] = await Promise.all([
+        fetchAPI<NotificationResponse>('/api/v1/notifications'),
+        fetchAPI<UnreadCountResponse>('/api/v1/notifications/unread-count'),
+      ]);
       setNotifications(data.notifications || []);
-      
-      const unreadData = await fetchAPI<UnreadCountResponse>('/api/v1/notifications/unread-count');
       setUnreadCount(unreadData.unread_count);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
@@ -61,32 +63,59 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   };
 
-  // WebSocket for real-time notifications
+  // WebSocket for real-time notifications (with reconnect)
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) return;
 
-    // Use existing WS endpoint but handle notification types
-    const wsUrl = API_URL.replace('http', 'ws') + '/api/v1/ws';
-    const ws = new WebSocket(`${wsUrl}?token=${token}`);
+    let cancelled = false;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'notification') {
-      const newNotification = data.payload as AppNotification;
-        setNotifications(prev => [newNotification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        // Optional: show a toast or browser notification
-        if (Notification.permission === 'granted') {
-          new window.Notification(newNotification.title, {
-            body: newNotification.message,
-          });
-        }
+    const showBrowserNotification = (n: AppNotification) => {
+      if (typeof window === 'undefined' || !('Notification' in window)) return;
+      if (Notification.permission === 'granted') {
+        new window.Notification(n.title, { body: n.message });
       }
     };
 
-    return () => ws.close();
+    const connect = () => {
+      if (cancelled) return;
+      const wsUrl = API_URL.replace('http', 'ws') + '/api/v1/ws';
+      ws = new WebSocket(`${wsUrl}?token=${token}`);
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'notification') {
+            const newNotification = data.payload as AppNotification;
+            setNotifications(prev => [newNotification, ...prev]);
+            setUnreadCount(prev => prev + 1);
+            showBrowserNotification(newNotification);
+          }
+        } catch {
+          // ignore malformed frames
+        }
+      };
+
+      ws.onclose = () => {
+        ws = null;
+        if (!cancelled) {
+          reconnectTimer = setTimeout(connect, 3000);
+        }
+      };
+    };
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (ws) {
+        ws.onclose = null;
+        ws.close();
+      }
+    };
   }, []);
 
   // Initial fetch

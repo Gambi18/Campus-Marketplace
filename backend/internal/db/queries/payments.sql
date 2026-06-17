@@ -111,3 +111,23 @@ SELECT EXISTS(
       AND ((buyer_id = $2 AND seller_id = $3) OR (seller_id = $2 AND buyer_id = $3))
       AND status IN ('held', 'released')
 ) AS exists;
+
+-- ClaimPaymentForRelease atomically transitions a payment out of 'held'
+-- into an in-progress state ($2 = 'releasing' or 'refunding'). Only one
+-- concurrent caller can succeed; the loser gets sql.ErrNoRows. This guards
+-- the escrow withdrawal against double-spend.
+-- name: ClaimPaymentForRelease :one
+UPDATE payments
+SET status     = $2,
+    updated_at = NOW()
+WHERE id = $1 AND status = 'held'
+RETURNING *;
+
+-- RevertPaymentToHeld puts a claimed payment back to 'held' when the
+-- CamPay withdrawal fails, so the buyer can retry.
+-- name: RevertPaymentToHeld :one
+UPDATE payments
+SET status     = 'held',
+    updated_at = NOW()
+WHERE id = $1 AND status IN ('releasing', 'refunding')
+RETURNING *;

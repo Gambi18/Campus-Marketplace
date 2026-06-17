@@ -1,6 +1,7 @@
 
 
 
+import Image from "next/image";
 import { ConversationItem } from "@/types";
 
 
@@ -36,12 +37,14 @@ export function ConversationList({
               }`}
             >
               {/* User Avatar */}
-              <div className="relative flex-shrink-0">
+              <div className="relative flex-shrink-0 w-11 h-11">
                 {chat.avatarUrl ? (
-                  <img
+                  <Image
                     src={chat.avatarUrl}
                     alt={chat.userName}
-                    className="w-11 h-11 rounded-full object-cover border border-gray-100"
+                    fill
+                    sizes="44px"
+                    className="rounded-full object-cover border border-gray-100"
                   />
                 ) : (
                   <div className="w-11 h-11 rounded-full bg-blue-100 border border-gray-100 flex items-center justify-center text-sm font-bold text-blue-600">

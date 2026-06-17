@@ -104,6 +104,7 @@ export default function Navbar() {
               // Not logged in - show register link
               <Link
                 href="/register"
+                aria-label="Create an account"
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-gray-200 cursor-pointer overflow-hidden hover:ring-2 hover:ring-offset-2 hover:ring-brand-primary transition-all duration-150 flex-shrink-0"
               >
                 <div className="w-full h-full bg-slate-100 flex items-center justify-center text-text-muted hover:text-brand-primary transition-colors">
@@ -117,6 +118,9 @@ export default function Navbar() {
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
               >
                 {mobileMenuOpen ? (
                   <X className="w-5 h-5 text-gray-600" />
@@ -142,6 +146,9 @@ export default function Navbar() {
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
               >
                 {mobileMenuOpen ? (
                   <X className="w-5 h-5 text-gray-600" />
@@ -156,7 +163,7 @@ export default function Navbar() {
 
       {/* Mobile Sidebar Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 top-16 bg-white border-b border-gray-100 z-30">
+        <div id="mobile-menu" className="md:hidden fixed inset-0 top-16 bg-white border-b border-gray-100 z-30">
           <div className="flex flex-col p-4 space-y-2">
             {/* Mobile Nav Links */}
             {navLinks.map((link) => (

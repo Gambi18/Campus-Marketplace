@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ConversationList } from '@/components/Chats/ConversationList';
 import Navbar from '@/components/Navbar';
@@ -15,8 +15,10 @@ export default function ConversationsLayout({ children }: { children: React.Reac
   const [conversations, setConversations] = useState<BackendConversation[]>([]);
   const [loading, setLoading] = useState(true);
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     try {
       const res = await fetchAPI<{ conversations: BackendConversation[] }>('/api/v1/conversations');
       setConversations(res.conversations || []);
@@ -25,7 +27,7 @@ export default function ConversationsLayout({ children }: { children: React.Reac
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined" && !localStorage.getItem("token")) {
@@ -41,6 +43,15 @@ export default function ConversationsLayout({ children }: { children: React.Reac
 
     let cancelled = false;
 
+    // Coalesce bursts of incoming chat events into a single refetch.
+    const scheduleRefetch = () => {
+      if (refetchTimerRef.current) return;
+      refetchTimerRef.current = setTimeout(() => {
+        refetchTimerRef.current = null;
+        fetchConversations();
+      }, 500);
+    };
+
     function connectWs() {
       if (cancelled) return;
       const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${token}`);
@@ -50,7 +61,7 @@ export default function ConversationsLayout({ children }: { children: React.Reac
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'chat') {
-            fetchConversations();
+            scheduleRefetch();
           }
         } catch {
           // ignore malformed messages
@@ -60,7 +71,7 @@ export default function ConversationsLayout({ children }: { children: React.Reac
       ws.onclose = () => {
         wsRef.current = null;
         if (!cancelled) {
-          setTimeout(connectWs, 3000);
+          reconnectRef.current = setTimeout(connectWs, 3000);
         }
       };
     }
@@ -69,26 +80,28 @@ export default function ConversationsLayout({ children }: { children: React.Reac
 
     return () => {
       cancelled = true;
+      if (reconnectRef.current) clearTimeout(reconnectRef.current);
+      if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
       if (wsRef.current) {
         wsRef.current.onclose = null;
         wsRef.current.close();
         wsRef.current = null;
       }
     };
-  }, [router]);
+  }, [router, fetchConversations]);
 
   const activeId = params?.productId as string | undefined;
 
-  const currentUserId = typeof window !== 'undefined' ? localStorage.getItem('user_id') : null;
-
   const items = conversations.map((c) => ({
     id: c.product_id,
-    userName: c.sender_name,
+    // Partner's name, computed by the API — never the requesting user's own name.
+    userName: c.other_user_name,
     itemTitle: c.product_title,
     lastMessage: c.content,
     timestamp: new Date(c.created_at).toLocaleDateString(),
     unread: !c.is_read,
-    otherUserId: c.sender_id === currentUserId ? c.receiver_id : c.sender_id,
+    // Provided by the API, so the client no longer guesses from localStorage.
+    otherUserId: c.other_user_id,
   }));
 
   return (
@@ -113,7 +126,7 @@ export default function ConversationsLayout({ children }: { children: React.Reac
               onSelectConversation={(id) => {
                 const conv = items.find(i => i.id === id);
                 if (conv) {
-                  router.push(`/conversations/${id}?user=${conv.otherUserId}`);
+                  router.push(`/conversations/${id}?user=${conv.otherUserId}&name=${encodeURIComponent(conv.userName || '')}`);
                 }
               }}
             />

@@ -1,12 +1,15 @@
 // API client utilities
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
+// Default per-request timeout so a hung request can't leave the UI spinning forever.
+const DEFAULT_TIMEOUT_MS = 15000;
+
 export async function apiCall<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<T> {
   const url = `${API_URL}${endpoint}`;
-  
+
   // Try to get token from localStorage
   let token = null;
   if (typeof window !== 'undefined') {
@@ -18,15 +21,33 @@ export async function apiCall<T>(
     ...((options?.headers as Record<string, string>) ?? {}),
   };
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  // Abort the request after a timeout unless the caller supplied their own signal.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+      signal: options?.signal ?? controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('Request timed out, please try again');
+    }
+    throw err instanceof Error ? err : new Error('Network error');
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     if (response.status === 401 && typeof window !== 'undefined') {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Avoid a redirect loop when an auth-protected call on the login page 401s.
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
       throw new Error('Session expired');
     }
     const errorData = await response.json().catch(() => ({}));

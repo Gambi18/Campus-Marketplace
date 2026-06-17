@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from "next/navigation";
+import { Lock } from 'lucide-react';
 import { ChatHeader } from "./ChatHeader";
 import { ChatInputArea } from "./ChatInputArea";
 import { MessageList } from "./MessageList";
@@ -21,16 +22,19 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080';
 interface ChatPaneProps {
   productId: string;
   otherUserId: string;
+  /** Conversation partner's display name, passed from the list/product page. */
+  otherUserName?: string;
   onBackAction?: () => void;
 }
 
-export function ChatPane({ productId, otherUserId, onBackAction }: ChatPaneProps) {
+export function ChatPane({ productId, otherUserId, otherUserName, onBackAction }: ChatPaneProps) {
  const router = useRouter();
  const [messages, setMessages] = useState<BackendMessage[]>([]);
  const [loading, setLoading] = useState(true);
  const [error, setError] = useState<string | null>(null);
   const [needsPayment, setNeedsPayment] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,12 +92,20 @@ export function ChatPane({ productId, otherUserId, onBackAction }: ChatPaneProps
       ws.onopen = () => {
         if (cancelled) { ws.close(); return; }
         setConnected(true);
+        setSendError(null);
       };
 
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'chat' && data.product_id === productId) {
+          // Only accept messages for THIS conversation: same product AND the
+          // other participant must be the person this thread is with. The socket
+          // receives every message for the logged-in user across all threads.
+          const belongsToThread =
+            data.type === 'chat' &&
+            data.product_id === productId &&
+            (data.sender_id === otherUserId || data.receiver_id === otherUserId);
+          if (belongsToThread) {
             setMessages((prev) => {
               if (prev.some((m) => m.id === data.id)) return prev;
               return [...prev, {
@@ -138,31 +150,42 @@ export function ChatPane({ productId, otherUserId, onBackAction }: ChatPaneProps
     };
   }, [productId, otherUserId]);
 
-  const handleSendMessage = (text: string) => {
+  // Returns true if the message was actually sent, so the input only clears on
+  // success and the user never loses text into a closed socket.
+  const handleSendMessage = (text: string): boolean => {
     const ws = wsRef.current;
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: 'chat',
-        receiver_id: otherUserId,
-        product_id: productId,
-        content: text,
-      }));
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      setSendError('Not connected — reconnecting. Your message was not sent.');
+      return false;
     }
+    ws.send(JSON.stringify({
+      type: 'chat',
+      receiver_id: otherUserId,
+      product_id: productId,
+      content: text,
+    }));
+    setSendError(null);
+    return true;
   };
 
+ // Prefer the name passed in; fall back to the partner's name pulled from any
+ // message they've sent, then a neutral label. Works whether the partner is the
+ // buyer or the seller — the thread no longer assumes one role.
+ const partnerName =
+   otherUserName ||
+   messages.find(m => m.sender_id === otherUserId)?.sender_name ||
+   'User';
+
  const reportUser = () => {
-   const seller = messages.find(m => m.sender_id === otherUserId);
-   router.push(`/report?sellerName=${encodeURIComponent(seller?.sender_name || '')}&productId=${productId}`);
+   router.push(`/report?sellerName=${encodeURIComponent(partnerName)}&productId=${productId}`);
  };
 
-  const chatMessages = messages.map((m, i) => ({
-    id: i,
+  const chatMessages = messages.map((m) => ({
+    id: m.id,
     text: m.content,
     sender: m.sender_id === otherUserId ? 'other' as const : 'self' as const,
     time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   }));
-
- const sellerName = messages.find(m => m.sender_id === otherUserId)?.sender_name || 'Seller';
 
  if (!productId || !otherUserId) {
    return (
@@ -184,14 +207,14 @@ export function ChatPane({ productId, otherUserId, onBackAction }: ChatPaneProps
    return (
      <div className="flex-1 flex flex-col bg-slate-50/30 h-full overflow-hidden">
        <ChatHeader
-         sellerName={sellerName}
+         sellerName={partnerName}
          itemTitle=""
          onBackAction={onBackAction}
          onReport={reportUser}
        />
        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
-           <span className="text-2xl">🔒</span>
+           <Lock className="w-7 h-7 text-amber-600" aria-hidden="true" />
          </div>
          <h3 className="text-lg font-bold text-gray-900 mb-2">Payment Required</h3>
          <p className="text-sm text-gray-500 max-w-sm">
@@ -220,11 +243,16 @@ export function ChatPane({ productId, otherUserId, onBackAction }: ChatPaneProps
           </div>
         )}
         <ChatHeader
-          sellerName={sellerName}
-          itemTitle=""
+          sellerName={partnerName}
+          itemTitle={product?.title || ''}
           onBackAction={onBackAction}
           onReport={reportUser}
         />
+        {sendError && (
+          <div className="px-4 py-1.5 bg-red-50 border-b border-red-100 text-xs text-red-600">
+            {sendError}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto min-h-0 bg-white">

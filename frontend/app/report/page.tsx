@@ -59,7 +59,9 @@ function ReportContent() {
 
         <form onSubmit={handleSubmit} className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
           <div className="p-5 bg-blue-50/30 border-b border-gray-100 flex items-center gap-3">
-            <img src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=150&auto=format&fit=crop&q=80" alt={sellerName} className="w-12 h-12 rounded-full object-cover border" />
+            <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold border" aria-hidden="true">
+              {(sellerName?.trim()?.[0] || '?').toUpperCase()}
+            </div>
             <div>
               <h3 className="text-sm font-bold text-gray-900">{sellerName}</h3>
               <p className="text-[11px] text-gray-400 mt-0.5">Seller since 2023 • 4.8 Rating</p>

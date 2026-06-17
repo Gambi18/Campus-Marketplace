@@ -65,6 +65,8 @@ function LoginForm() {
             </span>
 
             <div className="w-full max-w-[240px] py-2">
+              {/* Local static SVG illustration — next/image doesn't optimize SVG, so a plain img is correct here. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={registerImage.src || registerImage}
                 alt="Students collaborating"
@@ -157,7 +159,7 @@ function LoginForm() {
           </div>
 
           <p className="text-center text-sm text-gray-500">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/register" className="font-semibold text-brand-primary hover:underline">
               Sign up
             </Link>

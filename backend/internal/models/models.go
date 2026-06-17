@@ -390,6 +390,12 @@ type ConversationResponse struct {
 	SenderID     string `json:"sender_id"`
 	SenderName   string `json:"sender_name"`
 	ReceiverID   string `json:"receiver_id"`
+	// OtherUserID is the conversation partner relative to the requesting user,
+	// computed server-side so the client never has to guess.
+	OtherUserID  string `json:"other_user_id"`
+	// OtherUserName is the partner's display name, regardless of who sent the
+	// last message, so the client never shows the requesting user's own name.
+	OtherUserName string `json:"other_user_name"`
 	ProductID    string `json:"product_id"`
 	ProductTitle string `json:"product_title"`
 	ProductImage string `json:"product_image"`
