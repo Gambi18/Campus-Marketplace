@@ -100,8 +100,9 @@ export default function EditProductPage() {
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
           <Input label="Title" name="title" required value={title} onChange={(e) => setTitle(e.target.value)} />
           <div>
-            <label className="block text-sm font-semibold text-brand-neutral mb-1">Description</label>
+            <label htmlFor="description" className="block text-sm font-semibold text-brand-neutral mb-1">Description</label>
             <textarea
+              id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required

@@ -11,7 +11,7 @@ import { loginStudent } from '../utils/authApi';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-   const router = useRouter();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,9 +20,9 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-       setError(null);
+    setError(null);
     if (loading) return;
- 
+
     if (!email.trim() || !password) {
       setError("Please enter both email and password");
       return;
@@ -30,14 +30,14 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const response : any = await loginStudent(email, password);
+      const response: any = await loginStudent(email, password);
 
-    if (response && response.token) {
-  localStorage.setItem("token", response.token);
-  router.push("/");
-} else {
-  setError("Login failed: invalid server response");
-}
+      if (response && response.token) {
+        localStorage.setItem("token", response.token);
+        router.push("/");
+      } else {
+        setError("Login failed: invalid server response");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -47,11 +47,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex bg-[#f8fafc]">
-      
+
       {/* LEFT COLUMN: Image Showcase Side */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-50 to-indigo-50 flex-col items-center justify-center p-12 relative border-r border-gray-100">
         <div className="max-w-md text-center space-y-8 z-10">
-          
+
           {/* Floating White Showcase Card Asset */}
           <div className="w-full bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/40 border border-gray-100 flex flex-col items-center">
             <h3 className="text-xl font-bold text-slate-800 tracking-tight">
@@ -60,12 +60,12 @@ export default function LoginPage() {
             <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1 mb-4">
               Signup
             </span>
-            
+
             <div className="w-full max-w-[240px] py-2">
-              <img 
-                src={registerImage.src || registerImage} 
-                alt="Students collaborating" 
-                className="w-full h-auto object-contain mx-auto" 
+              <img
+                src={registerImage.src || registerImage}
+                alt="Students collaborating"
+                className="w-full h-auto object-contain mx-auto"
               />
             </div>
 
@@ -85,10 +85,10 @@ export default function LoginPage() {
         </div>
       </div>
 
-       {/* RIGHT COLUMN */}
+      {/* RIGHT COLUMN */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12">
         <div className="w-full max-w-md space-y-6">
-          
+
           {/* Brand Header */}
           <div className="flex items-center gap-2 text-brand-primary font-bold text-lg select-none">
             <LogIn className="w-5 h-5 text-brand-primary" strokeWidth={2.5} />
@@ -103,14 +103,14 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              
+
               <Input
                 label="Email Address"
                 type="email"
                 name="email"
                 required
                 placeholder="your.name@university.edu"
-                 value={email}
+                value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
               />
@@ -122,21 +122,21 @@ export default function LoginPage() {
                   name="password"
                   required
                   placeholder="••••••••"
-                   value={password}
+                  value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
                 />
-                
 
-                <button 
-                  type="button" 
+
+                <Button
+                  type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 bottom-3.5 text-gray-400 hover:text-gray-600 cursor-pointer outline-none focus:text-brand-primary"
                 >
                   <Eye className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
-               {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-600">{error}</p>}
 
 
               <Button type="submit" variant="form" size="lg" className="w-full pt-3" disabled={loading}>

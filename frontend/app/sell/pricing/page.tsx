@@ -42,6 +42,13 @@ export default function SellPricingPage() {
     return new File([blob], filename, { type: blob.type || 'image/jpeg' });
   };
 
+  const CONDITION_MAP: Record<string, string> = {
+    'Brand New': 'brand_new',
+    'Like New': 'like_new',
+    'Good': 'good',
+    'Fair': 'fair',
+  };
+
   const handlePublish = async () => {
     if (!canPublish || !primaryPhoto) return;
     setPublishing(true);
@@ -53,9 +60,18 @@ export default function SellPricingPage() {
       body.append('description', form.description);
       body.append('price', form.price);
       body.append('category_id', form.categoryId);
+      body.append('condition', CONDITION_MAP[form.condition] || 'good');
 
       const file = await dataUrlToFile(primaryPhoto, 'listing-photo.jpg');
-      body.append('image', file);
+      body.append('image_1', file);
+
+      for (let i = 1; i < form.photos.length; i++) {
+        const photo = form.photos[i];
+        if (photo) {
+          const f = await dataUrlToFile(photo, `listing-photo-${i + 1}.jpg`);
+          body.append(`image_${i + 1}`, f);
+        }
+      }
 
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const res = await fetch(`${API_URL}/api/v1/products`, {

@@ -91,7 +91,7 @@ export function useRegister() {
   }
 
     const formData = new FormData();
-    formData.append("fullname", fullName);
+    formData.append("full_name", fullName);
     formData.append("username", username);
     formData.append("email", email);
     formData.append("password", password);

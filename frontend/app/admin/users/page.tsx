@@ -117,18 +117,18 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap justify-end gap-2">
-                        {tab === 'pending' && user.account_status === 'pending' && (
+                        {user.student_id_url && (
+                          <a
+                            href={user.student_id_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-brand-primary hover:underline self-center mr-1"
+                          >
+                            View ID
+                          </a>
+                        )}
+                        {user.account_status === 'pending' && (
                           <>
-                            {user.student_id_url && (
-                              <a
-                                href={user.student_id_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-brand-primary hover:underline self-center mr-1"
-                              >
-                                View ID
-                              </a>
-                            )}
                             <Button
                               size="sm"
                               variant="primary"
