@@ -1,37 +1,44 @@
-"use client"
-import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { SearchInput } from './SearchInput';
-import { FilterActions } from './FilterActions';
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { SearchInput } from "./SearchInput";
+import { FilterActions } from "./FilterActions";
 
 function Toolbar() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleSearch = useCallback((value: string) => {
-    setSearchQuery(value);
-  }, []);
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
-      router.push(`/?q=${encodeURIComponent(searchQuery.trim())}`);
+    if (!q) {
+      router.push("/", { scroll: false });
+      return;
     }
-  }, [router, searchQuery]);
+
+    router.push(`/?q=${encodeURIComponent(q)}`, { scroll: false });
+  };
 
   const handleFilterOpen = () => {
-    console.log("Open filter drawer/modal");
+    // keep this for later if you add a real filter modal
   };
 
   return (
     <div className="w-full">
       <div className="flex flex-col sm:flex-row items-center gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-        
-        <div onKeyDown={handleKeyDown} className="w-full">
-          <SearchInput value={searchQuery} onChange={handleSearch} />
-        </div>
-        
-        <FilterActions onFilterClick={handleFilterOpen} onSortChange={() => {}} />
+        <form onSubmit={handleSubmit} className="w-full">
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+        </form>
 
+        <FilterActions
+          onFilterClick={handleFilterOpen}
+          onSortChange={() => {}}
+        />
       </div>
     </div>
   );
