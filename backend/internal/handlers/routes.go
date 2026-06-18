@@ -82,6 +82,8 @@ func SetupRoutes(
 		products.GET("/:id", productHandler.GetProductByID)
 	}
 
+	// 
+
 	protected := api.Group("/")
 	protected.Use(authMiddleware.RequireAuth())
 	protected.Use(authMiddleware.RequireStudent())
