@@ -14,6 +14,7 @@ export function useRegister() {
   const [studentIdFile, setStudentIdFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState("")
  
   const validateForm = (): boolean => {
   if (!username.trim()) {
@@ -85,6 +86,10 @@ export function useRegister() {
       setError("Student ID is required");
       return;
     }
+    if (!phoneNumber.trim()) {
+      setError("Phone number is required");
+      return false;
+    }
 
      if (!validateForm()) {
     return;
@@ -96,6 +101,7 @@ export function useRegister() {
     formData.append("email", email);
     formData.append("password", password);
     formData.append("student_id", studentIdFile);
+    formData.append
 
     setLoading(true);
     try {
@@ -112,6 +118,7 @@ export function useRegister() {
     fullName, setFullName,
     username, setUsername,
     email, setEmail,
+    phoneNumber, setPhoneNumber,
     password, setPassword,
     confirmPassword, setConfirmPassword,
     studentIdFile, setStudentIdFile,

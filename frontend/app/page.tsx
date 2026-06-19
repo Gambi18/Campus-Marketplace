@@ -7,7 +7,9 @@ import Navbar from "./components/Navbar";
 import Toolbar from "./components/Toolbar";
 
 type HomeProps = {
-  searchParams?: Promise<{ q?: string }>;
+  searchParams?: Promise<{
+    q?: string;
+  }>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
@@ -17,13 +19,15 @@ export default async function Home({ searchParams }: HomeProps) {
   return (
     <div>
       <Navbar />
+ <Hero />
       <main className="max-w-6xl mx-auto px-4 sm:px-6 space-y-4 pb-12">
-        <Hero />
+       
         <Toolbar />
         <ItemCategory />
+
         <Suspense
           fallback={
-            <div className="p-8 text-sm text-text-muted">
+            <div className="p-8 text-sm text-gray-500">
               Loading products...
             </div>
           }
@@ -31,6 +35,7 @@ export default async function Home({ searchParams }: HomeProps) {
           <CardGrid query={query} />
         </Suspense>
       </main>
+
       <Footer />
     </div>
   );
