@@ -4,15 +4,27 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ConversationList } from '@/components/Chats/ConversationList';
 import Navbar from '@/components/Navbar';
-import { fetchAPI } from '../utils/api';
+import { fetchAPI, postAPI } from '../utils/api';
+import { getMyPurchases, getMySales } from '../utils/paymentApi';
 import type { BackendConversation } from '@/types';
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080';
+
+interface ConversationItem {
+  id: string;
+  userName: string;
+  itemTitle: string;
+  lastMessage: string;
+  timestamp: string;
+  unread: boolean;
+  otherUserId: string;
+}
 
 export default function ConversationsLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const router = useRouter();
   const [conversations, setConversations] = useState<BackendConversation[]>([]);
+  const [paymentItems, setPaymentItems] = useState<ConversationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -20,8 +32,64 @@ export default function ConversationsLayout({ children }: { children: React.Reac
 
   const fetchConversations = useCallback(async () => {
     try {
-      const res = await fetchAPI<{ conversations: BackendConversation[] }>('/api/v1/conversations');
-      setConversations(res.conversations || []);
+      const [convRes, purchasesRes, salesRes] = await Promise.allSettled([
+        fetchAPI<{ conversations: BackendConversation[] }>('/api/v1/conversations'),
+        getMyPurchases(),
+        getMySales(),
+      ]);
+
+      const messageConvs = convRes.status === 'fulfilled' ? convRes.value.conversations || [] : [];
+      const purchases = purchasesRes.status === 'fulfilled' ? purchasesRes.value.purchases || [] : [];
+      const sales = salesRes.status === 'fulfilled' ? salesRes.value.sales || [] : [];
+
+      // Build a set of existing conversation keys: "productId|otherUserId"
+      const covered = new Set<string>();
+      for (const c of messageConvs) {
+        covered.add(`${c.product_id}|${c.other_user_id}`);
+      }
+
+      // Create synthetic items from payments not already in conversations
+      const now = Date.now();
+      const paymentItems: ConversationItem[] = [];
+
+      for (const p of purchases) {
+        const key = `${p.product_id}|${p.seller_id}`;
+        if (!covered.has(key) && (p.status === 'held' || p.status === 'released')) {
+          covered.add(key);
+          paymentItems.push({
+            id: p.product_id,
+            userName: p.seller_name || 'Seller',
+            itemTitle: p.product_title || '',
+            lastMessage: 'Payment confirmed — start chatting!',
+            timestamp: new Date(p.created_at).toLocaleDateString(),
+            unread: false,
+            otherUserId: p.seller_id,
+          });
+        }
+      }
+
+      for (const s of sales) {
+        const key = `${s.product_id}|${s.buyer_id}`;
+        if (!covered.has(key) && (s.status === 'held' || s.status === 'released')) {
+          covered.add(key);
+          paymentItems.push({
+            id: s.product_id,
+            userName: s.buyer_name || 'Buyer',
+            itemTitle: s.product_title || '',
+            lastMessage: 'Payment received — start chatting!',
+            timestamp: new Date(s.created_at).toLocaleDateString(),
+            unread: false,
+            otherUserId: s.buyer_id,
+          });
+        }
+      }
+
+      // Sort payment items by timestamp (most recent first)
+      paymentItems.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      setConversations(messageConvs);
+      // Store payment-derived items for the items list
+      setPaymentItems(paymentItems);
     } catch {
       setConversations([]);
     } finally {
@@ -92,17 +160,17 @@ export default function ConversationsLayout({ children }: { children: React.Reac
 
   const activeId = params?.productId as string | undefined;
 
-  const items = conversations.map((c) => ({
+  const messageItems = conversations.map((c) => ({
     id: c.product_id,
-    // Partner's name, computed by the API — never the requesting user's own name.
     userName: c.other_user_name,
     itemTitle: c.product_title,
     lastMessage: c.content,
     timestamp: new Date(c.created_at).toLocaleDateString(),
     unread: !c.is_read,
-    // Provided by the API, so the client no longer guesses from localStorage.
     otherUserId: c.other_user_id,
-  }));
+  } satisfies ConversationItem));
+
+  const items = [...messageItems, ...paymentItems]
 
   return (
     <div>

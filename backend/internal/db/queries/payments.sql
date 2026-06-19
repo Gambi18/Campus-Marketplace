@@ -92,6 +92,7 @@ SET
     withdraw_reference = $5,
     receipt_number     = $6,
     receipt_pdf_url    = $7,
+    rejection_reason   = $8,
     updated_at         = NOW()
 WHERE id = $1
 RETURNING *;
@@ -131,3 +132,8 @@ SET status     = 'held',
     updated_at = NOW()
 WHERE id = $1 AND status IN ('releasing', 'refunding')
 RETURNING *;
+
+-- name: GetStalePendingPayments :many
+SELECT * FROM payments
+WHERE status = 'pending'
+  AND created_at < NOW() - INTERVAL '5 minutes';

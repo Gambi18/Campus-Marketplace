@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Clock, MapPin, ShieldCheck, Smartphone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, MapPin, MessageCircleMore, ShieldCheck, Smartphone } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import Button from '../../components/Button';
@@ -50,6 +50,8 @@ export default function ProductDetailsPage() {
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [isDev, setIsDev] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [hasPaid, setHasPaid] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(true);
 
   const router = useRouter();
 
@@ -84,6 +86,24 @@ export default function ProductDetailsPage() {
     load();
   }, [id]);
 
+  // Check if user already has an active payment for this product
+  useEffect(() => {
+    if (!id || id === 'demo' || !product.seller_id) return;
+    (async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/api/v1/conversations/${id}/${product.seller_id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        setHasPaid(res.ok);
+      } catch {
+        setHasPaid(false);
+      } finally {
+        setCheckingPayment(false);
+      }
+    })();
+  }, [id, product.seller_id]);
+
   useEffect(() => {
     if (!paymentRef || paymentStatus === 'SUCCESSFUL') return;
     const interval = setInterval(async () => {
@@ -109,9 +129,10 @@ export default function ProductDetailsPage() {
     setPaying(true);
     setPaymentError(null);
     try {
+      const fullNumber = phoneNumber.startsWith('237') ? phoneNumber : '237' + phoneNumber;
       const res = await initiatePayment({
         product_id: id,
-        phone_number: phoneNumber,
+        phone_number: fullNumber,
       });
       setPaymentRef(res.reference);
       setPaymentStatus('pending');
@@ -262,18 +283,39 @@ export default function ProductDetailsPage() {
                       <ShieldCheck className="w-3.5 h-3.5" />
                       Verified
                     </span>
+                    <button
+                      onClick={() => {
+                        if (hasPaid) {
+                          router.push(`/conversations/${id}?user=${product.seller_id}&name=${encodeURIComponent(product.seller_name || '')}`);
+                        } else {
+                          setShowPaymentModal(true);
+                        }
+                      }}
+                      className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 transition-colors text-xs font-medium text-brand-primary"
+                      title="Chat with seller"
+                      aria-label="Chat with seller"
+                    >
+                      <MessageCircleMore className="w-4 h-4" />
+                      Chat
+                    </button>
                   </div>
                   <p className="text-sm text-text-muted mt-0.5">Campus student</p>
                 </div>
               </div>
               <Button
-                onClick={() => setShowPaymentModal(true)}
+                onClick={() => {
+                  if (hasPaid) {
+                    router.push(`/conversations/${id}?user=${product.seller_id}&name=${encodeURIComponent(product.seller_name || '')}`);
+                  } else {
+                    setShowPaymentModal(true);
+                  }
+                }}
                 variant="outlined"
                 fullWidth
                 className="mt-4"
               >
                 <Smartphone className="w-4 h-4 mr-2" />
-                Pay to Chat ({formatPrice(price)})
+                {hasPaid ? 'Chat with Seller' : `Pay to Chat (${formatPrice(price)})`}
               </Button>
             </div>
 
@@ -333,7 +375,7 @@ export default function ProductDetailsPage() {
                 <Input
                   label="Mobile Money Number"
                   name="phone"
-                  placeholder="237XXXXXXXXX"
+                  placeholder="XXXXXXXXX (9-digit number)"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                 />

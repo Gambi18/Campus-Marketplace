@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import Button from '../components/Button';
+import Input from '../components/Input';
+import { MessageCircle } from 'lucide-react';
 import { getMyPurchases, confirmDelivery, rejectDelivery, getReceipt } from '../utils/paymentApi';
 import type { Payment } from '../types/payment';
 
@@ -13,6 +15,10 @@ export default function PurchasesPage() {
   const router = useRouter();
   const [purchases, setPurchases] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejecting, setRejecting] = useState(false);
 
   const load = async () => {
     try {
@@ -42,13 +48,23 @@ export default function PurchasesPage() {
     }
   };
 
-  const handleReject = async (id: string) => {
-    if (!confirm('Cancelling incurs a 1% fee. The remaining amount will be refunded. Continue?')) return;
+  const handleRejectClick = (id: string) => {
+    setRejectTarget(id);
+    setRejectReason('');
+    setShowRejectModal(true);
+  };
+
+  const handleConfirmReject = async () => {
+    if (!rejectTarget || !rejectReason.trim() || rejecting) return;
+    setRejecting(true);
     try {
-      await rejectDelivery(id);
+      await rejectDelivery(rejectTarget, rejectReason.trim());
+      setShowRejectModal(false);
       load();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to reject delivery');
+    } finally {
+      setRejecting(false);
     }
   };
 
@@ -58,6 +74,7 @@ export default function PurchasesPage() {
       held: 'bg-blue-100 text-blue-800',
       released: 'bg-green-100 text-green-800',
       refunded: 'bg-red-100 text-red-800',
+      expired: 'bg-gray-100 text-gray-600',
     };
     return `px-2 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-600'}`;
   };
@@ -91,16 +108,25 @@ export default function PurchasesPage() {
                     <p className="text-xs text-text-muted mt-1">
                       {new Date(p.created_at).toLocaleDateString()}
                     </p>
+                    {p.status === 'refunded' && p.rejection_reason && (
+                      <p className="text-xs text-red-600 mt-2">
+                        Reason: {p.rejection_reason}
+                      </p>
+                    )}
                   </div>
                   <span className={statusBadge(p.status)}>{p.status}</span>
                 </div>
-                <div className="mt-3 flex gap-2">
+                <div className="mt-3 flex gap-2 flex-wrap">
                   {p.status === 'held' && (
                     <>
+                      <Button variant="outlined" size="md" onClick={() => router.push(`/conversations/${p.product_id}?user=${p.seller_id}&name=${encodeURIComponent(p.seller_name || '')}`)}>
+                        <MessageCircle className="w-4 h-4 mr-1" />
+                        Chat
+                      </Button>
                       <Button variant="primary" size="md" onClick={() => handleConfirm(p.id)}>
                         Confirm Received
                       </Button>
-                      <Button variant="outlined" size="md" onClick={() => handleReject(p.id)}>
+                      <Button variant="outlined" size="md" onClick={() => handleRejectClick(p.id)}>
                         Cancel & Refund
                       </Button>
                     </>
@@ -125,6 +151,34 @@ export default function PurchasesPage() {
           </div>
         )}
       </main>
+
+      {/* Reject Reason Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h3 className="text-lg font-bold text-brand-neutral mb-2">Cancel & Refund</h3>
+            <p className="text-sm text-text-muted mb-4">
+              A 1% platform fee applies on refunds. Please tell us why you're cancelling:
+            </p>
+            <Input
+              label="Reason for cancellation"
+              name="reason"
+              placeholder="e.g. Seller didn't respond, item not as described..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+            <div className="flex gap-3 mt-4">
+              <Button variant="outlined" onClick={() => setShowRejectModal(false)} fullWidth disabled={rejecting}>
+                Go Back
+              </Button>
+              <Button variant="primary" onClick={handleConfirmReject} fullWidth disabled={rejecting || !rejectReason.trim()}>
+                {rejecting ? 'Processing…' : 'Confirm Refund'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );
