@@ -20,8 +20,8 @@ export async function confirmDelivery(paymentId: string): Promise<ConfirmDeliver
   return postAPI<ConfirmDeliveryResponse>(`/api/v1/payments/${paymentId}/confirm`);
 }
 
-export async function rejectDelivery(paymentId: string): Promise<ConfirmDeliveryResponse> {
-  return postAPI<ConfirmDeliveryResponse>(`/api/v1/payments/${paymentId}/reject`);
+export async function rejectDelivery(paymentId: string, reason?: string): Promise<ConfirmDeliveryResponse> {
+  return postAPI<ConfirmDeliveryResponse>(`/api/v1/payments/${paymentId}/reject`, reason ? { reason } : undefined);
 }
 
 export async function getMyPurchases(): Promise<PaymentListResponse> {

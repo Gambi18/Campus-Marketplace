@@ -38,6 +38,7 @@ export function ChatPane({ productId, otherUserId, otherUserName, onBackAction }
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch product details
   useEffect(() => {
@@ -74,6 +75,11 @@ export function ChatPane({ productId, otherUserId, otherUserName, onBackAction }
       }
     })();
   }, [productId, otherUserId]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // WebSocket connection for real-time messaging
   useEffect(() => {
@@ -265,6 +271,7 @@ export function ChatPane({ productId, otherUserId, otherUserName, onBackAction }
           }}
           onItemClick={() => router.push(`/details/${productId}`)}
         />
+        <div ref={messagesEndRef} />
       </div>
 
       <div className="flex-shrink-0 bg-white border-t border-gray-100 p-3 z-10">

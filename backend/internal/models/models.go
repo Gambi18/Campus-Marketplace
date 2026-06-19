@@ -455,6 +455,7 @@ type PaymentResponse struct {
 	Status            string `json:"status"`
 	ReceiptNumber     string `json:"receipt_number"`
 	ReceiptPdfUrl     string `json:"receipt_pdf_url"`
+	RejectionReason   string `json:"rejection_reason,omitempty"`
 	CreatedAt         string `json:"created_at"`
 }
 
@@ -489,70 +490,74 @@ func ToPaymentResponse(p db.Payment) PaymentResponse {
 		Status:            p.Status,
 		ReceiptNumber:     p.ReceiptNumber.String,
 		ReceiptPdfUrl:     p.ReceiptPdfUrl.String,
+		RejectionReason:   p.RejectionReason.String,
 		CreatedAt:         p.CreatedAt.String(),
 	}
 }
 
 func ToBuyerPaymentResponse(p db.GetBuyerPaymentsRow) PaymentResponse {
 	return PaymentResponse{
-		ID:            p.ID.String(),
-		BuyerID:       p.BuyerID.String(),
-		SellerID:      p.SellerID.String(),
-		SellerName:    p.SellerName,
-		ProductID:     p.ProductID.String(),
-		ProductTitle:  p.ProductTitle,
-		Amount:        p.Amount,
-		PlatformFee:   p.PlatformFee,
-		NetAmount:     p.NetAmount,
-		PhoneNumber:   p.PhoneNumber,
-		Operator:      p.Operator,
-		Reference:     p.Reference.String,
-		Status:        p.Status,
-		ReceiptNumber: p.ReceiptNumber.String,
-		ReceiptPdfUrl: p.ReceiptPdfUrl.String,
-		CreatedAt:     p.CreatedAt.String(),
+		ID:              p.ID.String(),
+		BuyerID:         p.BuyerID.String(),
+		SellerID:        p.SellerID.String(),
+		SellerName:      p.SellerName,
+		ProductID:       p.ProductID.String(),
+		ProductTitle:    p.ProductTitle,
+		Amount:          p.Amount,
+		PlatformFee:     p.PlatformFee,
+		NetAmount:       p.NetAmount,
+		PhoneNumber:     p.PhoneNumber,
+		Operator:        p.Operator,
+		Reference:       p.Reference.String,
+		Status:          p.Status,
+		ReceiptNumber:   p.ReceiptNumber.String,
+		ReceiptPdfUrl:   p.ReceiptPdfUrl.String,
+		RejectionReason: p.RejectionReason.String,
+		CreatedAt:       p.CreatedAt.String(),
 	}
 }
 
 func ToSellerPaymentResponse(p db.GetSellerPaymentsRow) PaymentResponse {
 	return PaymentResponse{
-		ID:            p.ID.String(),
-		BuyerID:       p.BuyerID.String(),
-		BuyerName:     p.BuyerName,
-		SellerID:      p.SellerID.String(),
-		ProductID:     p.ProductID.String(),
-		ProductTitle:  p.ProductTitle,
-		Amount:        p.Amount,
-		PlatformFee:   p.PlatformFee,
-		NetAmount:     p.NetAmount,
-		PhoneNumber:   p.PhoneNumber,
-		Operator:      p.Operator,
-		Reference:     p.Reference.String,
-		Status:        p.Status,
-		ReceiptNumber: p.ReceiptNumber.String,
-		ReceiptPdfUrl: p.ReceiptPdfUrl.String,
-		CreatedAt:     p.CreatedAt.String(),
+		ID:              p.ID.String(),
+		BuyerID:         p.BuyerID.String(),
+		BuyerName:       p.BuyerName,
+		SellerID:        p.SellerID.String(),
+		ProductID:       p.ProductID.String(),
+		ProductTitle:    p.ProductTitle,
+		Amount:          p.Amount,
+		PlatformFee:     p.PlatformFee,
+		NetAmount:       p.NetAmount,
+		PhoneNumber:     p.PhoneNumber,
+		Operator:        p.Operator,
+		Reference:       p.Reference.String,
+		Status:          p.Status,
+		ReceiptNumber:   p.ReceiptNumber.String,
+		ReceiptPdfUrl:   p.ReceiptPdfUrl.String,
+		RejectionReason: p.RejectionReason.String,
+		CreatedAt:       p.CreatedAt.String(),
 	}
 }
 
 func ToHeldPaymentResponse(p db.GetAllHeldPaymentsRow) PaymentResponse {
 	return PaymentResponse{
-		ID:            p.ID.String(),
-		BuyerID:       p.BuyerID.String(),
-		BuyerName:     p.BuyerName,
-		SellerID:      p.SellerID.String(),
-		SellerName:    p.SellerName,
-		ProductID:     p.ProductID.String(),
-		ProductTitle:  p.ProductTitle,
-		Amount:        p.Amount,
-		PlatformFee:   p.PlatformFee,
-		NetAmount:     p.NetAmount,
-		PhoneNumber:   p.PhoneNumber,
-		Operator:      p.Operator,
-		Reference:     p.Reference.String,
-		Status:        p.Status,
-		ReceiptNumber: p.ReceiptNumber.String,
-		ReceiptPdfUrl: p.ReceiptPdfUrl.String,
-		CreatedAt:     p.CreatedAt.String(),
+		ID:              p.ID.String(),
+		BuyerID:         p.BuyerID.String(),
+		BuyerName:       p.BuyerName,
+		SellerID:        p.SellerID.String(),
+		SellerName:      p.SellerName,
+		ProductID:       p.ProductID.String(),
+		ProductTitle:    p.ProductTitle,
+		Amount:          p.Amount,
+		PlatformFee:     p.PlatformFee,
+		NetAmount:       p.NetAmount,
+		PhoneNumber:     p.PhoneNumber,
+		Operator:        p.Operator,
+		Reference:       p.Reference.String,
+		Status:          p.Status,
+		ReceiptNumber:   p.ReceiptNumber.String,
+		ReceiptPdfUrl:   p.ReceiptPdfUrl.String,
+		RejectionReason: p.RejectionReason.String,
+		CreatedAt:       p.CreatedAt.String(),
 	}
 }

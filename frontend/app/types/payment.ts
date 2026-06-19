@@ -19,6 +19,7 @@ export interface Payment {
   reference: string;
   withdraw_reference: string;
   status: 'pending' | 'held' | 'released' | 'refunded';
+  rejection_reason?: string;
   receipt_number: string;
   receipt_pdf_url: string;
   created_at: string;
