@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { Menu, X, LogOut } from 'lucide-react';
 import { fetchAPI } from '../utils/api';
 
+
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -37,21 +38,37 @@ export default function Navbar() {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
     setMobileMenuOpen(false);
-    router.push("/login");
+    router.push("/");
   };
 
-  const navLinks: { label: string; href: string; badge?: number }[] = [
-    { label: "Browse", href: "/" },
-    ...(isLoggedIn
-      ? [
-          { label: "My Listings", href: "/mylistings" },
-          { label: "Messages", href: "/conversations", badge: unreadMessages },
-          { label: "Purchases", href: "/purchases" },
-          { label: "Sales", href: "/sales" },
-          { label: "Profile", href: "/profile" },
-        ]
-      : []),
-  ];
+  // const navLinks: { label: string; href: string; badge?: number }[] = [
+  //   { label: "Browse", href: "/" },
+  //   ...(isLoggedIn
+  //     ? [
+  //         { label: "My Listings", href: "/mylistings" },
+  //         { label: "Messages", href: "/conversations", badge: unreadMessages },
+  //         { label: "Purchases", href: "/purchases" },
+  //         { label: "Sales", href: "/sales" },
+  //         { label: "Profile", href: "/profile" },
+  //       ]
+  //     : []),
+  // ];
+const handleProtectedAction = (e: React.MouseEvent, targetHref: string) => {
+  if (!isLoggedIn) {
+    e.preventDefault();
+    setMobileMenuOpen(false);
+    router.push("/login");
+  }
+};
+
+  const navLinks: { label: string; href: string; isProtected: boolean; badge?: number }[] = [
+  { label: "Browse", href: "/", isProtected: false },
+  { label: "My Listings", href: "/mylistings", isProtected: true },
+  { label: "Messages", href: "/conversations", isProtected: true, badge: unreadMessages },
+  { label: "Purchases", href: "/purchases", isProtected: true },
+  { label: "Sales", href: "/sales", isProtected: true },
+  { label: "Profile", href: "/profile", isProtected: true },
+];
 
   return (
     <>
@@ -66,6 +83,7 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={(e) => link.isProtected && handleProtectedAction(e, link.href)}
                   className={`h-16 flex items-center transition-colors relative ${
                     pathname === link.href
                       ? "text-brand-primary font-semibold after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-brand-primary"
@@ -85,7 +103,7 @@ export default function Navbar() {
 
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Sell Item Button - hide on very small screens */}
-            <Link href="/sell" className="hidden sm:block">
+            <Link href="/sell" className="hidden sm:block" onClick={(e) => handleProtectedAction(e, "/sell")}>
               <Button variant="primary" size="md">
                 <span className="flex items-center gap-1.5 font-semibold text-xs sm:text-sm">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
@@ -101,7 +119,7 @@ export default function Navbar() {
 
             {/* Profile / Auth Section */}
             {!isLoggedIn ? (
-              // Not logged in - show register link
+             
               <Link
                 href="/register"
                 aria-label="Create an account"
@@ -170,7 +188,13 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
+               onClick={(e) => {
+      if (link.isProtected) {
+        handleProtectedAction(e, link.href);
+      } else {
+        setMobileMenuOpen(false);
+      }
+    }}
                 className={`px-4 py-3 rounded-lg font-medium transition-colors ${
                   pathname === link.href
                     ? "bg-blue-50 text-brand-primary"
@@ -189,7 +213,7 @@ export default function Navbar() {
             {/* Mobile Sell Button */}
             <Link
               href="/sell"
-              onClick={() => setMobileMenuOpen(false)}
+             onClick={(e) => handleProtectedAction(e, "/sell")}
               className="px-4 py-3 rounded-lg font-medium text-brand-primary hover:bg-blue-50 transition-colors flex items-center gap-2"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
