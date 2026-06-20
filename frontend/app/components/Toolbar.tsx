@@ -26,7 +26,7 @@ function Toolbar() {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full my-2">
       <div className="flex flex-col sm:flex-row items-center gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
         <form onSubmit={handleSubmit} className="w-full">
           <SearchInput

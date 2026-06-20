@@ -1,37 +1,42 @@
-'use client';
+import { Suspense } from "react";
+import CardGrid from "../../components/CardGrid";
+import Footer from "../../components/Footer";
+import Hero from "../../../app/components/Hero";
+import ItemCategory from "../../../app/components/ItemCategory";
+import Navbar from "../../components/Navbar";
+import Toolbar from "../../components/Toolbar";
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
-import CardGrid from '../../components/CardGrid';
-
-const CATEGORY_NAMES: Record<string, string> = {
-  '1': 'Electronics',
-  '2': 'Fashion & Accessories',
-  '3': 'Academic Materials',
-  '4': 'Furniture & Home',
-  '5': 'Sports & Fitness',
-  '6': 'Others',
+type CategoryPageProps = {
+  params: Promise<{
+    id: string;
+  }>;
 };
 
-export default function CategoryPage() {
-  const params = useParams();
-  const id = params.id as string;
-  const [categoryName, setCategoryName] = useState('');
-
-  useEffect(() => {
-    setCategoryName(CATEGORY_NAMES[id] || 'Category');
-  }, [id]);
+export default async function CategoryPage({
+  params,
+}: CategoryPageProps) {
+  const { id } = await params;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafc]">
+    <div>
       <Navbar />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6">
-        <h1 className="text-2xl font-bold text-brand-neutral mb-2">{categoryName}</h1>
-        <p className="text-sm text-text-muted mb-6">Browse products in this category</p>
-        <CardGrid />
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 space-y-4 pb-12">
+        <Hero />
+        <Toolbar />
+        <ItemCategory />
+
+        <Suspense
+          fallback={
+            <div className="p-8 text-sm text-gray-500">
+              Loading products...
+            </div>
+          }
+        >
+          <CardGrid categoryId={id} />
+        </Suspense>
       </main>
+
       <Footer />
     </div>
   );

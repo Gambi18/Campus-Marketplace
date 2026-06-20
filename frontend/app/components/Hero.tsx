@@ -1,32 +1,142 @@
+// components/Hero.tsx
 "use client";
 
-import { useRouter } from 'next/navigation';
-import { Check } from 'lucide-react';
-import Button from "./Button"
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import Button from "./Button";
+import { useHeroEffects, slides } from "../../customHooks/useHerroEffects"; // Adjust path as needed
+import {
+  ArrowRight,
+  BookOpen,
+  GraduationCap,
+  Rocket,
+  Smartphone,
+} from "lucide-react";
 
-function Hero() {
+export default function Hero() {
   const router = useRouter();
+  const { currentSlide, setCurrentSlide, typedText } = useHeroEffects();
 
   return (
-    <div className="bg-gradient-to-r from-brand-primary to-purple-600 min-h-[400px] md:min-h-[500px] flex flex-col justify-center items-center p-8 md:p-20 text-white">
-       <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-1.5 rounded-full text-xs font-medium mb-6">
-        <span className="w-4 h-4 bg-white text-purple-600 rounded-full flex items-center justify-center">
-          <Check className="w-2.5 h-2.5" strokeWidth={3} aria-hidden="true" />
-        </span>
-        <span>Trusted by 5,000+ students across campus</span>
+    <section className="relative min-h-screen overflow-hidden text-white">
+      
+      {/* Background Images */}
+      <div className="absolute inset-0">
+        {slides.map((image, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-1000 ${
+              currentSlide === index ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <img
+              src={image}
+              alt="Campus"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ))}
       </div>
-        <h2 className="font-bold text-2xl sm:text-3xl md:text-4xl text-center">Buy & Sell Safely Within Your Campus <br className="hidden sm:inline" />Community</h2>
-        <p className="text-white/80 text-sm md:text-lg max-w-2xl mb-8 leading-relaxed">
-            Discover affordable deals and secondhand essentials from classmates.
-            List what you do not need and pick up what you do—all in one peer-to-peer campus marketplace.
-        </p>
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 p-4">
-            <Button variant="secondary" onClick={() => router.push('/')}><span>Start Browsing</span></Button>
-            <Button variant="outlined" onClick={() => router.push('/sell')}><span>Sell an Item</span></Button>
-        </div>
-        
-    </div>
-  )
-}
 
-export default Hero
+      {/* Gradients & Background Overlays */}
+      <div className="absolute inset-0 bg-black/65" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-[#020817]" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-blue-600/20 blur-[140px]" />
+
+      {/* Floating Animated Icons */}
+      <motion.div
+        className="absolute left-10 top-24 hidden lg:block"
+        animate={{ y: [0, -40, 20, 0], x: [0, 20, -15, 0], rotate: [0, 8, -8, 0] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <BookOpen className="w-16 h-16 text-blue-400/30" />
+      </motion.div>
+
+      <motion.div
+        className="absolute left-16 bottom-24 hidden lg:block"
+        animate={{ y: [0, 30, -20, 0], x: [0, -25, 15, 0], rotate: [0, -10, 10, 0] }}
+        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <Rocket className="w-16 h-16 text-blue-400/30" />
+      </motion.div>
+
+      <motion.div
+        className="absolute right-10 top-24 hidden lg:block"
+        animate={{ y: [0, -30, 25, 0], x: [0, -20, 20, 0], rotate: [0, 10, -10, 0] }}
+        transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <GraduationCap className="w-16 h-16 text-blue-400/30" />
+      </motion.div>
+
+      <motion.div
+        className="absolute right-16 bottom-24 hidden lg:block"
+        animate={{ y: [0, 35, -15, 0], x: [0, 20, -20, 0], rotate: [0, -8, 8, 0] }}
+        transition={{ duration: 13, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <Smartphone className="w-16 h-16 text-blue-400/30" />
+      </motion.div>
+
+      {/* Hero Content Section */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-6">
+        <div className="max-w-5xl w-full text-center">
+          
+          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl px-4 py-2 rounded-full text-sm text-blue-300">
+            Trusted by 5,000+ students across campus
+          </div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="mt-5 text-5xl md:text-7xl font-extrabold leading-[1.05]"
+          >
+            <span className="text-white">
+              {typedText}
+              <span className="animate-pulse text-blue-500">|</span>
+            </span>
+            <br />
+            <span className="text-blue-500">Within Your Campus Community</span>
+          </motion.h1>
+
+          <p className="mt-5 text-lg md:text-xl text-slate-200 max-w-3xl mx-auto">
+            Discover affordable textbooks, electronics, furniture and more from fellow students. 
+            List what you no longer need and find amazing deals from classmates you trust.
+          </p>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+            <Button variant="primary" size="lg" onClick={() => router.push("/")}>
+              <span className="flex items-center gap-2">
+                Browse Marketplace
+                <ArrowRight className="w-4 h-4" />
+              </span>
+            </Button>
+
+            <Button
+              variant="outlined"
+              size="lg"
+              className="!bg-transparent !text-white !border-white/30 hover:!bg-white/10"
+              onClick={() => router.push("/sell")}
+            >
+              Start Selling
+            </Button>
+          </div>
+
+          {/* Slider Indicators */}
+          <div className="flex justify-center gap-2 mt-8">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  currentSlide === index ? "w-8 bg-blue-500" : "w-2 bg-white/40"
+                }`}
+              />
+            ))}
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
