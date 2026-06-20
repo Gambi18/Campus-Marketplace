@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"time"
 
 	db "campus-marketplace/internal/db/sqlc"
@@ -40,6 +41,9 @@ func SetupRoutes(
     cloudinaryService,
     hub,
     )
+
+	// Start background expirer for stale pending payments
+	go paymentHandler.StartPendingPaymentExpirer(context.Background(), 60*time.Second)
 
 	api := router.Group("/api/v1")
 

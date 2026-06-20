@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Clock, MapPin, ShieldCheck, Smartphone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, MapPin, MessageCircle, ShieldCheck, Smartphone } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import Button from '../../components/Button';
@@ -50,6 +50,8 @@ export default function ProductDetailsPage() {
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [isDev, setIsDev] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [hasPaid, setHasPaid] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(true);
 
   const router = useRouter();
 
@@ -84,6 +86,26 @@ export default function ProductDetailsPage() {
     load();
   }, [id]);
 
+  // Check if user already has an active payment for this product
+  useEffect(() => {
+    if (!id || id === 'demo' || !product.seller_id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/api/v1/conversations/${id}/${product.seller_id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!cancelled) setHasPaid(res.ok);
+      } catch {
+        if (!cancelled) setHasPaid(false);
+      } finally {
+        if (!cancelled) setCheckingPayment(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [id, product.seller_id]);
+
   useEffect(() => {
     if (!paymentRef || paymentStatus === 'SUCCESSFUL') return;
     const interval = setInterval(async () => {
@@ -109,9 +131,10 @@ export default function ProductDetailsPage() {
     setPaying(true);
     setPaymentError(null);
     try {
+      const fullNumber = phoneNumber.startsWith('237') ? phoneNumber : '237' + phoneNumber;
       const res = await initiatePayment({
         product_id: id,
-        phone_number: phoneNumber,
+        phone_number: fullNumber,
       });
       setPaymentRef(res.reference);
       setPaymentStatus('pending');
@@ -168,6 +191,7 @@ export default function ProductDetailsPage() {
                         }
                         className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         aria-label="Previous image"
+                        title="Previous image"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
@@ -179,6 +203,7 @@ export default function ProductDetailsPage() {
                         }
                         className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         aria-label="Next image"
+                        title="Next image"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
@@ -194,14 +219,13 @@ export default function ProductDetailsPage() {
             {images.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {images.map((url, index) => (
-                  <button
+                  <Button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${
-                      index === selectedImageIndex
+                    className={`w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${index === selectedImageIndex
                         ? 'border-brand-primary ring-1 ring-brand-primary'
                         : 'border-gray-200 hover:border-gray-400'
-                    }`}
+                      }`}
                   >
                     <Image
                       src={url}
@@ -210,7 +234,7 @@ export default function ProductDetailsPage() {
                       height={64}
                       className="w-full h-full object-cover"
                     />
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -266,13 +290,19 @@ export default function ProductDetailsPage() {
                 </div>
               </div>
               <Button
-                onClick={() => setShowPaymentModal(true)}
+                onClick={() => {
+                  if (hasPaid) {
+                    router.push(`/conversations/${id}?user=${product.seller_id}&name=${encodeURIComponent(product.seller_name || '')}`);
+                  } else {
+                    setShowPaymentModal(true);
+                  }
+                }}
                 variant="outlined"
                 fullWidth
                 className="mt-4"
               >
-                <Smartphone className="w-4 h-4 mr-2" />
-                Pay to Chat ({formatPrice(price)})
+                {hasPaid ? <MessageCircle className="w-4 h-4 mr-2" /> : <Smartphone className="w-4 h-4 mr-2" />}
+                {hasPaid ? 'Chat with Seller' : `Pay to Chat (${formatPrice(price)})`}
               </Button>
             </div>
 
@@ -305,6 +335,7 @@ export default function ProductDetailsPage() {
                   product_id: id,
                   phone_number: '237670000000',
                 });
+                setHasPaid(true);
               } catch {
                 // payment may already exist (product in escrow), navigate anyway
               }
@@ -332,7 +363,7 @@ export default function ProductDetailsPage() {
                 <Input
                   label="Mobile Money Number"
                   name="phone"
-                  placeholder="237XXXXXXXXX"
+                  placeholder="XXXXXXXXX (9-digit number)"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                 />

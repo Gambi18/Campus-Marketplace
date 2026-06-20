@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -277,7 +278,16 @@ func (h *PaymentHandler) ConfirmDelivery(c *gin.Context) {
 		return
 	}
 
-	// Get payment 
+	// Parse rejection reason
+	var reqBody struct {
+		Reason string `json:"reason"`
+	}
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		// body is optional — swallow bind errors so existing callers without a body still work
+		reqBody.Reason = ""
+	}
+
+	// Get payment
 	payment, err := h.queries.GetPaymentByID(c.Request.Context(), paymentID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
@@ -382,6 +392,7 @@ func (h *PaymentHandler) ConfirmDelivery(c *gin.Context) {
 		WithdrawReference: sql.NullString{String: withdrawResp.Reference, Valid: true},
 		ReceiptNumber:     sql.NullString{String: receiptNumber, Valid: true},
 		ReceiptPdfUrl:     sql.NullString{String: receiptURL, Valid: receiptURL != ""},
+		RejectionReason:   sql.NullString{},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update payment record"})
@@ -427,6 +438,14 @@ func (h *PaymentHandler) RejectDelivery(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payment ID"})
 		return
+	}
+
+	// Parse rejection reason
+	var reqBody struct {
+		Reason string `json:"reason"`
+	}
+	if err = c.ShouldBindJSON(&reqBody); err != nil {
+		reqBody.Reason = ""
 	}
 
 	// Get payment
@@ -525,6 +544,7 @@ func (h *PaymentHandler) RejectDelivery(c *gin.Context) {
 		WithdrawReference: sql.NullString{String: withdrawResp.Reference, Valid: true},
 		ReceiptNumber:     sql.NullString{String: receiptNumber, Valid: true},
 		ReceiptPdfUrl:     sql.NullString{String: receiptURL, Valid: receiptURL != ""},
+		RejectionReason:   sql.NullString{String: reqBody.Reason, Valid: reqBody.Reason != ""},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update payment record"})
@@ -676,4 +696,46 @@ func detectOperator(phone string) string {
 		return "MTN"
 	}
 	return "Orange"
+}
+
+// StartPendingPaymentExpirer runs a background loop that expires payments
+// stuck in "pending" for more than 5 minutes and reverts the product to
+// "available". Call it as a goroutine.
+func (h *PaymentHandler) StartPendingPaymentExpirer(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	log.Printf("pending-payment expirer started (interval=%v)", interval)
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("pending-payment expirer stopped")
+			return
+		case <-ticker.C:
+			payments, err := h.queries.GetStalePendingPayments(ctx)
+			if err != nil {
+				log.Printf("expirer: error fetching stale payments: %v", err)
+				continue
+			}
+			for _, p := range payments {
+				_, err := h.queries.UpdatePaymentStatus(ctx, db.UpdatePaymentStatusParams{
+					ID:     p.ID,
+					Status: "expired",
+				})
+				if err != nil {
+					log.Printf("expirer: error expiring payment %s: %v", p.ID, err)
+					continue
+				}
+				_, err = h.queries.UpdateProductStatus(ctx, db.UpdateProductStatusParams{
+					ID:       p.ProductID,
+					SellerID: p.SellerID,
+					Status:   "available",
+				})
+				if err != nil {
+					log.Printf("expirer: error reverting product %s to available: %v", p.ProductID, err)
+				}
+				log.Printf("expirer: expired payment %s for product %s", p.ID, p.ProductID)
+			}
+		}
+	}
 }
