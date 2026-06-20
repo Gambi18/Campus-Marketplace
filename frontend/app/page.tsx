@@ -22,8 +22,10 @@ export default async function Home({ searchParams }: HomeProps) {
  <Hero />
       <main className="max-w-6xl mx-auto px-4 sm:px-6 space-y-4 pb-12">
        
-        <Toolbar />
+       <div id="product_listings">
+         <Toolbar />
         <ItemCategory />
+       </div>
 
         <Suspense
           fallback={

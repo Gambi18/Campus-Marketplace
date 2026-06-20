@@ -20,9 +20,9 @@ export default async function CategoryPage({
   return (
     <div>
       <Navbar />
-
+         <Hero />
       <main className="max-w-6xl mx-auto px-4 sm:px-6 space-y-4 pb-12">
-        <Hero />
+     
         <Toolbar />
         <ItemCategory />
 
