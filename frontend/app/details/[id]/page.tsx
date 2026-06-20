@@ -51,7 +51,7 @@ export default function ProductDetailsPage() {
   const [isDev, setIsDev] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [hasPaid, setHasPaid] = useState(false);
-  const [checkingPayment, setCheckingPayment] = useState(true);
+  const [, setCheckingPayment] = useState(true);
 
   const router = useRouter();
 

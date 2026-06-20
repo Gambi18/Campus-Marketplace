@@ -1,0 +1,16 @@
+# Keep the build context small and reproducible.
+.git
+.gitignore
+.env
+.env.local
+bin/
+vendor/
+uploads/
+*.log
+*.test
+*.out
+.idea/
+.vscode/
+README.md
+Dockerfile
+.dockerignore

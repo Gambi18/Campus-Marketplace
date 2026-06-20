@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ConversationList } from '@/components/Chats/ConversationList';
 import Navbar from '@/components/Navbar';
-import { fetchAPI, postAPI } from '../utils/api';
+import { fetchAPI } from '../utils/api';
 import { getMyPurchases, getMySales } from '../utils/paymentApi';
 import type { BackendConversation } from '@/types';
 
@@ -50,7 +50,6 @@ export default function ConversationsLayout({ children }: { children: React.Reac
       }
 
       // Create synthetic items from payments not already in conversations
-      const now = Date.now();
       const paymentItems: ConversationItem[] = [];
 
       for (const p of purchases) {

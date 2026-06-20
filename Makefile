@@ -1,4 +1,9 @@
-.PHONY: help install dev build docker-up docker-down docker-build clean
+.PHONY: help install dev dev-stop stop build docker-up docker-dev docker-dev-down docker-down docker-build docker-logs clean
+
+# Ports the local (non-Docker) dev servers listen on. Override if you changed
+# them, e.g. `make dev-stop DEV_BACKEND_PORT=9090`.
+DEV_BACKEND_PORT  ?= 8080
+DEV_FRONTEND_PORT ?= 3000
 
 help:
 	@echo "Campus Marketplace - Available Commands"
@@ -8,6 +13,8 @@ help:
 	@echo "  make dev              - Start both frontend and backend in development mode"
 	@echo "  make dev-backend      - Start backend development server"
 	@echo "  make dev-frontend     - Start frontend development server"
+	@echo "  make dev-stop         - Stop local (non-Docker) dev servers"
+	@echo "  make stop             - Stop EVERYTHING (local dev servers + Docker stacks)"
 	@echo ""
 	@echo "Installation:"
 	@echo "  make install          - Install dependencies for both frontend and backend"
@@ -20,7 +27,9 @@ help:
 	@echo "  make build-frontend   - Build frontend"
 	@echo ""
 	@echo "Docker:"
-	@echo "  make docker-up        - Start all services with Docker Compose"
+	@echo "  make docker-up        - Build & start all services (production images)"
+	@echo "  make docker-dev       - Start all services with hot reload"
+	@echo "  make docker-dev-down  - Stop the hot-reload (dev) services"
 	@echo "  make docker-down      - Stop all Docker Compose services"
 	@echo "  make docker-build     - Build Docker images"
 	@echo "  make docker-logs      - View Docker Compose logs"
@@ -65,10 +74,31 @@ dev-frontend:
 	cd frontend && npm run dev & 
 
 dev-stop:
-	@echo "Stopping development servers..."
-	pkill -f "go run cmd/api/main.go"
-	pkill -f "npm run dev"
-	@echo "Development servers stopped!"
+	@echo "Stopping local (non-Docker) development servers..."
+	@# Kill by listening port — the real servers are child processes (go run's
+	@# compiled temp binary, next-server/Turbopack workers) that name-based pkill
+	@# misses, so they keep holding the ports. SIGTERM first, then SIGKILL.
+	@for port in $(DEV_BACKEND_PORT) $(DEV_FRONTEND_PORT); do \
+		pids=$$(lsof -ti tcp:$$port 2>/dev/null); \
+		if [ -n "$$pids" ]; then \
+			echo "  port $$port -> killing PID(s): $$pids"; \
+			kill $$pids 2>/dev/null || true; \
+			sleep 1; \
+			pids=$$(lsof -ti tcp:$$port 2>/dev/null); \
+			[ -n "$$pids" ] && kill -9 $$pids 2>/dev/null || true; \
+		fi; \
+	done
+	@# Fallback: sweep any stray parents not bound to those ports. The bracketed
+	@# first char keeps the pattern from matching pkill's own shell command line.
+	-@pkill -f "[c]md/api/main.go" 2>/dev/null || true
+	-@pkill -f "go-build.*[e]xe/main" 2>/dev/null || true
+	-@pkill -f "[n]ext dev" 2>/dev/null || true
+	-@pkill -f "[n]ext-server" 2>/dev/null || true
+	@echo "Local development servers stopped!"
+
+# Stop EVERYTHING: local host dev servers + both Docker stacks (prod and dev).
+stop: dev-stop docker-dev-down
+	@echo "All environments stopped!"
 
 # Build targets
 build: build-backend build-frontend
@@ -82,22 +112,30 @@ build-frontend:
 	@echo "Building frontend..."
 	cd frontend && npm run build
 
-# Docker targets
+# Docker targets (Compose v2 syntax: `docker compose`, not `docker-compose`)
 docker-up:
-	@echo "Starting Docker Compose services..."
-	docker-compose up
+	@echo "Building & starting Docker Compose services..."
+	docker compose up --build
+
+docker-dev:
+	@echo "Starting Docker Compose services with hot reload..."
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+docker-dev-down:
+	@echo "Stopping hot-reload Docker Compose services..."
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 
 docker-down:
 	@echo "Stopping Docker Compose services..."
-	docker-compose down
+	docker compose down
 
 docker-build:
 	@echo "Building Docker images..."
-	docker-compose build
+	docker compose build
 
 docker-logs:
 	@echo "Showing Docker Compose logs..."
-	docker-compose logs -f
+	docker compose logs -f
 
 # Testing targets
 test: test-backend test-frontend
