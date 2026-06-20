@@ -44,10 +44,14 @@ jobs:
         run: npm ci
       - name: Lint
         run: npm run lint
-      - name: Type-check
-        run: npx tsc --noEmit
+      # Build before type-check: Next 16 generates next-env.d.ts and
+      # .next/types/** (typed routes) during the build, and tsc --noEmit needs
+      # those artifacts to resolve image imports and route types on a fresh
+      # checkout. `next build` also type-checks, so this is the real gate.
       - name: Build
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080
           NEXT_PUBLIC_WS_URL: ws://localhost:8080
+      - name: Type-check
+        run: npx tsc --noEmit
