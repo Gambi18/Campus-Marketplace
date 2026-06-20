@@ -101,7 +101,8 @@ export function useRegister() {
     formData.append("email", email);
     formData.append("password", password);
     formData.append("student_id", studentIdFile);
-    formData.append
+    const fullNumber = phoneNumber.startsWith('237') ? phoneNumber : '237' + phoneNumber;
+    formData.append("phone_number", fullNumber);
 
     setLoading(true);
     try {

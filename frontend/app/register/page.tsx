@@ -86,7 +86,7 @@ export default function RegisterPage() {
               <Input required label="Username" disabled={loading} name="username" value={username} placeholder="john_doe" onChange={(e) => setUsername(e.target.value)} />
               <Input required label="Full Name" disabled={loading} name="name" value={fullName} placeholder="John Doe" onChange={(e) => setFullName(e.target.value)} />
               <Input required label="Email" disabled={loading} type="email" name="email" value={email} placeholder="name@university.edu" onChange={(e) => setEmail(e.target.value)} />
-              <Input label="Phone Number (MTN or Orange)" name="phone" type="tel" value={phoneNumber} required={true}  placeholder="237XXXXXXXXX" onChange={(e) => setPhoneNumber(e.target.value)}   />
+<Input label="Phone Number (MTN or Orange)" name="phone" type="tel" value={phoneNumber} required={true} placeholder="XXXXXXXXX (9-digit number)" helperText="237 will be added automatically" onChange={(e) => setPhoneNumber(e.target.value)} />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="relative">
