@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Emit a self-contained server bundle (.next/standalone) so the Docker runtime
+  // image can run `node server.js` without installing node_modules.
+  output: 'standalone',
   images: {
     // `images.domains` was removed in Next 16; use remotePatterns. Product/avatar
     // images come from several hosts (Cloudinary, Unsplash seed data, and the

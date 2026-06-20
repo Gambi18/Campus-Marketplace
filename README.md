@@ -54,20 +54,66 @@ Campus-Marketplace/
 │   │   └── ws/             # WebSocket hub + client
 │   ├── pkg/utils/
 │   └── sqlc.yaml
-├── docker-compose.yml
+├── docker-compose.yml       # Default stack (production images)
+├── docker-compose.dev.yml   # Dev override (hot reload, source-mounted)
+├── .env.example             # Root env template for Compose
 └── README.md
 ```
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+, Go 1.25+, PostgreSQL 15+, Docker & Docker Compose (optional)
+- **Docker only** (recommended): Docker Desktop (Windows/macOS) or Docker Engine + Compose v2 (Linux). Nothing else required.
+- **Manual setup**: Node.js 18+, Go 1.25+, PostgreSQL 15+
 
 ### Quick start (Docker)
+
+Works identically on Linux and Windows (Docker Desktop / WSL2). From the repo root:
+
 ```bash
-docker-compose up
+# Optional: copy the env template and edit it (the stack also runs with no .env)
+cp .env.example .env
+
+# Build images and start everything (Postgres + backend + frontend)
+docker compose up --build
 ```
-Frontend: http://localhost:3000, Backend: http://localhost:8080
+
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8080 (health check at `/health`)
+- Postgres: localhost:5432
+
+Database migrations run automatically on backend startup, and the default admin
+is seeded on first boot (`admin@campusmarket.local` / `password` unless overridden).
+
+Stop and remove containers with `docker compose down` (add `-v` to also wipe the
+database and uploaded-files volumes).
+
+#### Hot-reload development
+
+Mounts your source into the containers so edits are picked up live (file-watch
+polling is enabled so this works on Windows/WSL2 too):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+Frontend changes reload automatically. After editing Go code, restart the backend
+container (`docker compose restart backend`) to rebuild.
+
+> Make shortcuts: `make docker-up`, `make docker-dev`, `make docker-down`, `make docker-logs`.
+
+#### Configuration
+
+All settings have safe dev defaults, so `docker compose up` works out of the box.
+Override them via a root `.env` file (see `.env.example`). Note `NEXT_PUBLIC_API_URL`
+/ `NEXT_PUBLIC_WS_URL` are **baked into the frontend at build time** and must be
+reachable from the browser — keep them as `localhost:8080` for local use, or set
+your public host and rebuild (`docker compose up --build`) when deploying remotely.
+
+> **Windows note:** the repo ships a `.gitattributes` that forces LF line endings,
+> so Docker builds work on Windows checkouts. If you cloned before it was added and
+> hit "exec format" errors, run `git rm --cached -r . && git reset --hard` to
+> re-normalize, or ensure your editor saves these files with LF.
 
 ### Manual setup
 ```bash

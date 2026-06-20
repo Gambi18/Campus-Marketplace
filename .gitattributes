@@ -1,0 +1,28 @@
+# Normalize line endings so a Windows checkout doesn't introduce CRLF, which
+# breaks shell scripts and Docker builds (e.g. "exec format" / "not found"
+# errors from a CRLF shebang). Text files are stored and checked out with LF.
+* text=auto eol=lf
+
+# Files that must always be LF regardless of content detection.
+*.go      text eol=lf
+*.sh      text eol=lf
+*.sql     text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.json    text eol=lf
+*.js      text eol=lf
+*.ts      text eol=lf
+*.tsx     text eol=lf
+Dockerfile      text eol=lf
+.dockerignore   text eol=lf
+Makefile        text eol=lf
+
+# Treat these as binary so they're never line-ending munged.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

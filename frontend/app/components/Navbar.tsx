@@ -53,7 +53,7 @@ export default function Navbar() {
   //       ]
   //     : []),
   // ];
-const handleProtectedAction = (e: React.MouseEvent, targetHref: string) => {
+const handleProtectedAction = (e: React.MouseEvent, _targetHref: string) => {
   if (!isLoggedIn) {
     e.preventDefault();
     setMobileMenuOpen(false);
