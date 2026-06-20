@@ -275,6 +275,7 @@ func ToBasicProductResponse(p db.Product) ProductResponse {
 type CreateReportRequest struct {
 	ProductID string `json:"product_id" binding:"required"`
 	Reason    string `json:"reason"     binding:"required,oneof=fake_listing wrong_price scam inappropriate other"`
+	Details   string `json:"details"    binding:"max=250"`
 }
 
 type UpdateReportStatusRequest struct {
@@ -288,6 +289,7 @@ type ReportResponse struct {
 	ProductID    string `json:"product_id"`
 	ProductTitle string `json:"product_title,omitempty"`
 	Reason       string `json:"reason"`
+	Details      string `json:"details,omitempty"`
 	Status       string `json:"status"`
 	CreatedAt    string `json:"created_at"`
 	UpdatedAt    string `json:"updated_at"`
@@ -300,6 +302,7 @@ func ToBasicReportResponse(r db.Report) ReportResponse {
 		ReporterID: r.ReporterID.String(),
 		ProductID:  r.ProductID.String(),
 		Reason:     r.Reason,
+		Details:    r.Details,
 		Status:     r.Status,
 		CreatedAt:  r.CreatedAt.String(),
 		UpdatedAt:  r.UpdatedAt.String(),
@@ -315,6 +318,7 @@ func ToReportResponse(r db.GetAllReportsRow) ReportResponse {
 		ProductID:    r.ProductID.String(),
 		ProductTitle: r.ProductTitle,
 		Reason:       r.Reason,
+		Details:      r.Details,
 		Status:       r.Status,
 		CreatedAt:    r.CreatedAt.String(),
 		UpdatedAt:    r.UpdatedAt.String(),
@@ -330,6 +334,7 @@ func ToGetByIDReportResponse(r db.GetReportByIDRow) ReportResponse {
 		ProductID:    r.ProductID.String(),
 		ProductTitle: r.ProductTitle,
 		Reason:       r.Reason,
+		Details:      r.Details,
 		Status:       r.Status,
 		CreatedAt:    r.CreatedAt.String(),
 		UpdatedAt:    r.UpdatedAt.String(),
@@ -345,6 +350,7 @@ func ToStatusReportResponse(r db.GetReportsByStatusRow) ReportResponse {
 		ProductID:    r.ProductID.String(),
 		ProductTitle: r.ProductTitle,
 		Reason:       r.Reason,
+		Details:      r.Details,
 		Status:       r.Status,
 		CreatedAt:    r.CreatedAt.String(),
 		UpdatedAt:    r.UpdatedAt.String(),
@@ -360,6 +366,7 @@ func ToReporterReportResponse(r db.GetReportsByReporterIDRow) ReportResponse {
 		ProductID:    r.ProductID.String(),
 		ProductTitle: r.ProductTitle,
 		Reason:       r.Reason,
+		Details:      r.Details,
 		Status:       r.Status,
 		CreatedAt:    r.CreatedAt.String(),
 		UpdatedAt:    r.UpdatedAt.String(),

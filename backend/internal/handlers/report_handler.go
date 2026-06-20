@@ -48,6 +48,7 @@ func (h *ReportHandler) CreateReport(c *gin.Context) {
 		ReporterID: reporterID,
 		ProductID:  productID,
 		Reason:     req.Reason,
+		Details:    req.Details,
 	})
 	if err != nil {
 		// unique constraint violation - already reported this product

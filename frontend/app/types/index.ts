@@ -116,7 +116,7 @@ export interface ReportPayload {
   buyerId: string;
   productId: string;
   productName: string;
-  reason: 'prohibited' | 'scam' | 'behavior' | 'misleading' | 'other' | string;
+  reason: 'fake_listing' | 'wrong_price' | 'scam' | 'inappropriate' | 'other' | '';
   details: string;
 }
 //
