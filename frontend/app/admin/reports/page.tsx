@@ -9,9 +9,18 @@ interface AdminReport {
   reporter_name: string;
   product_title: string;
   reason: string;
+  details?: string;
   status: string;
   created_at: string;
 }
+
+const REASON_LABELS: Record<string, string> = {
+  fake_listing: 'Fake / Prohibited Listing',
+  wrong_price: 'Misleading Price',
+  scam: 'Scam / Fraud',
+  inappropriate: 'Inappropriate Behavior',
+  other: 'Other',
+};
 
 export default function AdminReportsPage() {
   const router = useRouter();
@@ -69,6 +78,7 @@ export default function AdminReportsPage() {
               <th className="text-left p-4 font-semibold text-text-muted">Reporter</th>
               <th className="text-left p-4 font-semibold text-text-muted">Product</th>
               <th className="text-left p-4 font-semibold text-text-muted">Reason</th>
+              <th className="text-left p-4 font-semibold text-text-muted">Details</th>
               <th className="text-left p-4 font-semibold text-text-muted">Status</th>
               <th className="text-left p-4 font-semibold text-text-muted">Date</th>
             </tr>
@@ -78,7 +88,10 @@ export default function AdminReportsPage() {
               <tr key={r.id} className="hover:bg-gray-50">
                 <td className="p-4 font-medium text-brand-neutral">{r.reporter_name}</td>
                 <td className="p-4 text-text-muted">{r.product_title}</td>
-                <td className="p-4 text-text-muted">{r.reason}</td>
+                <td className="p-4 text-text-muted">{REASON_LABELS[r.reason] || r.reason}</td>
+                <td className="p-4 text-text-muted max-w-xs whitespace-pre-wrap break-words">
+                  {r.details?.trim() ? r.details : <span className="text-gray-300">—</span>}
+                </td>
                 <td className="p-4"><span className={statusBadge(r.status)}>{r.status}</span></td>
                 <td className="p-4 text-text-muted">{new Date(r.created_at).toLocaleDateString()}</td>
               </tr>

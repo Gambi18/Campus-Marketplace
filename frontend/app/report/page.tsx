@@ -14,25 +14,31 @@ function ReportContent() {
   const searchParams = useSearchParams();
 
   const sellerName = searchParams.get('sellerName') || 'Rose Sharon';
+  const productId = searchParams.get('productId') || '';
   const [selectedReason, setSelectedReason] = useState<ReportPayload['reason']>('');
   const [additionalDetails, setAdditionalDetails] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const reasons = [
-    { id: 'prohibited', label: 'Prohibited Item' },
-    { id: 'scam', label: 'Scam/Fraud' },
-    { id: 'behavior', label: 'Inappropriate Behavior' },
-    { id: 'misleading', label: 'Misleading Listing' },
+  const reasons: { id: ReportPayload['reason']; label: string }[] = [
+    { id: 'fake_listing', label: 'Fake / Prohibited Listing' },
+    { id: 'wrong_price', label: 'Misleading Price' },
+    { id: 'scam', label: 'Scam / Fraud' },
+    { id: 'inappropriate', label: 'Inappropriate Behavior' },
     { id: 'other', label: 'Other' },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedReason) return;
+    if (!productId) {
+      alert('Missing product reference. Please start the report from the chat.');
+      return;
+    }
     setIsSubmitting(true);
 
     try {
       await postAPI('/api/v1/reports', {
+        product_id: productId,
         reason: selectedReason,
         details: additionalDetails,
       });

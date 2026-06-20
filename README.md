@@ -42,7 +42,7 @@ Campus-Marketplace/
 │   ├── internal/
 │   │   ├── config/         # Configuration (fees, CamPay creds)
 │   │   ├── db/
-│   │   │   ├── migrations/ # SQL migrations (011 payments, 010 phone_number)
+│   │   │   ├── migrations/ # SQL migrations (014 report details, 011 payments)
 │   │   │   ├── queries/    # sqlc query definitions
 │   │   │   └── sqlc/       # Generated Go code
 │   │   ├── handlers/       # HTTP handlers (auth, product, payment, message, etc.)
@@ -107,8 +107,8 @@ cd frontend && cp .env.example .env.local && npm install && npm run dev
 
 See the route definitions in `backend/internal/handlers/routes.go` for the complete list. Key groups:
 - **Public:** health, register, login, categories, products (list/search/detail), webhook
-- **Protected (student JWT):** profile, my-products, CRUD products, reports, conversations, messages, payments (initiate/status/confirm/reject/receipt), purchases, sales
-- **Admin (admin JWT):** users, pending-users, approve/reject/block, categories CRUD, reports, held payments
+- **Protected (student JWT):** profile, my-products, CRUD products, reports (`product_id` + `reason` ∈ `fake_listing|wrong_price|scam|inappropriate|other` + optional `details` ≤250 chars), conversations, messages, payments (initiate/status/confirm/reject/receipt), purchases, sales
+- **Admin (admin JWT):** users, pending-users, approve/reject/block, categories CRUD, reports (reporter, product, reason, details, status), held payments
 
 ## Environment Variables
 

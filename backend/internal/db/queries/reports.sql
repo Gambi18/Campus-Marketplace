@@ -2,9 +2,10 @@
 INSERT INTO reports (
     reporter_id,
     product_id,
-    reason
+    reason,
+    details
 ) VALUES (
-    $1, $2, $3
+    $1, $2, $3, $4
 )
 RETURNING *;
 
