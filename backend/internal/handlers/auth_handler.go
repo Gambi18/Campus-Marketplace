@@ -30,9 +30,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	email := c.PostForm("email")
 	password := c.PostForm("password")
 	fullName := c.PostForm("full_name")
+	phoneNumber := c.PostForm("phone_number")
 
-	if username == "" || email == "" || password == "" || fullName == ""  {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username, full_name, email and password are required"})
+	if username == "" || email == "" || password == "" || fullName == "" || phoneNumber == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username, full_name, email, password and phone_number are required"})
+		return
+	}
+
+	if len(phoneNumber) < 9 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "phone_number must be at least 9 digits"})
 		return
 	}
 
@@ -72,6 +78,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		PasswordHash: hashedPassword,
 		FullName:     fullName,
 		StudentIDUrl: studentIDUrl,
+		PhoneNumber:  phoneNumber,
 	})
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "email or username already exists"})

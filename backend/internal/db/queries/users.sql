@@ -5,9 +5,10 @@ INSERT INTO users (
     password_hash,
     full_name,
     student_id_url,
+    phone_number,
     account_status
 ) VALUES (
-    $1, $2, $3, $4, $5, 'pending'
+    $1, $2, $3, $4, $5, $6, 'pending'
 )
 RETURNING *;
 
