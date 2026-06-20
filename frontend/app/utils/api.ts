@@ -42,7 +42,11 @@ export async function apiCall<T>(
   }
 
   if (!response.ok) {
-    if (response.status === 401 && typeof window !== 'undefined') {
+    // A 401 from the login/register endpoints means bad credentials, not an
+    // expired session — let the backend's real message ("invalid email or
+    // password") through instead of hijacking it with a session-expired flow.
+    const isAuthEndpoint = endpoint.startsWith('/api/v1/auth/') || endpoint.startsWith('/api/v1/admin/auth/');
+    if (response.status === 401 && !isAuthEndpoint && typeof window !== 'undefined') {
       localStorage.removeItem('token');
       // Avoid a redirect loop when an auth-protected call on the login page 401s.
       if (!window.location.pathname.startsWith('/login')) {
