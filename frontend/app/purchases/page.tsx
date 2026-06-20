@@ -158,7 +158,7 @@ export default function PurchasesPage() {
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
             <h3 className="text-lg font-bold text-brand-neutral mb-2">Cancel & Refund</h3>
             <p className="text-sm text-text-muted mb-4">
-              A 1% platform fee applies on refunds. Please tell us why you're cancelling:
+              A 1% platform fee applies on refunds. Please tell us why you&apos;re cancelling:
             </p>
             <Input
               label="Reason for cancellation"
