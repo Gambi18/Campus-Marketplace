@@ -27,9 +27,9 @@ export default function ItemCategory() {
               key={category.id}
               onClick={() => {
                 if (category.id === 0) {
-                  router.push("/");
+                  router.push("/" , { scroll: false });
                 } else {
-                  router.push(`/category/${category.id}`);
+                  router.push(`/category/${category.id}`,  { scroll: false });
                 }
               }}
               className="flex items-center space-x-1.5 px-4 py-2 rounded-lg border text-xs font-semibold transition-all duration-150 active:scale-95 cursor-pointer bg-white text-gray-600 border-gray-100 hover:bg-gray-50 hover:border-gray-200"

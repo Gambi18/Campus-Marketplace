@@ -1,16 +1,13 @@
-// components/Hero.tsx
+
 "use client";
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Button from "./Button";
-import { useHeroEffects, slides } from "../../customHooks/useHerroEffects"; // Adjust path as needed
+import { useHeroEffects, slides } from "../../customHooks/useHerroEffects"; 
 import {
   ArrowRight,
-  BookOpen,
-  GraduationCap,
-  Rocket,
-  Smartphone,
+ 
 } from "lucide-react";
 
 export default function Hero() {
@@ -39,43 +36,11 @@ export default function Hero() {
       </div>
 
       {/* Gradients & Background Overlays */}
-      <div className="absolute inset-0 bg-black/65" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-[#020817]" />
+      <div className="absolute inset-0 bg-black/10" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-[#24304e]" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-blue-600/20 blur-[140px]" />
 
-      {/* Floating Animated Icons */}
-      <motion.div
-        className="absolute left-10 top-24 hidden lg:block"
-        animate={{ y: [0, -40, 20, 0], x: [0, 20, -15, 0], rotate: [0, 8, -8, 0] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <BookOpen className="w-16 h-16 text-blue-400/30" />
-      </motion.div>
-
-      <motion.div
-        className="absolute left-16 bottom-24 hidden lg:block"
-        animate={{ y: [0, 30, -20, 0], x: [0, -25, 15, 0], rotate: [0, -10, 10, 0] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <Rocket className="w-16 h-16 text-blue-400/30" />
-      </motion.div>
-
-      <motion.div
-        className="absolute right-10 top-24 hidden lg:block"
-        animate={{ y: [0, -30, 25, 0], x: [0, -20, 20, 0], rotate: [0, 10, -10, 0] }}
-        transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <GraduationCap className="w-16 h-16 text-blue-400/30" />
-      </motion.div>
-
-      <motion.div
-        className="absolute right-16 bottom-24 hidden lg:block"
-        animate={{ y: [0, 35, -15, 0], x: [0, 20, -20, 0], rotate: [0, -8, 8, 0] }}
-        transition={{ duration: 13, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <Smartphone className="w-16 h-16 text-blue-400/30" />
-      </motion.div>
-
+    
       {/* Hero Content Section */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-6">
         <div className="max-w-5xl w-full text-center">
@@ -105,7 +70,7 @@ export default function Hero() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
-            <Button variant="primary" size="lg" onClick={() => router.push("/")}>
+            <Button variant="primary" size="lg" onClick={() => window.location.hash = "product_listings"}>
               <span className="flex items-center gap-2">
                 Browse Marketplace
                 <ArrowRight className="w-4 h-4" />
