@@ -38,7 +38,11 @@ export function ListingFormProvider({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!hydrated) return;
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(form));
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(form));
+    } catch {
+      // quota exceeded (usually large images) — skip persistence
+    }
   }, [form, hydrated]);
 
   const updateForm = useCallback((patch: Partial<ListingFormData>) => {
