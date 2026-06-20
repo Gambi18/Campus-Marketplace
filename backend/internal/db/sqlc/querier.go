@@ -41,7 +41,7 @@ type Querier interface {
 	GetAllUsers(ctx context.Context) ([]User, error)
 	GetBuyerPayments(ctx context.Context, buyerID uuid.UUID) ([]GetBuyerPaymentsRow, error)
 	GetCategoryByID(ctx context.Context, id int32) (Category, error)
-	GetConversations(ctx context.Context, senderID uuid.UUID) ([]GetConversationsRow, error)
+	GetConversations(ctx context.Context, receiverID uuid.UUID) ([]GetConversationsRow, error)
 	GetMessagesByConversation(ctx context.Context, arg GetMessagesByConversationParams) ([]GetMessagesByConversationRow, error)
 	GetNotificationPreferences(ctx context.Context, userID uuid.UUID) (NotificationPreference, error)
 	GetPaymentByID(ctx context.Context, id uuid.UUID) (GetPaymentByIDRow, error)

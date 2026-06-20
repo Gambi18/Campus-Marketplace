@@ -58,7 +58,14 @@ SELECT DISTINCT ON (
     m.id, m.sender_id, m.receiver_id, m.product_id, m.content, m.is_read, m.created_at,
     u.username  AS sender_name,
     p.title     AS product_title,
-    p.image_url_1 AS product_image
+    p.image_url_1 AS product_image,
+    (
+        SELECT COUNT(*) FROM messages um
+        WHERE um.product_id = m.product_id
+          AND um.receiver_id = $1
+          AND um.sender_id = CASE WHEN m.sender_id = $1 THEN m.receiver_id ELSE m.sender_id END
+          AND um.is_read = FALSE
+    ) AS unread_count
 FROM messages m
 JOIN users    u ON u.id = m.sender_id
 JOIN products p ON p.id = m.product_id
@@ -80,10 +87,11 @@ type GetConversationsRow struct {
 	SenderName   string    `json:"sender_name"`
 	ProductTitle string    `json:"product_title"`
 	ProductImage string    `json:"product_image"`
+	UnreadCount  int64     `json:"unread_count"`
 }
 
-func (q *Queries) GetConversations(ctx context.Context, senderID uuid.UUID) ([]GetConversationsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getConversations, senderID)
+func (q *Queries) GetConversations(ctx context.Context, receiverID uuid.UUID) ([]GetConversationsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getConversations, receiverID)
 	if err != nil {
 		return nil, err
 	}
@@ -102,6 +110,7 @@ func (q *Queries) GetConversations(ctx context.Context, senderID uuid.UUID) ([]G
 			&i.SenderName,
 			&i.ProductTitle,
 			&i.ProductImage,
+			&i.UnreadCount,
 		); err != nil {
 			return nil, err
 		}

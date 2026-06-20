@@ -24,8 +24,8 @@ export default function Navbar() {
     if (!isLoggedIn) return;
     const fetchUnread = async () => {
       try {
-        const res = await fetchAPI<{ count: number }>('/api/v1/unread-count');
-        setUnreadMessages(res.count || 0);
+        const res = await fetchAPI<{ unread_count: number }>('/api/v1/unread-count');
+        setUnreadMessages(res.unread_count || 0);
       } catch { /* ignore */ }
     };
     fetchUnread();

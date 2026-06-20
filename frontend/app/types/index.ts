@@ -128,6 +128,7 @@ export interface ConversationItem {
   lastMessage: string;
   timestamp: string;
   unread?: boolean;
+  unreadCount?: number;
 }
 
 export interface BackendConversation {
@@ -144,6 +145,7 @@ export interface BackendConversation {
   product_image: string;
   content: string;
   is_read: boolean;
+  unread_count: number;
   created_at: string;
 }
 

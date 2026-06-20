@@ -62,9 +62,16 @@ export function ConversationList({
                   <h4 className={`text-sm truncate ${chat.unread ? 'font-semibold text-gray-950' : 'font-medium text-gray-900'}`}>
                     {chat.itemTitle}
                   </h4>
-                  <span className="text-xs text-gray-400 flex-shrink-0 font-light">
-                    {chat.timestamp}
-                  </span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-xs text-gray-400 font-light">
+                      {chat.timestamp}
+                    </span>
+                    {chat.unreadCount && chat.unreadCount > 0 ? (
+                      <span className="bg-blue-600 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
+                        {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
 
                 <p className="text-xs text-blue-600 font-medium truncate mt-0.5">

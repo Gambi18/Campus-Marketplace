@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNotifications } from '../context/NotificationContext';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { notificationHref } from '../utils/notificationLink';
 
 export default function NotificationCenter() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
@@ -68,7 +69,7 @@ export default function NotificationCenter() {
               notifications.map((notification) => (
                 <Link
                   key={notification.id}
-                  href={notification.link || '#'}
+                  href={notificationHref(notification)}
                   onClick={() => handleNotificationClick(notification.id, notification.is_read)}
                   className={`block p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors ${
                     !notification.is_read ? 'bg-blue-50/30' : ''

@@ -408,6 +408,9 @@ type ConversationResponse struct {
 	ProductImage string `json:"product_image"`
 	Content      string `json:"content"`
 	IsRead       bool   `json:"is_read"`
+	// UnreadCount is how many messages from the partner the requesting user has
+	// not yet read in this conversation — used for the per-conversation badge.
+	UnreadCount  int64  `json:"unread_count"`
 	CreatedAt    string `json:"created_at"`
 }
 

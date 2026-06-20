@@ -17,6 +17,7 @@ interface ConversationItem {
   lastMessage: string;
   timestamp: string;
   unread: boolean;
+  unreadCount: number;
   otherUserId: string;
 }
 
@@ -63,6 +64,7 @@ export default function ConversationsLayout({ children }: { children: React.Reac
             lastMessage: 'Payment confirmed — start chatting!',
             timestamp: new Date(p.created_at).toLocaleDateString(),
             unread: false,
+            unreadCount: 0,
             otherUserId: p.seller_id,
           });
         }
@@ -79,6 +81,7 @@ export default function ConversationsLayout({ children }: { children: React.Reac
             lastMessage: 'Payment received — start chatting!',
             timestamp: new Date(s.created_at).toLocaleDateString(),
             unread: false,
+            unreadCount: 0,
             otherUserId: s.buyer_id,
           });
         }
@@ -166,7 +169,8 @@ export default function ConversationsLayout({ children }: { children: React.Reac
     itemTitle: c.product_title,
     lastMessage: c.content,
     timestamp: new Date(c.created_at).toLocaleDateString(),
-    unread: !c.is_read,
+    unread: (c.unread_count ?? 0) > 0,
+    unreadCount: c.unread_count ?? 0,
     otherUserId: c.other_user_id,
   } satisfies ConversationItem));
 

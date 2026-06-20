@@ -30,7 +30,14 @@ SELECT DISTINCT ON (
     m.*,
     u.username  AS sender_name,
     p.title     AS product_title,
-    p.image_url_1 AS product_image
+    p.image_url_1 AS product_image,
+    (
+        SELECT COUNT(*) FROM messages um
+        WHERE um.product_id = m.product_id
+          AND um.receiver_id = $1
+          AND um.sender_id = CASE WHEN m.sender_id = $1 THEN m.receiver_id ELSE m.sender_id END
+          AND um.is_read = FALSE
+    ) AS unread_count
 FROM messages m
 JOIN users    u ON u.id = m.sender_id
 JOIN products p ON p.id = m.product_id

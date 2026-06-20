@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	db "campus-marketplace/internal/db/sqlc"
@@ -195,7 +196,7 @@ func (h *MessageHandler) persistAndBroadcast(msg ws.Message) {
 			"product_id": productID.String(),
 			"chat_id":    saved.ID.String(),
 		},
-		fmt.Sprintf("/conversations/%s/%s", productID.String(), senderID.String()),
+		fmt.Sprintf("/conversations/%s?user=%s&name=%s", productID.String(), senderID.String(), url.QueryEscape(sender.Username)),
 	)
 }
 
@@ -312,7 +313,7 @@ func (h *MessageHandler) CreateMessageREST(c *gin.Context) {
 			"sender_id":  senderID.String(),
 			"product_id": productID.String(),
 		},
-		fmt.Sprintf("/conversations/%s/%s", productID.String(), senderID.String()),
+		fmt.Sprintf("/conversations/%s?user=%s&name=%s", productID.String(), senderID.String(), url.QueryEscape(sender.Username)),
 	)
 
 	c.JSON(http.StatusCreated, gin.H{"message": models.MessageResponse{
@@ -368,6 +369,7 @@ func (h *MessageHandler) GetConversations(c *gin.Context) {
 			ProductImage: conv.ProductImage,
 			Content:      conv.Content,
 			IsRead:       conv.IsRead,
+			UnreadCount:  conv.UnreadCount,
 			CreatedAt:    conv.CreatedAt.String(),
 		})
 	}

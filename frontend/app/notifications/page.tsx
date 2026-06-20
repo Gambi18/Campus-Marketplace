@@ -8,6 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { notificationHref } from '../utils/notificationLink';
 
 export default function NotificationsPage() {
   const router = useRouter();
@@ -97,9 +98,9 @@ export default function NotificationsPage() {
                     </p>
                     
                     <div className="flex items-center gap-4">
-                      {notification.link && (
+                      {notificationHref(notification) !== '#' && (
                         <Link
-                          href={notification.link}
+                          href={notificationHref(notification)}
                           onClick={() => !notification.is_read && markAsRead(notification.id)}
                           className="text-xs font-semibold text-brand-primary hover:text-brand-neutral transition-colors"
                         >

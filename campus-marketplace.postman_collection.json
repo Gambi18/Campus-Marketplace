@@ -453,13 +453,13 @@
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "conversations"]
             },
-            "description": "Get all conversations for the authenticated user. Filters out unpaid conversations (unless DEV_BYPASS_PAYMENT=true)."
+            "description": "Get all conversations for the authenticated user. Filters out unpaid conversations (unless DEV_BYPASS_PAYMENT=true). Each conversation includes other_user_id / other_user_name (the partner) and unread_count (number of unread messages from the partner, used for the per-conversation badge)."
           },
           "response": [
             {
               "name": "200 OK",
               "code": 200,
-              "body": "{\n  \"conversations\": [\n    {\n      \"id\": \"uuid\",\n      \"sender_id\": \"uuid\",\n      \"sender_name\": \"Alice\",\n      \"receiver_id\": \"uuid\",\n      \"product_id\": \"uuid\",\n      \"product_title\": \"MacBook Air\",\n      \"product_image\": \"https://...\",\n      \"content\": \"Last message text\",\n      \"is_read\": false,\n      \"created_at\": \"...\"\n    }\n  ],\n  \"count\": 1\n}"
+              "body": "{\n  \"conversations\": [\n    {\n      \"id\": \"uuid\",\n      \"sender_id\": \"uuid\",\n      \"sender_name\": \"Alice\",\n      \"receiver_id\": \"uuid\",\n      \"other_user_id\": \"uuid\",\n      \"other_user_name\": \"Alice\",\n      \"product_id\": \"uuid\",\n      \"product_title\": \"MacBook Air\",\n      \"product_image\": \"https://...\",\n      \"content\": \"Last message text\",\n      \"is_read\": false,\n      \"unread_count\": 2,\n      \"created_at\": \"...\"\n    }\n  ],\n  \"count\": 1\n}"
             }
           ]
         },
@@ -701,20 +701,20 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"product_id\": \"uuid-here\",\n  \"reason\": \"fake_listing\"\n}"
+              "raw": "{\n  \"product_id\": \"uuid-here\",\n  \"reason\": \"fake_listing\",\n  \"details\": \"Optional context, max 250 chars\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/reports",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "reports"]
             },
-            "description": "Report a product. Valid reasons: fake_listing, wrong_price, scam, inappropriate, other."
+            "description": "Report a product. Valid reasons: fake_listing, wrong_price, scam, inappropriate, other. Optional 'details' free-text field (max 250 chars) is stored and shown in the admin reports view."
           },
           "response": [
             {
               "name": "201 Created",
               "code": 201,
-              "body": "{\n  \"message\": \"report submitted successfully\",\n  \"report\": {\n    \"id\": \"uuid\",\n    \"reporter_id\": \"uuid\",\n    \"product_id\": \"uuid\",\n    \"reason\": \"fake_listing\",\n    \"status\": \"pending\",\n    \"created_at\": \"...\",\n    \"updated_at\": \"...\"\n  }\n}"
+              "body": "{\n  \"message\": \"report submitted successfully\",\n  \"report\": {\n    \"id\": \"uuid\",\n    \"reporter_id\": \"uuid\",\n    \"product_id\": \"uuid\",\n    \"reason\": \"fake_listing\",\n    \"details\": \"Seller asked to pay off-platform\",\n    \"status\": \"pending\",\n    \"created_at\": \"...\",\n    \"updated_at\": \"...\"\n  }\n}"
             }
           ]
         },
@@ -736,7 +736,7 @@
             {
               "name": "200 OK",
               "code": 200,
-              "body": "{\n  \"reports\": [\n    {\n      \"id\": \"uuid\",\n      \"reporter_id\": \"uuid\",\n      \"reporter_name\": \"John Doe\",\n      \"product_id\": \"uuid\",\n      \"product_title\": \"MacBook Air\",\n      \"reason\": \"fake_listing\",\n      \"status\": \"pending\",\n      \"created_at\": \"...\",\n      \"updated_at\": \"...\"\n    }\n  ],\n  \"count\": 1\n}"
+              "body": "{\n  \"reports\": [\n    {\n      \"id\": \"uuid\",\n      \"reporter_id\": \"uuid\",\n      \"reporter_name\": \"John Doe\",\n      \"product_id\": \"uuid\",\n      \"product_title\": \"MacBook Air\",\n      \"reason\": \"fake_listing\",\n      \"details\": \"Seller asked to pay off-platform\",\n      \"status\": \"pending\",\n      \"created_at\": \"...\",\n      \"updated_at\": \"...\"\n    }\n  ],\n  \"count\": 1\n}"
             }
           ]
         }
@@ -1065,7 +1065,7 @@
             {
               "name": "200 OK",
               "code": 200,
-              "body": "{\n  \"reports\": [\n    {\n      \"id\": \"uuid\",\n      \"reporter_id\": \"uuid\",\n      \"reporter_name\": \"John Doe\",\n      \"product_id\": \"uuid\",\n      \"product_title\": \"MacBook Air\",\n      \"reason\": \"fake_listing\",\n      \"status\": \"pending\",\n      \"created_at\": \"...\",\n      \"updated_at\": \"...\"\n    }\n  ],\n  \"count\": 3\n}"
+              "body": "{\n  \"reports\": [\n    {\n      \"id\": \"uuid\",\n      \"reporter_id\": \"uuid\",\n      \"reporter_name\": \"John Doe\",\n      \"product_id\": \"uuid\",\n      \"product_title\": \"MacBook Air\",\n      \"reason\": \"fake_listing\",\n      \"details\": \"Seller asked to pay off-platform\",\n      \"status\": \"pending\",\n      \"created_at\": \"...\",\n      \"updated_at\": \"...\"\n    }\n  ],\n  \"count\": 3\n}"
             }
           ]
         },
@@ -1087,7 +1087,7 @@
             {
               "name": "200 OK",
               "code": 200,
-              "body": "{\n  \"id\": \"uuid\",\n  \"reporter_id\": \"uuid\",\n  \"reporter_name\": \"John Doe\",\n  \"product_id\": \"uuid\",\n  \"product_title\": \"MacBook Air\",\n  \"reason\": \"fake_listing\",\n  \"status\": \"pending\",\n  \"created_at\": \"...\",\n  \"updated_at\": \"...\"\n}"
+              "body": "{\n  \"id\": \"uuid\",\n  \"reporter_id\": \"uuid\",\n  \"reporter_name\": \"John Doe\",\n  \"product_id\": \"uuid\",\n  \"product_title\": \"MacBook Air\",\n  \"reason\": \"fake_listing\",\n  \"details\": \"Seller asked to pay off-platform\",\n  \"status\": \"pending\",\n  \"created_at\": \"...\",\n  \"updated_at\": \"...\"\n}"
             }
           ]
         },
