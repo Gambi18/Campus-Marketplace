@@ -57,6 +57,7 @@ type UserResponse struct {
 	IsVerified    bool   `json:"is_verified"`
 	AccountStatus string `json:"account_status"`
 	StudentIDUrl  string `json:"student_id_url,omitempty"`
+	ReportCount   int32  `json:"report_count"`
 }
 
 type AdminResponse struct {
@@ -77,8 +78,8 @@ type CreateAdminRequest struct {
 	Password string `json:"password" binding:"required,min=6,max=50"`
 }
 
-func ToUserResponse(u db.User) UserResponse {
-	return UserResponse{
+func ToUserResponse(u db.User, reportCount ...int32) UserResponse {
+	r := UserResponse{
 		ID:            u.ID.String(),
 		FullName:      u.FullName,
 		Username:      u.Username,
@@ -87,6 +88,10 @@ func ToUserResponse(u db.User) UserResponse {
 		AccountStatus: u.AccountStatus,
 		StudentIDUrl:  u.StudentIDUrl,
 	}
+	if len(reportCount) > 0 {
+		r.ReportCount = reportCount[0]
+	}
+	return r
 }
 
 func ToAdminResponse(a db.Admin) AdminResponse {

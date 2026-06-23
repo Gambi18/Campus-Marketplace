@@ -51,6 +51,20 @@ JOIN products p ON p.id = r.product_id
 WHERE r.reporter_id = $1
 ORDER BY r.created_at DESC;
 
+-- name: GetReportCountBySeller :many
+SELECT
+    p.seller_id,
+    COUNT(*)::int AS report_count
+FROM reports r
+JOIN products p ON p.id = r.product_id
+GROUP BY p.seller_id;
+
+-- name: GetReportCountBySellerID :one
+SELECT COUNT(*)::int AS report_count
+FROM reports r
+JOIN products p ON p.id = r.product_id
+WHERE p.seller_id = $1;
+
 -- name: UpdateReportStatus :one
 UPDATE reports
 SET

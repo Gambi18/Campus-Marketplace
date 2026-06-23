@@ -5,6 +5,7 @@ export interface AdminUser {
   is_verified: boolean;
   account_status: 'pending' | 'approved' | 'rejected' | 'blocked' | string;
   student_id_url?: string;
+  report_count?: number;
 }
 
 export interface PlatformAdmin {

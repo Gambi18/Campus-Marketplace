@@ -53,22 +53,22 @@ export default function Navbar() {
   //       ]
   //     : []),
   // ];
-const handleProtectedAction = (e: React.MouseEvent, _targetHref: string) => {
-  if (!isLoggedIn) {
-    e.preventDefault();
-    setMobileMenuOpen(false);
-    router.push("/login");
-  }
-};
+  const handleProtectedAction = (e: React.MouseEvent, _targetHref: string) => {
+    if (!isLoggedIn) {
+      e.preventDefault();
+      setMobileMenuOpen(false);
+      router.push("/login");
+    }
+  };
 
   const navLinks: { label: string; href: string; isProtected: boolean; badge?: number }[] = [
-  { label: "Browse", href: "/", isProtected: false },
-  { label: "My Listings", href: "/mylistings", isProtected: true },
-  { label: "Messages", href: "/conversations", isProtected: true, badge: unreadMessages },
-  { label: "Purchases", href: "/purchases", isProtected: true },
-  { label: "Sales", href: "/sales", isProtected: true },
-  { label: "Profile", href: "/profile", isProtected: true },
-];
+    { label: "Browse", href: "/", isProtected: false },
+    { label: "My Listings", href: "/mylistings", isProtected: true },
+    { label: "Messages", href: "/conversations", isProtected: true, badge: unreadMessages },
+    { label: "Purchases", href: "/purchases", isProtected: true },
+    { label: "Sales", href: "/sales", isProtected: true },
+    { label: "Profile", href: "/profile", isProtected: true },
+  ];
 
   return (
     <>
@@ -84,11 +84,10 @@ const handleProtectedAction = (e: React.MouseEvent, _targetHref: string) => {
                   key={link.href}
                   href={link.href}
                   onClick={(e) => link.isProtected && handleProtectedAction(e, link.href)}
-                  className={`h-16 flex items-center transition-colors relative ${
-                    pathname === link.href
+                  className={`h-16 flex items-center transition-colors relative ${pathname === link.href
                       ? "text-brand-primary font-semibold after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-brand-primary"
                       : "text-text-muted hover:text-brand-neutral"
-                  }`}
+                    }`}
                 >
                   {link.label}
                   {link.badge && link.badge > 0 ? (
@@ -119,7 +118,7 @@ const handleProtectedAction = (e: React.MouseEvent, _targetHref: string) => {
 
             {/* Profile / Auth Section */}
             {!isLoggedIn ? (
-             
+
               <Link
                 href="/register"
                 aria-label="Create an account"
@@ -133,7 +132,7 @@ const handleProtectedAction = (e: React.MouseEvent, _targetHref: string) => {
               </Link>
             ) : (
               // Logged in - show mobile menu toggle and profile icon
-              <button
+              <Button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
@@ -145,7 +144,7 @@ const handleProtectedAction = (e: React.MouseEvent, _targetHref: string) => {
                 ) : (
                   <Menu className="w-5 h-5 text-gray-600" />
                 )}
-              </button>
+              </Button>
             )}
 
             {/* Desktop Logout Button */}
@@ -161,7 +160,7 @@ const handleProtectedAction = (e: React.MouseEvent, _targetHref: string) => {
 
             {/* Mobile Menu Button - show when not logged in */}
             {!isLoggedIn && (
-              <button
+              <Button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
@@ -173,7 +172,7 @@ const handleProtectedAction = (e: React.MouseEvent, _targetHref: string) => {
                 ) : (
                   <Menu className="w-5 h-5 text-gray-600" />
                 )}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -188,18 +187,17 @@ const handleProtectedAction = (e: React.MouseEvent, _targetHref: string) => {
               <Link
                 key={link.href}
                 href={link.href}
-               onClick={(e) => {
-      if (link.isProtected) {
-        handleProtectedAction(e, link.href);
-      } else {
-        setMobileMenuOpen(false);
-      }
-    }}
-                className={`px-4 py-3 rounded-lg font-medium transition-colors ${
-                  pathname === link.href
+                onClick={(e) => {
+                  if (link.isProtected) {
+                    handleProtectedAction(e, link.href);
+                  } else {
+                    setMobileMenuOpen(false);
+                  }
+                }}
+                className={`px-4 py-3 rounded-lg font-medium transition-colors ${pathname === link.href
                     ? "bg-blue-50 text-brand-primary"
                     : "text-text-muted hover:bg-gray-50 hover:text-brand-neutral"
-                }`}
+                  }`}
               >
                 {link.label}
                 {link.badge && link.badge > 0 ? (
@@ -213,7 +211,7 @@ const handleProtectedAction = (e: React.MouseEvent, _targetHref: string) => {
             {/* Mobile Sell Button */}
             <Link
               href="/sell"
-             onClick={(e) => handleProtectedAction(e, "/sell")}
+              onClick={(e) => handleProtectedAction(e, "/sell")}
               className="px-4 py-3 rounded-lg font-medium text-brand-primary hover:bg-blue-50 transition-colors flex items-center gap-2"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">

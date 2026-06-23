@@ -101,9 +101,19 @@ func (h *AdminHandler) GetAllUsers(c *gin.Context) {
 		return
 	}
 
+	// Build a map of seller_id → report_count
+	reportCounts := make(map[string]int32)
+	rows, err := h.queries.GetReportCountBySeller(c.Request.Context())
+	if err == nil {
+		for _, r := range rows {
+			reportCounts[r.SellerID.String()] = r.ReportCount
+		}
+	}
+
 	response := make([]models.UserResponse, len(users))
 	for i, u := range users {
-		response[i] = models.ToUserResponse(u)
+		rc := reportCounts[u.ID.String()]
+		response[i] = models.ToUserResponse(u, rc)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -119,9 +129,18 @@ func (h *AdminHandler) GetPendingUsers(c *gin.Context) {
 		return
 	}
 
+	reportCounts := make(map[string]int32)
+	rows, err := h.queries.GetReportCountBySeller(c.Request.Context())
+	if err == nil {
+		for _, r := range rows {
+			reportCounts[r.SellerID.String()] = r.ReportCount
+		}
+	}
+
 	response := make([]models.UserResponse, len(users))
 	for i, u := range users {
-		response[i] = models.ToUserResponse(u)
+		rc := reportCounts[u.ID.String()]
+		response[i] = models.ToUserResponse(u, rc)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -147,7 +166,7 @@ func (h *AdminHandler) ApproveUser(c *gin.Context) {
 	_, _ = h.notificationService.Create(
 		c.Request.Context(),
 		userID,
-		notification.NotificationListingApproved, // Account approved doesn't have a specific type yet, reusing
+		notification.NotificationAccountApproved,
 		"Account Approved",
 		"Your student account has been approved. You can now start listing products.",
 		notification.NotificationMetadata{"user_id": userID.String()},
@@ -177,7 +196,7 @@ func (h *AdminHandler) RejectUser(c *gin.Context) {
 	_, _ = h.notificationService.Create(
 		c.Request.Context(),
 		userID,
-		notification.NotificationListingRejected,
+		notification.NotificationAccountRejected,
 		"Account Rejected",
 		"Your student account verification was rejected. Please check your student ID and try again.",
 		notification.NotificationMetadata{"user_id": userID.String()},
@@ -202,6 +221,17 @@ func (h *AdminHandler) BlockUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not block user"})
 		return
 	}
+
+	// Send notification
+	_, _ = h.notificationService.Create(
+		c.Request.Context(),
+		userID,
+		notification.NotificationAccountBlocked,
+		"Account Blocked",
+		"Your account has been blocked. Contact support if you believe this is a mistake.",
+		notification.NotificationMetadata{"user_id": userID.String()},
+		"#",
+	)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "user blocked successfully",

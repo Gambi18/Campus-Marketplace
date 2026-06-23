@@ -1,19 +1,41 @@
 import type { AppNotification } from '../types/notifications';
 
-// Builds the in-app href for a notification, preferring structured `metadata`
-// over the stored `link`. This rescues legacy NEW_MESSAGE notifications whose
-// `link` used the old 3-segment `/conversations/{productId}/{senderId}` shape,
-// which 404s against the `/conversations/[productId]?user=...` route.
 export function notificationHref(n: AppNotification): string {
   const meta = (n.metadata ?? {}) as Record<string, unknown>;
   const productId = typeof meta.product_id === 'string' ? meta.product_id : '';
   const senderId = typeof meta.sender_id === 'string' ? meta.sender_id : '';
 
-  if (n.type === 'NEW_MESSAGE' && productId && senderId) {
-    return `/conversations/${productId}?user=${senderId}`;
+  switch (n.type) {
+    case 'NEW_MESSAGE':
+      if (productId && senderId) {
+        return `/conversations/${productId}?user=${senderId}`;
+      }
+      break;
+
+    case 'ACCOUNT_APPROVED':
+    case 'ACCOUNT_REJECTED':
+      return '/profile';
+
+    case 'ACCOUNT_BLOCKED':
+      return '#';
+
+    case 'PAYMENT_RECEIVED':
+    case 'PAYMENT_CONFIRMED':
+    case 'PAYMENT_RELEASED':
+      if (productId) {
+        return `/details/${productId}`;
+      }
+      return '/my-sales';
+
+    case 'ITEM_SOLD':
+      return '/my-sales';
+
+    case 'LISTING_APPROVED':
+    case 'LISTING_REJECTED':
+      return '/mylistings';
   }
 
-  // Rewrite a stored old-format conversation link into the query-param form.
+  // Fallback: rewrite old-format 3-segment links to query-param form
   if (n.link) {
     const m = n.link.match(/^\/conversations\/([^/?#]+)\/([^/?#]+)$/);
     if (m) {
