@@ -288,16 +288,18 @@ type UpdateReportStatusRequest struct {
 }
 
 type ReportResponse struct {
-	ID           string `json:"id"`
-	ReporterID   string `json:"reporter_id"`
-	ReporterName string `json:"reporter_name,omitempty"`
-	ProductID    string `json:"product_id"`
-	ProductTitle string `json:"product_title,omitempty"`
-	Reason       string `json:"reason"`
-	Details      string `json:"details,omitempty"`
-	Status       string `json:"status"`
-	CreatedAt    string `json:"created_at"`
-	UpdatedAt    string `json:"updated_at"`
+	ID                string `json:"id"`
+	ReporterID        string `json:"reporter_id"`
+	ReporterName      string `json:"reporter_name,omitempty"`
+	ProductID         string `json:"product_id"`
+	ProductTitle      string `json:"product_title,omitempty"`
+	SellerID          string `json:"seller_id,omitempty"`
+	ProductSellerName string `json:"product_seller_name,omitempty"`
+	Reason            string `json:"reason"`
+	Details           string `json:"details,omitempty"`
+	Status            string `json:"status"`
+	CreatedAt         string `json:"created_at"`
+	UpdatedAt         string `json:"updated_at"`
 }
 
 //  Report (basic, no joins)
@@ -317,64 +319,72 @@ func ToBasicReportResponse(r db.Report) ReportResponse {
 //  GetAllReportsRow
 func ToReportResponse(r db.GetAllReportsRow) ReportResponse {
 	return ReportResponse{
-		ID:           r.ID.String(),
-		ReporterID:   r.ReporterID.String(),
-		ReporterName: r.ReporterName,
-		ProductID:    r.ProductID.String(),
-		ProductTitle: r.ProductTitle,
-		Reason:       r.Reason,
-		Details:      r.Details,
-		Status:       r.Status,
-		CreatedAt:    r.CreatedAt.String(),
-		UpdatedAt:    r.UpdatedAt.String(),
+		ID:                r.ID.String(),
+		ReporterID:        r.ReporterID.String(),
+		ReporterName:      r.ReporterName,
+		ProductID:         r.ProductID.String(),
+		ProductTitle:      r.ProductTitle,
+		SellerID:          r.SellerID.String(),
+		ProductSellerName: r.ProductSellerName,
+		Reason:            r.Reason,
+		Details:           r.Details,
+		Status:            r.Status,
+		CreatedAt:         r.CreatedAt.String(),
+		UpdatedAt:         r.UpdatedAt.String(),
 	}
 }
 
 //  GetReportByIDRow
 func ToGetByIDReportResponse(r db.GetReportByIDRow) ReportResponse {
 	return ReportResponse{
-		ID:           r.ID.String(),
-		ReporterID:   r.ReporterID.String(),
-		ReporterName: r.ReporterName,
-		ProductID:    r.ProductID.String(),
-		ProductTitle: r.ProductTitle,
-		Reason:       r.Reason,
-		Details:      r.Details,
-		Status:       r.Status,
-		CreatedAt:    r.CreatedAt.String(),
-		UpdatedAt:    r.UpdatedAt.String(),
+		ID:                r.ID.String(),
+		ReporterID:        r.ReporterID.String(),
+		ReporterName:      r.ReporterName,
+		ProductID:         r.ProductID.String(),
+		ProductTitle:      r.ProductTitle,
+		SellerID:          r.SellerID.String(),
+		ProductSellerName: r.ProductSellerName,
+		Reason:            r.Reason,
+		Details:           r.Details,
+		Status:            r.Status,
+		CreatedAt:         r.CreatedAt.String(),
+		UpdatedAt:         r.UpdatedAt.String(),
 	}
 }
 
 //  GetReportsByStatusRow
 func ToStatusReportResponse(r db.GetReportsByStatusRow) ReportResponse {
 	return ReportResponse{
-		ID:           r.ID.String(),
-		ReporterID:   r.ReporterID.String(),
-		ReporterName: r.ReporterName,
-		ProductID:    r.ProductID.String(),
-		ProductTitle: r.ProductTitle,
-		Reason:       r.Reason,
-		Details:      r.Details,
-		Status:       r.Status,
-		CreatedAt:    r.CreatedAt.String(),
-		UpdatedAt:    r.UpdatedAt.String(),
+		ID:                r.ID.String(),
+		ReporterID:        r.ReporterID.String(),
+		ReporterName:      r.ReporterName,
+		ProductID:         r.ProductID.String(),
+		ProductTitle:      r.ProductTitle,
+		SellerID:          r.SellerID.String(),
+		ProductSellerName: r.ProductSellerName,
+		Reason:            r.Reason,
+		Details:           r.Details,
+		Status:            r.Status,
+		CreatedAt:         r.CreatedAt.String(),
+		UpdatedAt:         r.UpdatedAt.String(),
 	}
 }
 
 //  GetReportsByReporterIDRow
 func ToReporterReportResponse(r db.GetReportsByReporterIDRow) ReportResponse {
 	return ReportResponse{
-		ID:           r.ID.String(),
-		ReporterID:   r.ReporterID.String(),
-		ReporterName: r.ReporterName,
-		ProductID:    r.ProductID.String(),
-		ProductTitle: r.ProductTitle,
-		Reason:       r.Reason,
-		Details:      r.Details,
-		Status:       r.Status,
-		CreatedAt:    r.CreatedAt.String(),
-		UpdatedAt:    r.UpdatedAt.String(),
+		ID:                r.ID.String(),
+		ReporterID:        r.ReporterID.String(),
+		ReporterName:      r.ReporterName,
+		ProductID:         r.ProductID.String(),
+		ProductTitle:      r.ProductTitle,
+		SellerID:          r.SellerID.String(),
+		ProductSellerName: r.ProductSellerName,
+		Reason:            r.Reason,
+		Details:           r.Details,
+		Status:            r.Status,
+		CreatedAt:         r.CreatedAt.String(),
+		UpdatedAt:         r.UpdatedAt.String(),
 	}
 }
 

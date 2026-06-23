@@ -55,25 +55,30 @@ func (q *Queries) CreateReport(ctx context.Context, arg CreateReportParams) (Rep
 const getAllReports = `-- name: GetAllReports :many
 SELECT
     r.id, r.reporter_id, r.product_id, r.reason, r.status, r.created_at, r.updated_at, r.details,
-    u.username  AS reporter_name,
-    p.title     AS product_title
+    u.username       AS reporter_name,
+    p.title          AS product_title,
+    p.seller_id,
+    sel.username     AS product_seller_name
 FROM reports r
-JOIN users    u ON u.id = r.reporter_id
-JOIN products p ON p.id = r.product_id
+JOIN users    u   ON u.id = r.reporter_id
+JOIN products p   ON p.id = r.product_id
+JOIN users    sel ON sel.id = p.seller_id
 ORDER BY r.created_at DESC
 `
 
 type GetAllReportsRow struct {
-	ID           uuid.UUID `json:"id"`
-	ReporterID   uuid.UUID `json:"reporter_id"`
-	ProductID    uuid.UUID `json:"product_id"`
-	Reason       string    `json:"reason"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Details      string    `json:"details"`
-	ReporterName string    `json:"reporter_name"`
-	ProductTitle string    `json:"product_title"`
+	ID                uuid.UUID `json:"id"`
+	ReporterID        uuid.UUID `json:"reporter_id"`
+	ProductID         uuid.UUID `json:"product_id"`
+	Reason            string    `json:"reason"`
+	Status            string    `json:"status"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+	Details           string    `json:"details"`
+	ReporterName      string    `json:"reporter_name"`
+	ProductTitle      string    `json:"product_title"`
+	SellerID          uuid.UUID `json:"seller_id"`
+	ProductSellerName string    `json:"product_seller_name"`
 }
 
 func (q *Queries) GetAllReports(ctx context.Context) ([]GetAllReportsRow, error) {
@@ -96,6 +101,8 @@ func (q *Queries) GetAllReports(ctx context.Context) ([]GetAllReportsRow, error)
 			&i.Details,
 			&i.ReporterName,
 			&i.ProductTitle,
+			&i.SellerID,
+			&i.ProductSellerName,
 		); err != nil {
 			return nil, err
 		}
@@ -113,25 +120,30 @@ func (q *Queries) GetAllReports(ctx context.Context) ([]GetAllReportsRow, error)
 const getReportByID = `-- name: GetReportByID :one
 SELECT
     r.id, r.reporter_id, r.product_id, r.reason, r.status, r.created_at, r.updated_at, r.details,
-    u.username  AS reporter_name,
-    p.title     AS product_title
+    u.username       AS reporter_name,
+    p.title          AS product_title,
+    p.seller_id,
+    sel.username     AS product_seller_name
 FROM reports r
-JOIN users    u ON u.id = r.reporter_id
-JOIN products p ON p.id = r.product_id
+JOIN users    u   ON u.id = r.reporter_id
+JOIN products p   ON p.id = r.product_id
+JOIN users    sel ON sel.id = p.seller_id
 WHERE r.id = $1
 `
 
 type GetReportByIDRow struct {
-	ID           uuid.UUID `json:"id"`
-	ReporterID   uuid.UUID `json:"reporter_id"`
-	ProductID    uuid.UUID `json:"product_id"`
-	Reason       string    `json:"reason"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Details      string    `json:"details"`
-	ReporterName string    `json:"reporter_name"`
-	ProductTitle string    `json:"product_title"`
+	ID                uuid.UUID `json:"id"`
+	ReporterID        uuid.UUID `json:"reporter_id"`
+	ProductID         uuid.UUID `json:"product_id"`
+	Reason            string    `json:"reason"`
+	Status            string    `json:"status"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+	Details           string    `json:"details"`
+	ReporterName      string    `json:"reporter_name"`
+	ProductTitle      string    `json:"product_title"`
+	SellerID          uuid.UUID `json:"seller_id"`
+	ProductSellerName string    `json:"product_seller_name"`
 }
 
 func (q *Queries) GetReportByID(ctx context.Context, id uuid.UUID) (GetReportByIDRow, error) {
@@ -148,6 +160,8 @@ func (q *Queries) GetReportByID(ctx context.Context, id uuid.UUID) (GetReportByI
 		&i.Details,
 		&i.ReporterName,
 		&i.ProductTitle,
+		&i.SellerID,
+		&i.ProductSellerName,
 	)
 	return i, err
 }
@@ -206,26 +220,31 @@ func (q *Queries) GetReportCountBySellerID(ctx context.Context, sellerID uuid.UU
 const getReportsByReporterID = `-- name: GetReportsByReporterID :many
 SELECT
     r.id, r.reporter_id, r.product_id, r.reason, r.status, r.created_at, r.updated_at, r.details,
-    u.username  AS reporter_name,
-    p.title     AS product_title
+    u.username       AS reporter_name,
+    p.title          AS product_title,
+    p.seller_id,
+    sel.username     AS product_seller_name
 FROM reports r
-JOIN users    u ON u.id = r.reporter_id
-JOIN products p ON p.id = r.product_id
+JOIN users    u   ON u.id = r.reporter_id
+JOIN products p   ON p.id = r.product_id
+JOIN users    sel ON sel.id = p.seller_id
 WHERE r.reporter_id = $1
 ORDER BY r.created_at DESC
 `
 
 type GetReportsByReporterIDRow struct {
-	ID           uuid.UUID `json:"id"`
-	ReporterID   uuid.UUID `json:"reporter_id"`
-	ProductID    uuid.UUID `json:"product_id"`
-	Reason       string    `json:"reason"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Details      string    `json:"details"`
-	ReporterName string    `json:"reporter_name"`
-	ProductTitle string    `json:"product_title"`
+	ID                uuid.UUID `json:"id"`
+	ReporterID        uuid.UUID `json:"reporter_id"`
+	ProductID         uuid.UUID `json:"product_id"`
+	Reason            string    `json:"reason"`
+	Status            string    `json:"status"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+	Details           string    `json:"details"`
+	ReporterName      string    `json:"reporter_name"`
+	ProductTitle      string    `json:"product_title"`
+	SellerID          uuid.UUID `json:"seller_id"`
+	ProductSellerName string    `json:"product_seller_name"`
 }
 
 func (q *Queries) GetReportsByReporterID(ctx context.Context, reporterID uuid.UUID) ([]GetReportsByReporterIDRow, error) {
@@ -248,6 +267,8 @@ func (q *Queries) GetReportsByReporterID(ctx context.Context, reporterID uuid.UU
 			&i.Details,
 			&i.ReporterName,
 			&i.ProductTitle,
+			&i.SellerID,
+			&i.ProductSellerName,
 		); err != nil {
 			return nil, err
 		}
@@ -265,26 +286,31 @@ func (q *Queries) GetReportsByReporterID(ctx context.Context, reporterID uuid.UU
 const getReportsByStatus = `-- name: GetReportsByStatus :many
 SELECT
     r.id, r.reporter_id, r.product_id, r.reason, r.status, r.created_at, r.updated_at, r.details,
-    u.username  AS reporter_name,
-    p.title     AS product_title
+    u.username       AS reporter_name,
+    p.title          AS product_title,
+    p.seller_id,
+    sel.username     AS product_seller_name
 FROM reports r
-JOIN users    u ON u.id = r.reporter_id
-JOIN products p ON p.id = r.product_id
+JOIN users    u   ON u.id = r.reporter_id
+JOIN products p   ON p.id = r.product_id
+JOIN users    sel ON sel.id = p.seller_id
 WHERE r.status = $1
 ORDER BY r.created_at DESC
 `
 
 type GetReportsByStatusRow struct {
-	ID           uuid.UUID `json:"id"`
-	ReporterID   uuid.UUID `json:"reporter_id"`
-	ProductID    uuid.UUID `json:"product_id"`
-	Reason       string    `json:"reason"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Details      string    `json:"details"`
-	ReporterName string    `json:"reporter_name"`
-	ProductTitle string    `json:"product_title"`
+	ID                uuid.UUID `json:"id"`
+	ReporterID        uuid.UUID `json:"reporter_id"`
+	ProductID         uuid.UUID `json:"product_id"`
+	Reason            string    `json:"reason"`
+	Status            string    `json:"status"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+	Details           string    `json:"details"`
+	ReporterName      string    `json:"reporter_name"`
+	ProductTitle      string    `json:"product_title"`
+	SellerID          uuid.UUID `json:"seller_id"`
+	ProductSellerName string    `json:"product_seller_name"`
 }
 
 func (q *Queries) GetReportsByStatus(ctx context.Context, status string) ([]GetReportsByStatusRow, error) {
@@ -307,6 +333,8 @@ func (q *Queries) GetReportsByStatus(ctx context.Context, status string) ([]GetR
 			&i.Details,
 			&i.ReporterName,
 			&i.ProductTitle,
+			&i.SellerID,
+			&i.ProductSellerName,
 		); err != nil {
 			return nil, err
 		}
