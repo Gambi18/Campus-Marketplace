@@ -7,6 +7,13 @@ export default {
   ],
   theme: {
     extend: {
+     
+      fontFamily: {
+       
+        sans: ['var(--font-inter)', 'sans-serif'],
+        logo: ['var(--font-jakarta)', 'sans-serif'],
+      },
+    
       colors: {
         brand: {
           primary: 'var(--brand-primary)',
@@ -20,7 +27,6 @@ export default {
         },
       },
     },
-
   },
   plugins: [],
 }

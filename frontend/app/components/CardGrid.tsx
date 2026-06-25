@@ -23,6 +23,8 @@ export default function CardGrid({
   const [products, setProducts] = useState<ProductCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [isBatchLoading, setIsBatchLoading] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -30,6 +32,7 @@ export default function CardGrid({
     const loadProducts = async () => {
       setLoading(true);
       setError(null);
+      setVisibleCount(5);
 
       try {
         const cleanQuery = query?.trim();
@@ -94,11 +97,52 @@ export default function CardGrid({
     );
   }
 
+  const visibleProducts = products.slice(0, visibleCount);
+
+  const handleLoadMore = () => {
+    
+    setIsBatchLoading(true);
+  
+  setTimeout(() => {
+    setVisibleCount((prev) => prev + 6);
+    setIsBatchLoading(false);
+  }, 1000);
+  };
+
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {products.map((product) => (
-        <ItemCard key={product.id} item={product} />
-      ))}
+  <div className="flex flex-col items-center gap-10 w-full">
+      {/* Product Display Grid */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 w-full">
+        {visibleProducts.map((product) => (
+          <ItemCard key={product.id} item={product} />
+        ))}
+      </div>
+
+      {/* Conditional Load More Button  */}
+      {products.length > visibleCount && (
+  <div className="flex flex-col items-center gap-2 mt-4 pb-8">
+    <button
+      onClick={handleLoadMore}
+      disabled={isBatchLoading}
+      className="px-6 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm active:scale-[0.98] disabled:opacity-75 disabled:cursor-not-allowed min-w-[150px] flex items-center justify-center gap-2"
+    >
+      {isBatchLoading ? (
+        <>
+          <svg className="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Loading...
+        </>
+      ) : (
+        "Load More Items"
+      )}
+    </button>
+    <span className="text-xs text-gray-400">
+      Showing {visibleProducts.length} of {products.length} items
+    </span>
+  </div>
+)}
     </div>
   );
 }
