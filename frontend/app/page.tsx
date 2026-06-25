@@ -4,6 +4,7 @@ import Footer from "./components/Footer";
 import Hero from "./components/Hero";
 import ItemCategory from "./components/ItemCategory";
 import Navbar from "./components/Navbar";
+import SoldToast from "./components/SoldToast";
 import Toolbar from "./components/Toolbar";
 
 type HomeProps = {
@@ -19,6 +20,11 @@ export default async function Home({ searchParams }: HomeProps) {
   return (
     <div>
       <Navbar />
+
+      <Suspense fallback={null}>
+        <SoldToast />
+      </Suspense>
+
  <Hero />
       <main className="max-w-6xl mx-auto px-4 sm:px-6 space-y-4 pb-12">
        
