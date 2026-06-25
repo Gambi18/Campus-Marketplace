@@ -71,6 +71,10 @@ export default function ProductDetailsPage() {
         const res = await fetch(`${API_URL}/api/v1/products/${id}`);
         if (res.ok) {
           const data: ProductCard = await res.json();
+          if (data.status !== 'available') {
+            router.push('/?sold=' + encodeURIComponent(data.title));
+            return;
+          }
           setProduct((prev) => ({
             ...prev,
             ...data,

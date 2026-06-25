@@ -1,6 +1,8 @@
 import { ProductCard } from '@/types';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { Link as LinkIcon } from 'lucide-react';
 import { formatPrice } from '../utils/format';
 
 export const Product: ProductCard = {
@@ -35,7 +37,15 @@ export default function ItemCard({ item }: ItemCardProps) {
   const category = item?.category_name ?? Product.category_name;
   const condition = item?.condition ?? Product.condition;
   const id = item?.id ?? Product.id;
+  const status = item?.status ?? Product.status;
   const createdAt = item?.created_at ?? Product.created_at;
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const displayImage = item?.image_url_1 && item.image_url_1.length > 0
     ? item.image_url_1
@@ -67,6 +77,28 @@ export default function ItemCard({ item }: ItemCardProps) {
         <span className="absolute top-2.5 left-2.5 px-1.5 py-0.5 bg-white/95 backdrop-blur-xs text-[9px] font-bold text-gray-700 rounded-md shadow-xs uppercase tracking-wider">
           {displayCondition}
         </span>
+
+        {status === 'available' && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              navigator.clipboard.writeText(`${window.location.origin}/details/${id}`)
+                .then(() => setToast('Link copied!'))
+                .catch(() => setToast('Failed to copy'));
+            }}
+            className="absolute top-2.5 right-2.5 z-10 p-1.5 bg-white/95 backdrop-blur-xs rounded-full shadow-xs hover:bg-white transition-colors"
+            title="Copy link"
+          >
+            <LinkIcon className="w-3.5 h-3.5 text-gray-600" />
+          </button>
+        )}
+
+        {toast && (
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 px-2.5 py-1 bg-gray-900/85 text-white text-[10px] font-medium rounded-full whitespace-nowrap transition-opacity duration-200">
+            {toast}
+          </div>
+        )}
       </div>
 
       <div className="p-3 flex flex-col space-y-1">
