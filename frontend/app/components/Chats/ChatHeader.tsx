@@ -1,6 +1,7 @@
 
 import Image from 'next/image';
-import { MoreVertical, AlertCircle, ArrowLeft } from 'lucide-react'; // Added ArrowLeft
+import { MoreVertical, AlertCircle, Ban, ArrowLeft } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
 
 interface ChatHeaderProps {
   sellerName: string;
@@ -8,8 +9,9 @@ interface ChatHeaderProps {
   avatarUrl?: string;
   isActive?: boolean;
   onReport?: () => void;
-  onMoreActions?: () => void;
-  onBackAction?: () => void; 
+  onCancelTransaction?: () => void;
+  onBackAction?: () => void;
+  showCancelOption?: boolean;
 }
 
 export function ChatHeader({
@@ -18,10 +20,29 @@ export function ChatHeader({
   avatarUrl,
   isActive = false,
   onReport,
-  onMoreActions,
-  onBackAction
+  onCancelTransaction,
+  onBackAction,
+  showCancelOption = false,
 }: ChatHeaderProps) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const initial = (sellerName?.trim()?.[0] || '?').toUpperCase();
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleAction = (action?: () => void) => {
+    setDropdownOpen(false);
+    action?.();
+  };
+
   return (
     <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-white">
       <div className="flex items-center gap-3">
@@ -63,21 +84,38 @@ export function ChatHeader({
         </div>
       </div>
       
-      <div className="flex items-center gap-4 text-gray-500">
-        <button 
-          onClick={onReport}
-          className="flex items-center gap-1 text-sm font-medium text-red-500 hover:text-red-600 transition"
-        >
-          <AlertCircle className="w-4 h-4" />
-          Report
-        </button>
+      <div className="relative" ref={dropdownRef}>
         <button
-          onClick={onMoreActions}
+          onClick={() => setDropdownOpen(!dropdownOpen)}
           aria-label="More actions"
-          className="p-1 hover:bg-gray-100 rounded-full transition"
+          aria-haspopup="true"
+          aria-expanded={dropdownOpen}
+          className="p-1 hover:bg-gray-100 rounded-full transition text-gray-500"
         >
           <MoreVertical className="w-5 h-5" />
         </button>
+        {dropdownOpen && (
+          <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
+            {onReport && (
+              <button
+                onClick={() => handleAction(onReport)}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+              >
+                <AlertCircle className="w-4 h-4" />
+                Report
+              </button>
+            )}
+            {showCancelOption && onCancelTransaction && (
+              <button
+                onClick={() => handleAction(onCancelTransaction)}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-orange-600 hover:bg-orange-50 transition-colors"
+              >
+                <Ban className="w-4 h-4" />
+                Cancel Transaction
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

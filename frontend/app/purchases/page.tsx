@@ -119,7 +119,7 @@ export default function PurchasesPage() {
                 <div className="mt-3 flex gap-2 flex-wrap">
                   {p.status === 'held' && (
                     <>
-                      <Button variant="outlined" size="md" onClick={() => router.push(`/conversations/${p.product_id}?user=${p.seller_id}&name=${encodeURIComponent(p.seller_name || '')}`)}>
+                      <Button variant="outlined" size="md" onClick={() => router.push(`/conversations/${p.product_id}?user=${p.seller_id}&name=${encodeURIComponent(p.seller_name || '')}&paymentId=${p.id}`)}>
                         <MessageCircle className="w-4 h-4 mr-1" />
                         Chat
                       </Button>

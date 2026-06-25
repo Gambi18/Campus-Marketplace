@@ -7,6 +7,7 @@ import { ChatHeader } from "./ChatHeader";
 import { ChatInputArea } from "./ChatInputArea";
 import { MessageList } from "./MessageList";
 import { API_URL, fetchAPI } from '../../utils/api';
+import { checkPaymentStatus, rejectDelivery } from '../../utils/paymentApi';
 import type { BackendMessage } from "@/types";
 
 interface ProductDetail {
@@ -24,10 +25,11 @@ interface ChatPaneProps {
   otherUserId: string;
   /** Conversation partner's display name, passed from the list/product page. */
   otherUserName?: string;
+  paymentId?: string;
   onBackAction?: () => void;
 }
 
-export function ChatPane({ productId, otherUserId, otherUserName, onBackAction }: ChatPaneProps) {
+export function ChatPane({ productId, otherUserId, otherUserName, paymentId, onBackAction }: ChatPaneProps) {
  const router = useRouter();
  const [messages, setMessages] = useState<BackendMessage[]>([]);
  const [loading, setLoading] = useState(true);
@@ -39,6 +41,60 @@ export function ChatPane({ productId, otherUserId, otherUserName, onBackAction }
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelPreset, setCancelPreset] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+
+  const cancelPresets = [
+    { value: 'seller_no_response', label: "Seller didn't respond" },
+    { value: 'not_as_described', label: 'Item not as described' },
+    { value: 'changed_mind', label: 'Changed mind' },
+    { value: 'better_price', label: 'Found better price' },
+    { value: 'other', label: 'Other (specify)' },
+  ];
+
+  // Check payment status for cancel eligibility
+  useEffect(() => {
+    if (!paymentId) return;
+    (async () => {
+      try {
+        const res = await checkPaymentStatus(paymentId);
+        setPaymentStatus(res.status);
+      } catch {
+        setPaymentStatus(null);
+      }
+    })();
+  }, [paymentId]);
+
+  const handleCancelTransaction = () => {
+    setShowCancelModal(true);
+    setCancelPreset('');
+    setCancelReason('');
+  };
+
+  const getCancelReasonText = () => {
+    if (cancelPreset === 'other') return cancelReason.trim();
+    const preset = cancelPresets.find(p => p.value === cancelPreset);
+    return preset ? preset.label : '';
+  };
+
+  const handleConfirmCancel = async () => {
+    const reason = getCancelReasonText();
+    if (!reason || cancelling || !paymentId) return;
+    setCancelling(true);
+    try {
+      await rejectDelivery(paymentId, reason);
+      setShowCancelModal(false);
+      setPaymentStatus('refunded');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to cancel transaction');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   // Fetch product details
   useEffect(() => {
@@ -240,45 +296,108 @@ export function ChatPane({ productId, otherUserId, otherUserName, onBackAction }
  }
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50/30 h-full overflow-hidden">
-      <div className="flex-shrink-0 bg-white z-10">
-        {!connected && (
-          <div className="px-4 py-1.5 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-            Reconnecting...
-          </div>
-        )}
-        <ChatHeader
-          sellerName={partnerName}
-          itemTitle={product?.title || ''}
-          onBackAction={onBackAction}
-          onReport={reportUser}
-        />
-        {sendError && (
-          <div className="px-4 py-1.5 bg-red-50 border-b border-red-100 text-xs text-red-600">
-            {sendError}
-          </div>
-        )}
+    <>
+      <div className="flex-1 flex flex-col bg-slate-50/30 h-full overflow-hidden">
+        <div className="flex-shrink-0 bg-white z-10">
+          {!connected && (
+            <div className="px-4 py-1.5 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+              Reconnecting...
+            </div>
+          )}
+          <ChatHeader
+            sellerName={partnerName}
+            itemTitle={product?.title || ''}
+            onBackAction={onBackAction}
+            onReport={reportUser}
+            onCancelTransaction={handleCancelTransaction}
+            showCancelOption={paymentStatus === 'held'}
+          />
+          {sendError && (
+            <div className="px-4 py-1.5 bg-red-50 border-b border-red-100 text-xs text-red-600">
+              {sendError}
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto min-h-0 bg-white">
+          <MessageList
+            messages={chatMessages}
+            item={{
+              title: product?.title || '',
+              price: product?.price || '',
+              imageUrl: product?.image_url_1 || undefined,
+            }}
+            onItemClick={() => router.push(`/details/${productId}`)}
+          />
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="flex-shrink-0 bg-white border-t border-gray-100 p-3 z-10">
+          <ChatInputArea
+            onSendMessage={handleSendMessage}
+          />
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 bg-white">
-        <MessageList
-          messages={chatMessages}
-          item={{
-            title: product?.title || '',
-            price: product?.price || '',
-            imageUrl: product?.image_url_1 || undefined,
-          }}
-          onItemClick={() => router.push(`/details/${productId}`)}
-        />
-        <div ref={messagesEndRef} />
+      {/* Cancel Transaction Modal */}
+      {showCancelModal && (
+     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+       <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+         <h3 className="text-lg font-bold text-brand-neutral mb-2">Cancel Transaction</h3>
+         <p className="text-sm text-text-muted mb-4">
+           A 1% platform fee applies on refunds. Please tell us why you&apos;re cancelling:
+         </p>
+         <div className="space-y-2 mb-4">
+           {cancelPresets.map((preset) => (
+             <label
+               key={preset.value}
+               className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                 cancelPreset === preset.value
+                   ? 'border-brand-primary bg-brand-primary/5'
+                   : 'border-gray-200 hover:border-gray-300'
+               }`}
+             >
+               <input
+                 type="radio"
+                 name="cancelReason"
+                 value={preset.value}
+                 checked={cancelPreset === preset.value}
+                 onChange={(e) => setCancelPreset(e.target.value)}
+                 className="accent-brand-primary"
+               />
+               <span className="text-sm font-medium text-brand-neutral">{preset.label}</span>
+             </label>
+           ))}
+         </div>
+         {cancelPreset === 'other' && (
+           <textarea
+             placeholder="Please specify your reason..."
+             value={cancelReason}
+             onChange={(e) => setCancelReason(e.target.value)}
+             rows={3}
+             className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent resize-none"
+           />
+         )}
+         <div className="flex gap-3 mt-4">
+           <button
+             onClick={() => setShowCancelModal(false)}
+             className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-brand-neutral hover:bg-gray-50 transition disabled:opacity-50"
+             disabled={cancelling}
+           >
+             Go Back
+           </button>
+           <button
+             onClick={handleConfirmCancel}
+             className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition disabled:opacity-50"
+             disabled={cancelling || !getCancelReasonText()}
+           >
+             {cancelling ? 'Processing\u2026' : 'Confirm Refund'}
+           </button>
+         </div>
+          </div>
       </div>
-
-      <div className="flex-shrink-0 bg-white border-t border-gray-100 p-3 z-10">
-        <ChatInputArea
-          onSendMessage={handleSendMessage}
-        />
-      </div>
-   </div>
- );
+      )}
+    </>
+  );
 }

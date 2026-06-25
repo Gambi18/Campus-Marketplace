@@ -1,0 +1,3 @@
+module.exports=[251038,a=>{"use strict";var b=a.i(907997);a.i(688517),a.s(["default",0,function(){return(0,b.jsxs)("div",{className:"min-h-[60vh] w-full flex flex-col items-center justify-center space-y-4 bg-[#f8fafc]",children:[(0,b.jsx)("div",{className:"w-10 h-10 border-4 border-slate-200 border-t-brand-primary rounded-full animate-spin"}),(0,b.jsx)("p",{className:"text-sm font-medium text-slate-500 animate-pulse",children:"Loading marketplace items..."})]})}])},506273,a=>{a.n(a.i(251038))}];
+
+//# sourceMappingURL=app_mylistings_loading_jsx_1qxu3e4._.js.map

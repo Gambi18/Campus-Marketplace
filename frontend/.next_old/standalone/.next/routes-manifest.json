@@ -1,0 +1,210 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/category/[id]",
+      "regex": "^/category/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/category/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/conversations/[productId]",
+      "regex": "^/conversations/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPproductId": "nxtPproductId"
+      },
+      "namedRegex": "^/conversations/(?<nxtPproductId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/details/[id]",
+      "regex": "^/details/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/details/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/edit/[id]",
+      "regex": "^/edit/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/edit/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/admin",
+      "regex": "^/admin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin(?:/)?$"
+    },
+    {
+      "page": "/admin/categories",
+      "regex": "^/admin/categories(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/categories(?:/)?$"
+    },
+    {
+      "page": "/admin/login",
+      "regex": "^/admin/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/login(?:/)?$"
+    },
+    {
+      "page": "/admin/payments",
+      "regex": "^/admin/payments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/payments(?:/)?$"
+    },
+    {
+      "page": "/admin/reports",
+      "regex": "^/admin/reports(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/reports(?:/)?$"
+    },
+    {
+      "page": "/admin/users",
+      "regex": "^/admin/users(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/users(?:/)?$"
+    },
+    {
+      "page": "/conversations",
+      "regex": "^/conversations(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/conversations(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/my-reports",
+      "regex": "^/my\\-reports(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/my\\-reports(?:/)?$"
+    },
+    {
+      "page": "/mylistings",
+      "regex": "^/mylistings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/mylistings(?:/)?$"
+    },
+    {
+      "page": "/notifications",
+      "regex": "^/notifications(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/notifications(?:/)?$"
+    },
+    {
+      "page": "/profile",
+      "regex": "^/profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/profile(?:/)?$"
+    },
+    {
+      "page": "/purchases",
+      "regex": "^/purchases(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/purchases(?:/)?$"
+    },
+    {
+      "page": "/register",
+      "regex": "^/register(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/register(?:/)?$"
+    },
+    {
+      "page": "/report",
+      "regex": "^/report(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/report(?:/)?$"
+    },
+    {
+      "page": "/sales",
+      "regex": "^/sales(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sales(?:/)?$"
+    },
+    {
+      "page": "/sell",
+      "regex": "^/sell(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sell(?:/)?$"
+    },
+    {
+      "page": "/sell/details",
+      "regex": "^/sell/details(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sell/details(?:/)?$"
+    },
+    {
+      "page": "/sell/pricing",
+      "regex": "^/sell/pricing(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sell/pricing(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
