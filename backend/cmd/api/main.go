@@ -76,13 +76,21 @@ func main() {
 
 	// Creates Gin router
 	router := gin.Default()
+
+	// Cap request bodies to bound memory use from uploads. Product create/update
+	// can carry up to 5 images (1 student ID + 4 product photos), so allow some
+	// headroom while still rejecting abusive payloads.
+	const maxUploadBytes = 25 << 20 // 25 MB
+	router.MaxMultipartMemory = 8 << 20
+	router.Use(middleware.BodySizeLimit(maxUploadBytes))
+
    //CORS — restricted to the configured allow-list
    router.Use(middleware.CORSMiddleware(cfg.AllowedOrigins))
 
    // Serve uploaded files in dev mode
    router.Static("/uploads", "./uploads")
 
-	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, notificationService, hub, campayService, receiptService, cfg.AllowedOrigins)
+	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, notificationService, hub, campayService, receiptService, cfg.AllowedOrigins, cfg.AdminBootstrapToken)
 
 
 	// Starts server

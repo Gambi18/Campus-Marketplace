@@ -64,6 +64,12 @@ func (h *PaymentHandler) InitiatePayment(c *gin.Context) {
 		return
 	}
 
+	// 2b. Validate phone number (CamPay expects country-coded MSISDN, e.g. 237XXXXXXXXX)
+	if len(req.PhoneNumber) < 9 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "phone_number must be at least 9 digits"})
+		return
+	}
+
 	// 3. Get product
 	productID, err := uuid.Parse(req.ProductID)
 	if err != nil {
@@ -93,7 +99,7 @@ func (h *PaymentHandler) InitiatePayment(c *gin.Context) {
 	var reference string
 	var operator string
 
-	if os.Getenv("DEV_BYPASS_PAYMENT") == "true" {
+	if devBypassEnabled() {
 		reference = "dev-bypass-" + uuid.New().String()
 		operator = detectOperator(req.PhoneNumber)
 	} else {
@@ -140,7 +146,7 @@ func (h *PaymentHandler) InitiatePayment(c *gin.Context) {
 	}
 
 	// In dev bypass mode, auto-confirm the payment to "held" status
-	if os.Getenv("DEV_BYPASS_PAYMENT") == "true" {
+	if devBypassEnabled() {
 		_, err = h.queries.UpdatePaymentToHeld(c.Request.Context(),
 			sql.NullString{String: reference, Valid: true},
 		)
@@ -225,7 +231,7 @@ func (h *PaymentHandler) CheckPaymentStatus(c *gin.Context) {
 	}
 
 	// Dev bypass: use local DB status instead of calling CamPay
-	if os.Getenv("DEV_BYPASS_PAYMENT") == "true" && strings.HasPrefix(payment.Reference.String, "dev-bypass-") {
+	if devBypassEnabled() && strings.HasPrefix(payment.Reference.String, "dev-bypass-") {
 		c.JSON(http.StatusOK, gin.H{
 			"payment_id": payment.ID.String(),
 			"reference":  payment.Reference.String,
@@ -681,8 +687,16 @@ func (h *PaymentHandler) GetAllHeldPayments(c *gin.Context) {
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
+// devBypassEnabled reports whether payment collection should be simulated.
+// It requires the opt-in env flag AND a non-production environment, so a leaked
+// or copy-pasted DEV_BYPASS_PAYMENT=true can never disable real payments in prod.
+func devBypassEnabled() bool {
+	return os.Getenv("DEV_BYPASS_PAYMENT") == "true" && os.Getenv("ENV") != "production"
+}
+
 func detectOperator(phone string) string {
-	if len(phone) < 5 {
+	// prefix is phone[3:6], which needs at least 6 characters.
+	if len(phone) < 6 {
 		return "unknown"
 	}
 	prefix := phone[3:6]

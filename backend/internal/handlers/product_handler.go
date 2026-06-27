@@ -251,6 +251,13 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
+	// 3b. Enforce ownership explicitly so a non-owner gets 403 rather than a
+	// misleading 500 from the seller-scoped UPDATE returning no rows.
+	if existing.SellerID != sellerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you do not own this product"})
+		return
+	}
+
 	// 4. Parse form fields
 	title         := c.PostForm("title")
 	description   := c.PostForm("description")
@@ -339,6 +346,23 @@ func (h *ProductHandler) UpdateProductStatus(c *gin.Context) {
 		return
 	}
 
+	// Load the product to enforce ownership and protect the escrow state machine.
+	existing, err := h.queries.GetProductByID(c.Request.Context(), productID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		return
+	}
+	if existing.SellerID != sellerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you do not own this product"})
+		return
+	}
+	// in_escrow / sold are managed by the payment flow — the seller must not be
+	// able to flip an item out of escrow (e.g. back to "available") mid-payment.
+	if existing.Status == "in_escrow" {
+		c.JSON(http.StatusConflict, gin.H{"error": "product is in an active transaction and cannot be changed"})
+		return
+	}
+
 	product, err := h.queries.UpdateProductStatus(c.Request.Context(), db.UpdateProductStatusParams{
 		ID:       productID,
 		SellerID: sellerID,
@@ -372,6 +396,13 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	existing, err := h.queries.GetProductByID(c.Request.Context(), productID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		return
+	}
+
+	// Enforce ownership explicitly so a non-owner gets 403 instead of a 200 "deleted
+	// successfully" when the seller-scoped DELETE actually matched no rows.
+	if existing.SellerID != sellerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you do not own this product"})
 		return
 	}
 

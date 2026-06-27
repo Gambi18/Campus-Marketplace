@@ -130,6 +130,25 @@ cd frontend && cp .env.example .env.local && npm install && npm run dev
 - **Two account types:** Students (`users` table) and admins (`admins` table), separate login endpoints, JWT `actor_type` claim.
 - **Account statuses:** `pending` → `approved` | `rejected` | `blocked`. Pending/rejected/blocked cannot log in.
 
+### Admin bootstrap
+
+The platform needs a first admin before any admin can log in, which is a chicken-and-egg problem (admin endpoints require an admin token). There are two ways to create that first admin, both of which only work while the `admins` table is **empty**:
+
+1. **Seed on startup (default).** Set `ADMIN_USERNAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD`. On boot, `EnsureDefaultAdmin` creates the admin if none exists. Best for self-hosted deployments where you control the environment.
+
+2. **One-time HTTP bootstrap.** Set `ADMIN_BOOTSTRAP_TOKEN` to a long random secret and call:
+
+   ```bash
+   curl -X POST https://<host>/api/v1/admin/create \
+     -H "X-Admin-Bootstrap-Token: <ADMIN_BOOTSTRAP_TOKEN>" \
+     -H "Content-Type: application/json" \
+     -d '{"username":"root","email":"admin@example.com","password":"<strong-password>"}'
+   ```
+
+   This endpoint is public by necessity (no admin token can exist yet) but is guarded two ways: the request must carry the matching `X-Admin-Bootstrap-Token` header (constant-time compared), **and** it only succeeds while no admin exists. Once any admin is created — by either method — the endpoint returns `403` permanently. If `ADMIN_BOOTSTRAP_TOKEN` is unset, the endpoint is disabled (`403`) and only the seed path is available.
+
+   After bootstrapping, additional admins are created from within the app by an authenticated admin; rotate or unset `ADMIN_BOOTSTRAP_TOKEN` afterwards.
+
 ## Payment Flow (Escrow via CamPay)
 
 1. Product detail → "Pay to Chat" button → enter phone number → CamPay USSD prompt
@@ -138,7 +157,7 @@ cd frontend && cp .env.example .env.local && npm install && npm run dev
 4. Buyer cancels → refund to buyer (minus 1% fee)
 5. PDF receipt generated and stored on Cloudinary
 
-**Chat gating:** Message sending (WebSocket) and listing/message history (REST) both check for active payment. Set `DEV_BYPASS_PAYMENT=true` on the backend to bypass for testing.
+**Chat gating:** Message sending (WebSocket) and listing/message history (REST) both check for active payment. Set `DEV_BYPASS_PAYMENT=true` on the backend to bypass for testing — this is ignored when `ENV=production`, so it can never disable real payments in a live deployment.
 
 ## Key Design Decisions
 
@@ -162,7 +181,9 @@ See the route definitions in `backend/internal/handlers/routes.go` for the compl
 - `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` (the DSN is built from these)
 - `JWT_SECRET` (**required** — the server refuses to start without it)
 - `ALLOWED_ORIGINS` (comma-separated CORS/WebSocket origin allow-list)
-- `CLOUDINARY_*` (optional — falls back to local `./uploads` if unset), `CAMPAY_*`, `ADMIN_*`, `DEV_BYPASS_PAYMENT`
+- `ADMIN_*` (default admin seed — see [Admin bootstrap](#admin-bootstrap)), `ADMIN_BOOTSTRAP_TOKEN` (one-time HTTP admin bootstrap secret)
+- `DEV_BYPASS_PAYMENT` (testing only; simulates payments — ignored when `ENV=production`)
+- `CLOUDINARY_*` (optional — falls back to local `./uploads` if unset), `CAMPAY_*`
 
 ### Frontend (`frontend/.env.example`)
 - `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`

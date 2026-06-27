@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"crypto/subtle"
 	"net/http"
 
 	db "campus-marketplace/internal/db/sqlc"
@@ -16,13 +17,15 @@ type AdminHandler struct {
 	queries             *db.Queries
 	authService         *services.AuthService
 	notificationService *notification.NotificationService
+	bootstrapToken      string
 }
 
-func NewAdminHandler(queries *db.Queries, authService *services.AuthService, notificationService *notification.NotificationService) *AdminHandler {
+func NewAdminHandler(queries *db.Queries, authService *services.AuthService, notificationService *notification.NotificationService, bootstrapToken string) *AdminHandler {
 	return &AdminHandler{
 		queries:             queries,
 		authService:         authService,
 		notificationService: notificationService,
+		bootstrapToken:      bootstrapToken,
 	}
 }
 
@@ -56,7 +59,40 @@ func (h *AdminHandler) Login(c *gin.Context) {
 	})
 }
 
+// CreateAdmin is a one-time bootstrap endpoint for creating the very first
+// platform admin. It is intentionally public (an admin token can't exist yet),
+// but it is guarded two ways so it cannot be abused:
+//
+//  1. A secret ADMIN_BOOTSTRAP_TOKEN must be presented in the
+//     X-Admin-Bootstrap-Token header. If the token is unset, the endpoint is
+//     disabled entirely.
+//  2. It only works while the admins table is empty. Once any admin exists
+//     (via this endpoint or the EnsureDefaultAdmin seed) it is permanently inert.
+//
+// See README "Admin bootstrap" for the operational procedure.
 func (h *AdminHandler) CreateAdmin(c *gin.Context) {
+	// Guard 1: bootstrap must be explicitly enabled via a configured secret.
+	if h.bootstrapToken == "" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "admin bootstrap is disabled"})
+		return
+	}
+	// Constant-time compare to avoid leaking the token via timing.
+	if subtle.ConstantTimeCompare([]byte(c.GetHeader("X-Admin-Bootstrap-Token")), []byte(h.bootstrapToken)) != 1 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid bootstrap token"})
+		return
+	}
+
+	// Guard 2: only ever usable to create the first admin.
+	count, err := h.queries.CountAdmins(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not verify admin state"})
+		return
+	}
+	if count > 0 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "an admin already exists; bootstrap endpoint is disabled"})
+		return
+	}
+
 	var req models.CreateAdminRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

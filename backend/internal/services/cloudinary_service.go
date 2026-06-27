@@ -6,8 +6,10 @@ import (
 	"io"
 	"log"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
@@ -39,6 +41,12 @@ func (s *CloudinaryService) UploadImage(ctx context.Context, file multipart.File
 		return "", fmt.Errorf("file is nil")
 	}
 
+	// Sniff the actual bytes (don't trust the client-supplied Content-Type) and
+	// reject anything that isn't a real image before it reaches storage.
+	if err := validateImageContent(file); err != nil {
+		return "", err
+	}
+
 	if s.localMode {
 		return s.uploadLocal(file, folder)
 	}
@@ -53,6 +61,26 @@ func (s *CloudinaryService) UploadImage(ctx context.Context, file multipart.File
 	}
 
 	return result.SecureURL, nil
+}
+
+// validateImageContent sniffs the first 512 bytes of an uploaded file and
+// confirms it is an image, then rewinds so the subsequent upload reads from the
+// start. multipart.File is an io.Seeker, so the rewind is cheap and lossless.
+func validateImageContent(file multipart.File) error {
+	head := make([]byte, 512)
+	n, err := file.Read(head)
+	if err != nil && err != io.EOF {
+		return fmt.Errorf("could not read file for validation: %w", err)
+	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("could not rewind file after validation: %w", err)
+	}
+
+	contentType := http.DetectContentType(head[:n])
+	if !strings.HasPrefix(contentType, "image/") {
+		return fmt.Errorf("uploaded file is not a valid image (detected %s)", contentType)
+	}
+	return nil
 }
 
 func (s *CloudinaryService) uploadLocal(file multipart.File, folder string) (string, error) {

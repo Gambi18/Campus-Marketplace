@@ -25,6 +25,7 @@ type Config struct {
 	AdminUsername       string
 	AdminEmail          string
 	AdminPassword       string
+	AdminBootstrapToken string
 	CamPayBaseURL     string
 	CamPayAppUsername string
 	CamPayAppPassword string
@@ -54,6 +55,7 @@ func LoadConfig() *Config {
 		AdminUsername:       getEnv("ADMIN_USERNAME", "admin"),
 		AdminEmail:          getEnv("ADMIN_EMAIL", ""),
 		AdminPassword:       getEnv("ADMIN_PASSWORD", ""),
+		AdminBootstrapToken: getEnv("ADMIN_BOOTSTRAP_TOKEN", ""),
 		CamPayBaseURL:     getEnv("CAMPAY_BASE_URL", "https://demo.campay.net/api"),
 		CamPayAppUsername: getEnv("CAMPAY_APP_USERNAME", ""),
 		CamPayAppPassword: getEnv("CAMPAY_APP_PASSWORD", ""),

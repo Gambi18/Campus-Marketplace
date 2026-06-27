@@ -50,12 +50,7 @@ func (h *Hub) Run() {
 
 		// unregister client
 		case client := <-h.Unregister:
-			h.mu.Lock()
-			if _, ok := h.clients[client.UserID]; ok {
-				delete(h.clients, client.UserID)
-				close(client.Send)
-			}
-			h.mu.Unlock()
+			h.dropClient(client.UserID, client)
 
 		// broadcast message to receiver
 		case message := <-h.Broadcast:
@@ -68,13 +63,24 @@ func (h *Hub) Run() {
 				case receiver.Send <- message:
 				default:
 					// receiver buffer full — disconnect them
-					h.mu.Lock()
-					delete(h.clients, receiver.UserID)
-					close(receiver.Send)
-					h.mu.Unlock()
+					h.dropClient(receiver.UserID, receiver)
 				}
 			}
 		}
+	}
+}
+
+// dropClient removes a client and closes its Send channel exactly once. The
+// identity check (cur == client) under the write lock prevents two goroutines
+// (e.g. the broadcast loop and BroadcastToUser) from double-closing the same
+// channel, and prevents an unregister of a stale connection from closing a newer
+// connection that reused the same userID.
+func (h *Hub) dropClient(userID string, client *Client) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if cur, ok := h.clients[userID]; ok && cur == client {
+		delete(h.clients, userID)
+		close(client.Send)
 	}
 }
 
@@ -88,10 +94,7 @@ func (h *Hub) BroadcastToUser(userID string, message Message) {
 		select {
 		case client.Send <- message:
 		default:
-			h.mu.Lock()
-			delete(h.clients, userID)
-			close(client.Send)
-			h.mu.Unlock()
+			h.dropClient(userID, client)
 		}
 	}
 }

@@ -24,11 +24,12 @@ func SetupRoutes(
 	campayService *services.CamPayService,
 	receiptService *services.ReceiptService,
 	allowedOrigins []string,
+	adminBootstrapToken string,
 ) {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
 	authHandler := NewAuthHandler(queries, authService, cloudinaryService)
-	adminHandler := NewAdminHandler(queries, authService, notificationService)
+	adminHandler := NewAdminHandler(queries, authService, notificationService, adminBootstrapToken)
 	productHandler := NewProductHandler(queries, productService)
 	categoryHandler := NewCategoryHandler(queries)
 	reportHandler := NewReportHandler(queries)
@@ -68,6 +69,9 @@ func SetupRoutes(
 		adminAuth.POST("/login", loginRateLimit, adminHandler.Login)
 	}
 
+	// One-time admin bootstrap: public by necessity (no admin token can exist
+	// yet) but gated by the X-Admin-Bootstrap-Token secret and only usable while
+	// the admins table is empty. See AdminHandler.CreateAdmin / README.
 	adminCreate := api.Group("/admin")
 	{
 		adminCreate.POST("/create", adminHandler.CreateAdmin)
