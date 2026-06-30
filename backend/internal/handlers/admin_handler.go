@@ -17,15 +17,21 @@ type AdminHandler struct {
 	queries             *db.Queries
 	authService         *services.AuthService
 	notificationService *notification.NotificationService
+	auditService        *services.AuditService
 	bootstrapToken      string
+	cookieDomain        string
+	cookieSecure        bool
 }
 
-func NewAdminHandler(queries *db.Queries, authService *services.AuthService, notificationService *notification.NotificationService, bootstrapToken string) *AdminHandler {
+func NewAdminHandler(queries *db.Queries, authService *services.AuthService, notificationService *notification.NotificationService, auditService *services.AuditService, bootstrapToken string, cookieDomain string, cookieSecure bool) *AdminHandler {
 	return &AdminHandler{
 		queries:             queries,
 		authService:         authService,
 		notificationService: notificationService,
+		auditService:        auditService,
 		bootstrapToken:      bootstrapToken,
+		cookieDomain:        cookieDomain,
+		cookieSecure:        cookieSecure,
 	}
 }
 
@@ -47,14 +53,15 @@ func (h *AdminHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.authService.GenerateAdminToken(admin.ID.String(), admin.Email)
+	tokenStr, _, err := h.authService.GenerateAdminToken(admin.ID.String(), admin.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate token"})
 		return
 	}
 
+	c.SetCookie("token", tokenStr, 86400, "/", h.cookieDomain, h.cookieSecure, true)
 	c.JSON(http.StatusOK, models.AdminAuthResponse{
-		Token: token,
+		Token: tokenStr,
 		Admin: models.ToAdminResponse(admin),
 	})
 }
@@ -173,13 +180,25 @@ func (h *AdminHandler) ApproveUser(c *gin.Context) {
 		return
 	}
 
+	targetUser, err := h.queries.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	if targetUser.AccountStatus == "approved" {
+		c.JSON(http.StatusConflict, gin.H{"error": "user is already approved"})
+		return
+	}
+
 	user, err := h.queries.ApproveUser(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not approve user"})
 		return
 	}
 
-	// Send notification
+	adminID := uuid.MustParse(c.GetString("user_id"))
+	h.auditService.Log(c.Request.Context(), adminID, services.AuditApproveUser, &userID, "user", services.ClientIP(c))
+
 	_, _ = h.notificationService.Create(
 		c.Request.Context(),
 		userID,
@@ -203,13 +222,25 @@ func (h *AdminHandler) RejectUser(c *gin.Context) {
 		return
 	}
 
+	targetUser, err := h.queries.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	if targetUser.AccountStatus == "rejected" {
+		c.JSON(http.StatusConflict, gin.H{"error": "user is already rejected"})
+		return
+	}
+
 	user, err := h.queries.RejectUser(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not reject user"})
 		return
 	}
 
-	// Send notification
+	adminID := uuid.MustParse(c.GetString("user_id"))
+	h.auditService.Log(c.Request.Context(), adminID, services.AuditRejectUser, &userID, "user", services.ClientIP(c))
+
 	_, _ = h.notificationService.Create(
 		c.Request.Context(),
 		userID,
@@ -233,11 +264,30 @@ func (h *AdminHandler) BlockUser(c *gin.Context) {
 		return
 	}
 
+	adminIDStr := c.GetString("user_id")
+	if userID.String() == adminIDStr {
+		c.JSON(http.StatusForbidden, gin.H{"error": "cannot block yourself"})
+		return
+	}
+
+	targetUser, err := h.queries.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	if targetUser.AccountStatus == "blocked" {
+		c.JSON(http.StatusConflict, gin.H{"error": "user is already blocked"})
+		return
+	}
+
 	user, err := h.queries.BlockUser(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not block user"})
 		return
 	}
+
+	adminID := uuid.MustParse(c.GetString("user_id"))
+	h.auditService.Log(c.Request.Context(), adminID, services.AuditBlockUser, &userID, "user", services.ClientIP(c))
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "user blocked successfully",

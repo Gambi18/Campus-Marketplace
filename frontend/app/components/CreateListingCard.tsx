@@ -12,7 +12,7 @@ export default function CreateListingCard() {
         <Plus className="w-5 h-5" strokeWidth={2.5} />
       </div>
       <div className="mt-5 space-y-1">
-        <h3 className="font-bold text-[#0f172a] text-lg tracking-tight">
+        <h3 className="font-bold text-brand-neutral text-lg tracking-tight">
           List another item
         </h3>
         <p className="text-sm text-slate-500 max-w-[200px] leading-relaxed">

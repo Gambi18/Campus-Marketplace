@@ -165,7 +165,6 @@ func (s *CamPayService) doRequest(method, endpoint string, payload interface{}) 
 }
 
 func stripDecimals(amount string) string {
-    // Convert "10000.00" → "10000"
     f, err := strconv.ParseFloat(amount, 64)
     if err != nil {
         return amount
@@ -196,7 +195,6 @@ func (s *CamPayService) CollectPayment(amount, phoneNumber, description, externa
 
 	log.Printf("CamPay parsed response: %+v", collectResp)
 
-	// Handle CamPay error codes
 	switch collectResp.Code {
 	case "ER101":
 		return nil, fmt.Errorf("invalid phone number, ensure it starts with country code e.g 237XXXXXXXXX")

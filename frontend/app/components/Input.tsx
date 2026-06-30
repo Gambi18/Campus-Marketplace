@@ -10,6 +10,7 @@ interface InputProps {
   disabled?: boolean;
   required?: boolean;
   helperText?: string;
+  autoComplete?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   className?: string;
 }
@@ -24,6 +25,7 @@ function Input({
   disabled = false,
   required = false,
   helperText,
+  autoComplete,
   onChange,
   className = '',
 }: InputProps) {
@@ -40,6 +42,7 @@ function Input({
         name={name}
         value={value}
         disabled={disabled}
+        autoComplete={autoComplete}
         onChange={onChange}
         className={`
           w-full py-3 px-4 text-sm rounded-lg border transition-all duration-200 outline-none

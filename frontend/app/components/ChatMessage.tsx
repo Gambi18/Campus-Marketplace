@@ -13,8 +13,8 @@ export default function ChatMessage({ text, timestamp, isSender }: ChatMessagePr
       <div
         className={`max-w-[75%] sm:max-w-[60%] px-5 py-3 rounded-2xl text-sm font-medium tracking-wide shadow-xs border transition-all duration-150 ${
           isSender
-            ? 'bg-[#0052cc] text-white border-[#0052cc] rounded-br-none' // Sender style
-            : 'bg-white text-[#1e293b] border-slate-100 rounded-bl-none' // Receiver style
+            ? 'bg-blue-700 text-white border-blue-700 rounded-br-none'
+            : 'bg-white text-slate-800 border-slate-100 rounded-bl-none'
         }`}
       >
         <p className="leading-relaxed whitespace-pre-line">{text}</p>

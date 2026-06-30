@@ -1,10 +1,14 @@
 import React from 'react';
-import * as LucideIcons from 'lucide-react';
+import { Package, ShieldCheck, BadgeCheck, TrendingUp, Coins } from 'lucide-react';
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Package, ShieldCheck, BadgeCheck, TrendingUp, Coins,
+};
 
 interface StatCardProps {
   label: string;
   value: string | number;
-  iconName: keyof typeof LucideIcons; 
+  iconName: string;
   iconColorClass?: string;
   iconBgClass?: string;
 }
@@ -16,7 +20,7 @@ export default function StatCard({
   iconColorClass = 'text-blue-600',
   iconBgClass = 'bg-blue-50',
 }: StatCardProps) {
-  const IconComponent = LucideIcons[iconName] as React.ComponentType<{ className?: string }>;
+  const IconComponent = iconMap[iconName];
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-start justify-between w-full">

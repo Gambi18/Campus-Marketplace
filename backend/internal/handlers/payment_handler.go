@@ -46,8 +46,6 @@ func NewPaymentHandler(
 	}
 }
 
-//INITIATE PAYMENT 
-
 func (h *PaymentHandler) InitiatePayment(c *gin.Context) {
 	// 1. Get buyer ID from JWT
 	buyerIDStr := c.GetString("user_id")
@@ -162,8 +160,6 @@ func (h *PaymentHandler) InitiatePayment(c *gin.Context) {
 	})
 }
 
-// WEBHOOK 
-
 func (h *PaymentHandler) Webhook(c *gin.Context) {
 	var payload map[string]interface{}
 	if err := c.ShouldBindJSON(&payload); err != nil {
@@ -200,17 +196,13 @@ func (h *PaymentHandler) Webhook(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "webhook received"})
 }
 
-// CHECK PAYMENT STATUS 
-
 func (h *PaymentHandler) CheckPaymentStatus(c *gin.Context) {
-	// Get payment ID from URL
 	paymentID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payment ID"})
 		return
 	}
 
-	// Fetch payment to get CamPay reference
 	payment, err := h.queries.GetPaymentByID(c.Request.Context(), paymentID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
@@ -224,7 +216,6 @@ func (h *PaymentHandler) CheckPaymentStatus(c *gin.Context) {
 		return
 	}
 
-	// Check reference exists
 	if !payment.Reference.Valid || payment.Reference.String == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "payment has no CamPay reference yet"})
 		return
@@ -242,7 +233,6 @@ func (h *PaymentHandler) CheckPaymentStatus(c *gin.Context) {
 		return
 	}
 
-	// Check status with CamPay
 	status, err := h.campayService.GetTransactionStatus(payment.Reference.String)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not check payment status"})
@@ -268,8 +258,6 @@ func (h *PaymentHandler) CheckPaymentStatus(c *gin.Context) {
 	})
 }
 
-//BUYER CONFIRMS 
-
 func (h *PaymentHandler) ConfirmDelivery(c *gin.Context) {
 	buyerIDStr := c.GetString("user_id")
 	buyerID, err := uuid.Parse(buyerIDStr)
@@ -284,7 +272,6 @@ func (h *PaymentHandler) ConfirmDelivery(c *gin.Context) {
 		return
 	}
 
-	// Parse rejection reason
 	var reqBody struct {
 		Reason string `json:"reason"`
 	}
@@ -293,7 +280,6 @@ func (h *PaymentHandler) ConfirmDelivery(c *gin.Context) {
 		reqBody.Reason = ""
 	}
 
-	// Get payment
 	payment, err := h.queries.GetPaymentByID(c.Request.Context(), paymentID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
@@ -364,7 +350,6 @@ func (h *PaymentHandler) ConfirmDelivery(c *gin.Context) {
 		return
 	}
 
-	// Generate receipt number
 	receiptNumber := fmt.Sprintf("CM-%d-%06d", time.Now().Year(), time.Now().UnixNano()%1000000)
 
 	// Generate PDF receipt
@@ -389,7 +374,6 @@ func (h *PaymentHandler) ConfirmDelivery(c *gin.Context) {
 		receiptURL = ""
 	}
 
-	// Update payment record
 	updated, err := h.queries.UpdatePaymentAfterRelease(c.Request.Context(), db.UpdatePaymentAfterReleaseParams{
 		ID:                payment.ID,
 		Status:            "released",
@@ -404,8 +388,6 @@ func (h *PaymentHandler) ConfirmDelivery(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update payment record"})
 		return
 	}
-
-	// Update product to sold
 	_, err = h.queries.UpdateProductStatus(c.Request.Context(), db.UpdateProductStatusParams{
 		ID:       payment.ProductID,
 		SellerID: payment.SellerID,
@@ -430,8 +412,6 @@ func (h *PaymentHandler) ConfirmDelivery(c *gin.Context) {
 	})
 }
 
-//  BUYER REJECTS 
-
 func (h *PaymentHandler) RejectDelivery(c *gin.Context) {
 	buyerIDStr := c.GetString("user_id")
 	buyerID, err := uuid.Parse(buyerIDStr)
@@ -446,7 +426,6 @@ func (h *PaymentHandler) RejectDelivery(c *gin.Context) {
 		return
 	}
 
-	// Parse rejection reason
 	var reqBody struct {
 		Reason string `json:"reason"`
 	}
@@ -454,7 +433,6 @@ func (h *PaymentHandler) RejectDelivery(c *gin.Context) {
 		reqBody.Reason = ""
 	}
 
-	// Get payment
 	payment, err := h.queries.GetPaymentByID(c.Request.Context(), paymentID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
@@ -516,7 +494,6 @@ func (h *PaymentHandler) RejectDelivery(c *gin.Context) {
 		return
 	}
 
-	// Generate receipt number
 	receiptNumber := fmt.Sprintf("CM-REF-%d-%06d", time.Now().Year(), time.Now().UnixNano()%1000000)
 
 	// Generate PDF receipt
@@ -541,7 +518,6 @@ func (h *PaymentHandler) RejectDelivery(c *gin.Context) {
 		receiptURL = ""
 	}
 
-	// Update payment record
 	updated, err := h.queries.UpdatePaymentAfterRelease(c.Request.Context(), db.UpdatePaymentAfterReleaseParams{
 		ID:                payment.ID,
 		Status:            "refunded",
@@ -556,8 +532,6 @@ func (h *PaymentHandler) RejectDelivery(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update payment record"})
 		return
 	}
-
-	// Put product back to available
 	_, err = h.queries.UpdateProductStatus(c.Request.Context(), db.UpdateProductStatusParams{
 		ID:       payment.ProductID,
 		SellerID: payment.SellerID,
@@ -582,7 +556,6 @@ func (h *PaymentHandler) RejectDelivery(c *gin.Context) {
 	})
 }
 
-//  HISTORY 
 func (h *PaymentHandler) GetMyPurchases(c *gin.Context) {
 	buyerIDStr := c.GetString("user_id")
 	buyerID, err := uuid.Parse(buyerIDStr)

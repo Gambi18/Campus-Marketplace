@@ -27,7 +27,7 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false)
 
   return (
-    <div className="min-h-screen w-full flex bg-[#f8fafc]">
+    <div className="min-h-screen w-full flex bg-surface-page">
 
       {/* LEFT COLUMN */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-50 to-indigo-50 flex-col items-center justify-center p-12 relative border-r border-gray-100">
@@ -82,7 +82,7 @@ export default function RegisterPage() {
               <p className="text-sm text-gray-400">Join your campus marketplace and start buying and selling safely</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3.5">
+            <form onSubmit={handleSubmit} autoComplete="on" className="space-y-3.5">
               <Input required label="Username" disabled={loading} name="username" value={username} placeholder="john_doe" onChange={(e) => setUsername(e.target.value)} />
               <Input required label="Full Name" disabled={loading} name="name" value={fullName} placeholder="John Doe" onChange={(e) => setFullName(e.target.value)} />
               <Input required label="Email" disabled={loading} type="email" name="email" value={email} placeholder="name@university.edu" onChange={(e) => setEmail(e.target.value)} />

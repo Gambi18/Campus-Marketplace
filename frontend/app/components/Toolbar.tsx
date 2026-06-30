@@ -22,13 +22,12 @@ function Toolbar() {
   };
 
   const handleFilterOpen = () => {
-    // keep this for later if you add a real filter modal
   };
 
   return (
     <div className="w-full my-2">
       <div className="flex flex-col sm:flex-row items-center gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-        <form onSubmit={handleSubmit} className="w-full">
+        <form onSubmit={handleSubmit} autoComplete="off" className="w-full">
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}

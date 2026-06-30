@@ -31,7 +31,7 @@ export default function PurchasesPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load().catch(() => {}); }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined" && !localStorage.getItem("token")) {
@@ -42,7 +42,7 @@ export default function PurchasesPage() {
   const handleConfirm = async (id: string) => {
     try {
       await confirmDelivery(id);
-      load();
+      await load();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to confirm delivery');
     }
@@ -60,7 +60,7 @@ export default function PurchasesPage() {
     try {
       await rejectDelivery(rejectTarget, rejectReason.trim());
       setShowRejectModal(false);
-      load();
+      await load();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to reject delivery');
     } finally {
@@ -80,7 +80,7 @@ export default function PurchasesPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafc]">
+    <div className="min-h-screen flex flex-col bg-surface-page">
       <Navbar />
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-6">
         <h1 className="text-2xl font-bold text-brand-neutral mb-6">My Purchases</h1>

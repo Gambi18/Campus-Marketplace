@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"net/http"
+	"regexp"
 	"strings"
+	"time"
 
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/models"
@@ -16,13 +18,17 @@ type AuthHandler struct {
 	queries           *db.Queries
 	authService       *services.AuthService
 	cloudinaryService *services.CloudinaryService
+	cookieDomain      string
+	cookieSecure      bool
 }
 
-func NewAuthHandler(queries *db.Queries, authService *services.AuthService, cloudinaryService *services.CloudinaryService) *AuthHandler {
+func NewAuthHandler(queries *db.Queries, authService *services.AuthService, cloudinaryService *services.CloudinaryService, cookieDomain string, cookieSecure bool) *AuthHandler {
 	return &AuthHandler{
 		queries:           queries,
 		authService:       authService,
 		cloudinaryService: cloudinaryService,
+		cookieDomain:      cookieDomain,
+		cookieSecure:      cookieSecure,
 	}
 }
 
@@ -50,6 +56,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	if len(password) < 8 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "password must be at least 8 characters"})
+		return
+	}
+
+	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+	hasDigit := regexp.MustCompile(`[0-9]`).MatchString(password)
+	hasSpecial := regexp.MustCompile(`[^a-zA-Z0-9]`).MatchString(password)
+	if !hasUpper || !hasLower || !hasDigit || !hasSpecial {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "password must contain uppercase, lowercase, digit, and special character"})
 		return
 	}
 
@@ -133,15 +148,28 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.authService.GenerateStudentToken(user.ID.String(), user.Email)
+	tokenStr, jti, err := h.authService.GenerateStudentToken(user.ID.String(), user.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate token"})
 		return
 	}
 
-	c.JSON(http.StatusOK, models.AuthResponse{
-		Token: token,
-		User:  models.ToUserResponse(user),
+	refreshToken, err := h.authService.GenerateRefreshToken(user.ID.String(), user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate refresh token"})
+		return
+	}
+
+	c.SetCookie("token", tokenStr, 86400, "/", h.cookieDomain, h.cookieSecure, true)
+	c.SetCookie("refresh_token", refreshToken, 86400*30, "/", h.cookieDomain, h.cookieSecure, true)
+
+	_ = jti // available for future blacklist on login
+
+	c.JSON(http.StatusOK, gin.H{
+		"token":         tokenStr,
+		"refresh_token": refreshToken,
+		"user":          models.ToUserResponse(user),
+		"actor_type":    "student",
 	})
 }
 
@@ -159,4 +187,73 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, models.ToUserResponse(user))
+}
+
+func (h *AuthHandler) RefreshToken(c *gin.Context) {
+	refreshTokenStr, _ := c.Cookie("refresh_token")
+	if refreshTokenStr == "" {
+		var req struct {
+			RefreshToken string `json:"refresh_token"`
+		}
+		if err := c.ShouldBindJSON(&req); err == nil {
+			refreshTokenStr = req.RefreshToken
+		}
+	}
+
+	if refreshTokenStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "refresh token required"})
+		return
+	}
+
+	claims, err := h.authService.ValidateRefreshToken(refreshTokenStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired refresh token"})
+		return
+	}
+
+	userID, _ := claims["user_id"].(string)
+	email, _ := claims["email"].(string)
+
+	newToken, _, err := h.authService.GenerateStudentToken(userID, email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate token"})
+		return
+	}
+
+	newRefreshToken, err := h.authService.GenerateRefreshToken(userID, email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate refresh token"})
+		return
+	}
+
+	c.SetCookie("token", newToken, 86400, "/", h.cookieDomain, h.cookieSecure, true)
+	c.SetCookie("refresh_token", newRefreshToken, 86400*30, "/", h.cookieDomain, h.cookieSecure, true)
+
+	c.JSON(http.StatusOK, gin.H{
+		"token":         newToken,
+		"refresh_token": newRefreshToken,
+	})
+}
+
+func (h *AuthHandler) Logout(c *gin.Context) {
+	userIDStr := c.GetString("user_id")
+	if userIDStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	// Blacklist the current token's jti if available
+	if jti, exists := c.Get("jti"); exists && jti != "" {
+		if jtiStr, ok := jti.(string); ok && jtiStr != "" {
+			userID := uuid.MustParse(userIDStr)
+			// Blacklist until token would naturally expire (max 15min from now)
+			h.authService.BlacklistToken(c.Request.Context(), jtiStr, userID, time.Now().Add(15*time.Minute))
+		}
+	}
+
+	c.SetCookie("token", "", -1, "/", h.cookieDomain, h.cookieSecure, true)
+	c.SetCookie("refresh_token", "", -1, "/", h.cookieDomain, h.cookieSecure, true)
+	c.SetCookie("csrf_token", "", -1, "/", h.cookieDomain, false, false)
+
+	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
 }

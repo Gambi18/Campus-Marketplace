@@ -84,7 +84,7 @@ export default function EditProductPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#f8fafc]">
+      <div className="min-h-screen flex flex-col bg-surface-page">
         <Navbar />
         <main className="flex-1 flex items-center justify-center text-text-muted">Loading...</main>
         <Footer />
@@ -93,7 +93,7 @@ export default function EditProductPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafc]">
+    <div className="min-h-screen flex flex-col bg-surface-page">
       <Navbar />
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 py-6">
         <h1 className="text-2xl font-bold text-brand-neutral mb-6">Edit Product</h1>

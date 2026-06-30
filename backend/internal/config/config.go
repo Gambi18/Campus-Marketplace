@@ -18,7 +18,9 @@ type Config struct {
 	DBUser   string
 	DBPass   string
 	DBName   string
-	JWTSecret string
+	DBSSLMode string
+	JWTSecret     string
+	RefreshSecret string
 	CloudinaryCloudName string
 	CloudinaryAPIKey    string
 	CloudinaryAPISecret string
@@ -33,6 +35,8 @@ type Config struct {
 	PlatformFeeOnSale   float64
 	PlatformFeeOnRefund float64
 	AllowedOrigins      []string
+	CookieDomain        string
+	CookieSecure        bool
 }
 
 func LoadConfig() *Config {
@@ -48,7 +52,9 @@ func LoadConfig() *Config {
 		DBUser:   getEnv("DB_USER", "Admin"),
 		DBPass:   getEnv("DB_PASSWORD", "password"),
 		DBName:   getEnv("DB_NAME", "campus_marketplace"),
-		JWTSecret: getEnv("JWT_SECRET", ""),
+		DBSSLMode: getEnv("DB_SSLMODE", "disable"),
+		JWTSecret:     getEnv("JWT_SECRET", ""),
+		RefreshSecret: getEnv("REFRESH_TOKEN_SECRET", ""),
 		CloudinaryCloudName: getEnv("CLOUDINARY_CLOUD_NAME", ""),
 		CloudinaryAPIKey:    getEnv("CLOUDINARY_API_KEY", ""),
 		CloudinaryAPISecret: getEnv("CLOUDINARY_API_SECRET", ""),
@@ -63,6 +69,8 @@ func LoadConfig() *Config {
 		PlatformFeeOnSale:   0.03,
 		PlatformFeeOnRefund: 0.01,
 		AllowedOrigins:      parseOrigins(getEnv("ALLOWED_ORIGINS", "http://localhost:3000")),
+		CookieDomain:        getEnv("COOKIE_DOMAIN", ""),
+		CookieSecure:        getEnv("ENV", "development") == "production",
 	}
 }
 
@@ -81,12 +89,13 @@ func parseOrigins(raw string) []string {
 // added this cause Always built fresh from current field values
 func (c *Config) DatabaseURL() string {
     return fmt.Sprintf(
-        "postgres://%s:%s@%s:%s/%s?sslmode=disable",
+        "postgres://%s:%s@%s:%s/%s?sslmode=%s",
         c.DBUser,
         c.DBPass,
         c.DBHost,
         c.DBPort,
         c.DBName,
+        c.DBSSLMode,
     )
 }
 

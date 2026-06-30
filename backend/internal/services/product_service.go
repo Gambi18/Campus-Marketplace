@@ -38,7 +38,7 @@ func (s *ProductService) CreateProduct(
 	ctx context.Context,
 	sellerID uuid.UUID,
 	categoryID int32,
-	title, description, price, condition string,
+	title, description string, price float64, condition string,
 	image1 multipart.File, // required
 	image2 multipart.File, // optional
 	image3 multipart.File, // optional
@@ -69,13 +69,12 @@ func (s *ProductService) CreateProduct(
 		return db.Product{}, err
 	}
 
-	// Save product to database
 	product, err := s.queries.CreateProduct(ctx, db.CreateProductParams{
 		SellerID:    sellerID,
 		CategoryID:  categoryID,
 		Title:       title,
 		Description: description,
-		Price:       price,
+		Price:       fmt.Sprintf("%.2f", price),
 		Condition:   condition,
 		ImageUrl1:   url1,
 		ImageUrl2:   url2,
@@ -94,7 +93,7 @@ func (s *ProductService) UpdateProduct(
 	productID uuid.UUID,
 	sellerID uuid.UUID,
 	categoryID int32,
-	title, description, price, condition string,
+	title, description string, price float64, condition string,
 	image1 multipart.File,
 	image2 multipart.File,
 	image3 multipart.File,
@@ -150,14 +149,13 @@ func (s *ProductService) UpdateProduct(
 		url4 = u
 	}
 
-	// Update product in database
 	product, err := s.queries.UpdateProduct(ctx, db.UpdateProductParams{
 		ID:          productID,
 		SellerID:    sellerID,
 		CategoryID:  categoryID,
 		Title:       title,
 		Description: description,
-		Price:       price,
+		Price:       fmt.Sprintf("%.2f", price),
 		Condition:   condition,
 		ImageUrl1:   url1,
 		ImageUrl2:   url2,

@@ -8,22 +8,31 @@ export default {
   theme: {
     extend: {
      
-      fontFamily: {
-       
+        fontFamily: {
         sans: ['var(--font-inter)', 'sans-serif'],
-        logo: ['var(--font-jakarta)', 'sans-serif'],
       },
-    
+     
       colors: {
         brand: {
           primary: 'var(--brand-primary)',
-          secondary: 'var(--brand-secondary)',
           tertiary: 'var(--brand-tertiary)',
           neutral: 'var(--brand-neutral)',
         },
         text: {
           main: 'var(--text-main)',
           muted: 'var(--text-muted)',
+          body: 'var(--text-body)',
+        },
+        surface: {
+          page: 'var(--surface-page)',
+          admin: 'var(--surface-admin)',
+          card: 'var(--surface-card)',
+        },
+        border: {
+          light: 'var(--border-light)',
+        },
+        bg: {
+          light: 'var(--bg-light)',
         },
       },
     },

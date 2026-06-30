@@ -14,22 +14,26 @@ import (
 )
 
 func SetupRoutes(
+	ctx context.Context,
 	router *gin.Engine,
 	queries *db.Queries,
 	authService *services.AuthService,
 	productService *services.ProductService,
 	cloudinaryService *services.CloudinaryService,
 	notificationService *notification.NotificationService,
+	auditService *services.AuditService,
 	hub *ws.Hub,
 	campayService *services.CamPayService,
 	receiptService *services.ReceiptService,
 	allowedOrigins []string,
 	adminBootstrapToken string,
+	cookieDomain string,
+	cookieSecure bool,
 ) {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
-	authHandler := NewAuthHandler(queries, authService, cloudinaryService)
-	adminHandler := NewAdminHandler(queries, authService, notificationService, adminBootstrapToken)
+	authHandler := NewAuthHandler(queries, authService, cloudinaryService, cookieDomain, cookieSecure)
+	adminHandler := NewAdminHandler(queries, authService, notificationService, auditService, adminBootstrapToken, cookieDomain, cookieSecure)
 	productHandler := NewProductHandler(queries, productService)
 	categoryHandler := NewCategoryHandler(queries)
 	reportHandler := NewReportHandler(queries)
@@ -44,7 +48,7 @@ func SetupRoutes(
     )
 
 	// Start background expirer for stale pending payments
-	go paymentHandler.StartPendingPaymentExpirer(context.Background(), 60*time.Second)
+	go paymentHandler.StartPendingPaymentExpirer(ctx, 60*time.Second)
 
 	api := router.Group("/api/v1")
 
@@ -58,11 +62,13 @@ func SetupRoutes(
 	// Throttle credential endpoints against brute-force / credential-stuffing.
 	loginRateLimit := middleware.RateLimit(10, time.Minute)
 	registerRateLimit := middleware.RateLimit(5, time.Minute)
+	createProductRateLimit := middleware.RateLimit(10, time.Minute)
 
 	auth := api.Group("/auth")
 	{
 		auth.POST("/register", registerRateLimit, authHandler.Register)
 		auth.POST("/login", loginRateLimit, authHandler.Login)
+		auth.POST("/refresh", authHandler.RefreshToken)
 	}
 
 	adminAuth := api.Group("/admin/auth")
@@ -91,8 +97,6 @@ func SetupRoutes(
 		products.GET("/:id", productHandler.GetProductByID)
 	}
 
-	// 
-
 	// WebSocket uses its own auth middleware that accepts the token from a query
 	// parameter (browser WebSocket API cannot set custom headers).
 	api.GET("/ws", authMiddleware.RequireWebSocketAuth(), authMiddleware.RequireStudent(), messageHandler.HandleWebSocket)
@@ -102,9 +106,10 @@ func SetupRoutes(
 	protected.Use(authMiddleware.RequireStudent())
 	{
 		protected.GET("/profile", authHandler.GetProfile)
+		protected.POST("/logout", authHandler.Logout)
 
 		protected.GET("/my-products", productHandler.GetMyProducts)
-		protected.POST("/products", productHandler.CreateProduct)
+		protected.POST("/products", createProductRateLimit, productHandler.CreateProduct)
 		protected.PUT("/products/:id", productHandler.UpdateProduct)
 		protected.PATCH("/products/:id/status", productHandler.UpdateProductStatus)
 		protected.DELETE("/products/:id", productHandler.DeleteProduct)

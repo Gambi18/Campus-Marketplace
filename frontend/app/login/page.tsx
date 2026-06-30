@@ -32,7 +32,7 @@ function LoginForm() {
 
     setLoading(true);
     try {
-      const response: any = await loginStudent(email, password);
+      const response = await loginStudent(email, password) as { token: string; user: { id: string } };
 
       if (response && response.token) {
         localStorage.setItem("token", response.token);
@@ -49,7 +49,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-[#f8fafc]">
+    <div className="min-h-screen w-full flex bg-surface-page">
 
       {/* LEFT COLUMN: Image Showcase Side */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-50 to-indigo-50 flex-col items-center justify-center p-12 relative border-r border-gray-100">
@@ -114,7 +114,7 @@ function LoginForm() {
               <p className="text-sm text-gray-400">Login to access your campus marketplace</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} autoComplete="on" className="space-y-4">
 
               <Input
                 label="Email Address"
@@ -174,7 +174,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen w-full flex bg-[#f8fafc] items-center justify-center"><p className="text-text-muted">Loading...</p></div>}>
+    <Suspense fallback={<div className="min-h-screen w-full flex bg-surface-page items-center justify-center"><p className="text-text-muted">Loading...</p></div>}>
       <LoginForm />
     </Suspense>
   );
