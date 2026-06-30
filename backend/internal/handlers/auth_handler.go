@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/models"

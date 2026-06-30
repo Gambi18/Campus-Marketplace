@@ -87,6 +87,9 @@ func main() {
    //CORS — restricted to the configured allow-list
    router.Use(middleware.CORSMiddleware(cfg.AllowedOrigins))
 
+   // Security headers
+   router.Use(middleware.SecurityHeaders())
+
    // Serve uploaded files in dev mode
    router.Static("/uploads", "./uploads")
 

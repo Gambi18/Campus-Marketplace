@@ -57,10 +57,11 @@ func SetupRoutes(
 
 	// Throttle credential endpoints against brute-force / credential-stuffing.
 	loginRateLimit := middleware.RateLimit(10, time.Minute)
+	registerRateLimit := middleware.RateLimit(5, time.Minute)
 
 	auth := api.Group("/auth")
 	{
-		auth.POST("/register", authHandler.Register)
+		auth.POST("/register", registerRateLimit, authHandler.Register)
 		auth.POST("/login", loginRateLimit, authHandler.Login)
 	}
 
