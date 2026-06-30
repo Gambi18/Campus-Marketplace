@@ -28,7 +28,7 @@ export default function Hero() {
           >
             <img
               src={image}
-              alt="Campus"
+              alt=""
               className="w-full h-full object-cover"
             />
           </div>
@@ -70,7 +70,7 @@ export default function Hero() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
-            <Button variant="primary" size="lg" onClick={() => window.location.hash = "product_listings"}>
+            <Button variant="primary" size="lg" onClick={() => document.getElementById('product_listings')?.scrollIntoView({ behavior: 'smooth' })}>
               <span className="flex items-center gap-2">
                 Browse Marketplace
                 <ArrowRight className="w-4 h-4" />
@@ -93,10 +93,14 @@ export default function Hero() {
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  currentSlide === index ? "w-8 bg-blue-500" : "w-2 bg-white/40"
-                }`}
-              />
+                aria-label={`Go to slide ${index + 1}`}
+                aria-current={currentSlide === index ? 'true' : undefined}
+                className="min-h-[44px] px-1 flex items-center justify-center"
+              >
+                <span className={`block rounded-full transition-all duration-300 ${
+                  currentSlide === index ? "w-8 h-2 bg-blue-500" : "w-2 h-2 bg-white/40"
+                }`} />
+              </button>
             ))}
           </div>
 

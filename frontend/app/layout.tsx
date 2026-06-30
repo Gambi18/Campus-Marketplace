@@ -27,8 +27,11 @@ export default function RootLayout({
     return (
         <html lang="en" className={`${inter.variable} ${jakarta.variable}`}>
             <body>
+                <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand-primary focus:text-white focus:rounded-md focus:outline-none">
+                    Skip to main content
+                </a>
                 <NotificationProvider>
-                    {children}
+                    <div id="main-content">{children}</div>
                 </NotificationProvider>
             </body>
         </html>

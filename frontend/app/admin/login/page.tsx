@@ -28,9 +28,10 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f1f5f9] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-surface-admin px-4">
       <form
         onSubmit={handleSubmit}
+        autoComplete="on"
         className="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-sm p-8 space-y-5"
       >
         <div className="text-center">

@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function Loading() {
   return (
-    <div className="min-h-[60vh] w-full flex flex-col items-center justify-center space-y-4 bg-[#f8fafc]">
+    <div className="min-h-[60vh] w-full flex flex-col items-center justify-center space-y-4 bg-surface-page">
       {/* Animated Tailwind Spinner */}
       <div className="w-10 h-10 border-4 border-slate-200 border-t-brand-primary rounded-full animate-spin" />
       

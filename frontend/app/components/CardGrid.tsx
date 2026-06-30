@@ -100,13 +100,9 @@ export default function CardGrid({
   const visibleProducts = products.slice(0, visibleCount);
 
   const handleLoadMore = () => {
-    
     setIsBatchLoading(true);
-  
-  setTimeout(() => {
     setVisibleCount((prev) => prev + 6);
     setIsBatchLoading(false);
-  }, 1000);
   };
 
   return (

@@ -45,7 +45,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#f8fafc]">
+      <div className="min-h-screen flex flex-col bg-surface-page">
         <Navbar />
         <main className="flex-1 flex items-center justify-center text-text-muted">Loading profile...</main>
         <Footer />
@@ -55,7 +55,7 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#f8fafc]">
+      <div className="min-h-screen flex flex-col bg-surface-page">
         <Navbar />
         <main className="flex-1 flex items-center justify-center text-text-muted">Could not load profile.</main>
         <Footer />
@@ -64,7 +64,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafc]">
+    <div className="min-h-screen flex flex-col bg-surface-page">
       <Navbar />
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-6">
         <h1 className="text-2xl font-bold text-brand-neutral mb-6">My Profile</h1>

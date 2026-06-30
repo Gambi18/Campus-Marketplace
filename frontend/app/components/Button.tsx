@@ -25,8 +25,8 @@ function Button({
     'inline-flex items-center justify-center font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
   const variantStyles = {
     primary: 'bg-brand-primary text-white hover:bg-blue-700 focus:ring-brand-primary',
-    secondary: 'bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] focus:ring-slate-400',
-    outlined: 'border border-gray-300 bg-white text-[#475569] hover:bg-slate-50 focus:ring-slate-400',
+    secondary: 'bg-surface-admin text-text-body hover:bg-slate-200 focus:ring-slate-400',
+    outlined: 'border border-gray-300 bg-white text-text-body hover:bg-slate-50 focus:ring-slate-400',
     form: 'bg-brand-primary text-white hover:bg-blue-700 focus:ring-brand-primary w-full font-semibold shadow-sm',
     formLightBlue: 'bg-blue-50 text-brand-primary border border-blue-100 hover:bg-blue-100 focus:ring-brand-primary w-full font-semibold',
   };

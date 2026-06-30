@@ -40,7 +40,7 @@ export default function SalesPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafc]">
+    <div className="min-h-screen flex flex-col bg-surface-page">
       <Navbar />
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-6">
         <h1 className="text-2xl font-bold text-brand-neutral mb-6">My Sales</h1>

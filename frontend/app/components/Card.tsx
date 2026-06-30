@@ -1,7 +1,7 @@
 import { ProductCard } from '@/types';
 import Image from 'next/image';
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
 import { Link as LinkIcon } from 'lucide-react';
 import { formatPrice } from '../utils/format';
 
@@ -32,6 +32,7 @@ const CONDITION_LABELS: Record<string, string> = {
 };
 
 export default function ItemCard({ item }: ItemCardProps) {
+  const router = useRouter();
   const title = item?.title ?? Product.title;
   const price = item?.price ?? Product.price;
   const category = item?.category_name ?? Product.category_name;
@@ -40,6 +41,10 @@ export default function ItemCard({ item }: ItemCardProps) {
   const status = item?.status ?? Product.status;
   const createdAt = item?.created_at ?? Product.created_at;
   const [toast, setToast] = useState<string | null>(null);
+
+  const handleCardClick = useCallback(() => {
+    router.push(`/details/${id}`);
+  }, [router, id]);
 
   useEffect(() => {
     if (!toast) return;
@@ -60,9 +65,12 @@ export default function ItemCard({ item }: ItemCardProps) {
   });
 
   return (
-    <Link
-      href={`/details/${id}`}
-      className="group block bg-white rounded-lg border border-gray-100 overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 relative bg-clip-border w-full"
+    <div
+      onClick={handleCardClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(); } }}
+      role="link"
+      tabIndex={0}
+      className="group block bg-white rounded-lg border border-gray-100 overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 relative bg-clip-border w-full cursor-pointer"
     >
       <div className="w-full aspect-square bg-gray-50 relative overflow-hidden">
 
@@ -87,15 +95,16 @@ export default function ItemCard({ item }: ItemCardProps) {
                 .then(() => setToast('Link copied!'))
                 .catch(() => setToast('Failed to copy'));
             }}
-            className="absolute top-2.5 right-2.5 z-10 p-1.5 bg-white/95 backdrop-blur-xs rounded-full shadow-xs hover:bg-white transition-colors"
+            className="absolute top-2.5 right-2.5 z-10 p-2.5 bg-white/95 backdrop-blur-xs rounded-full shadow-xs hover:bg-white transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
             title="Copy link"
+            aria-label="Copy link"
           >
             <LinkIcon className="w-3.5 h-3.5 text-gray-600" />
           </button>
         )}
 
         {toast && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 px-2.5 py-1 bg-gray-900/85 text-white text-[10px] font-medium rounded-full whitespace-nowrap transition-opacity duration-200">
+          <div role="status" aria-live="polite" className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 px-2.5 py-1 bg-gray-900/85 text-white text-[10px] font-medium rounded-full whitespace-nowrap transition-opacity duration-200">
             {toast}
           </div>
         )}
@@ -116,7 +125,7 @@ export default function ItemCard({ item }: ItemCardProps) {
 
         <div className="flex flex-col space-y-0.5 pt-1.5 border-t border-gray-50 text-[10px] text-text-muted font-medium">
           <div className="flex items-center space-x-1">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-3 h-3 flex-shrink-0">
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-3 h-3 flex-shrink-0">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
             </svg>
@@ -124,13 +133,13 @@ export default function ItemCard({ item }: ItemCardProps) {
           </div>
 
           <div className="flex items-center space-x-1">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-3 h-3 flex-shrink-0">
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-3 h-3 flex-shrink-0">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
             <span>{formattedDate}</span>
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

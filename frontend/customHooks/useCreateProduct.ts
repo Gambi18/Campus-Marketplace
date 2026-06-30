@@ -52,15 +52,15 @@ export function useCreateProduct() {
 
     setLoading(true);
     try {
-      const res: any = await createProduct(fd);
+      const res = await createProduct(fd) as { product: { id: string } };
       // backend returns created product under res.product
       if (res && res.product && res.product.id) {
         router.push(`/details/${res.product.id}`);
       } else {
         setError("Unexpected server response");
       }
-    } catch (err: any) {
-      setError(err?.message ?? "Failed to create product");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create product");
     } finally {
       setLoading(false);
     }
