@@ -3,9 +3,11 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"html"
 	"log"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	db "campus-marketplace/internal/db/sqlc"
@@ -97,7 +99,31 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 
 	client.Conn.SetReadLimit(4096)
 
+	const maxMessagesPerWindow = 10
+	const rateWindow = 10 * time.Second
+
+	var mu sync.Mutex
+	msgCount := 0
+	windowStart := time.Now()
+
 	for {
+		mu.Lock()
+		if time.Since(windowStart) > rateWindow {
+			msgCount = 0
+			windowStart = time.Now()
+		}
+		msgCount++
+		if msgCount > maxMessagesPerWindow {
+			mu.Unlock()
+			log.Printf("WebSocket rate limit exceeded for user %s", client.UserID)
+			err := client.Conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"error","content":"rate limit exceeded, please slow down"}`))
+			if err != nil {
+				break
+			}
+			continue
+		}
+		mu.Unlock()
+
 		var msg ws.Message
 		if err := client.Conn.ReadJSON(&msg); err != nil {
 			if websocket.IsUnexpectedCloseError(err,
@@ -111,6 +137,12 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 
 		// Set sender from authenticated user (never trust the client's value)
 		msg.SenderID = client.UserID
+
+		if len(msg.Content) > 5000 {
+			msg.Content = msg.Content[:5000]
+		}
+		msg.Content = html.EscapeString(msg.Content)
+
 		h.persistAndBroadcast(msg)
 	}
 }
@@ -268,11 +300,16 @@ func (h *MessageHandler) CreateMessageREST(c *gin.Context) {
 		return
 	}
 
+	sanitizedContent := html.EscapeString(req.Content)
+	if len(sanitizedContent) > 5000 {
+		sanitizedContent = sanitizedContent[:5000]
+	}
+
 	saved, err := h.queries.CreateMessage(c.Request.Context(), db.CreateMessageParams{
 		SenderID:   senderID,
 		ReceiverID: receiverID,
 		ProductID:  productID,
-		Content:    req.Content,
+		Content:    sanitizedContent,
 	})
 	if err != nil {
 		log.Printf("Error saving message: %v", err)

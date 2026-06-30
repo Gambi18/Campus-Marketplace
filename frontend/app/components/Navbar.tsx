@@ -269,6 +269,7 @@ import NotificationCenter from './NotificationCenter';
 import { useEffect, useState, useRef } from 'react';
 import { Menu, X, LogOut, User, ShoppingBag, DollarSign, ListOrdered, MessageSquare } from 'lucide-react';
 import { fetchAPI } from '../utils/api';
+import { deleteCookie } from '@/utils/cookie';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -309,6 +310,8 @@ export default function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    deleteCookie('token');
+    deleteCookie('refresh_token');
     setIsLoggedIn(false);
     setMobileMenuOpen(false);
     setProfileDropdownOpen(false);

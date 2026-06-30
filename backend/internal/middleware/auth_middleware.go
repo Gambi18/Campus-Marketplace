@@ -59,6 +59,9 @@ func extractBearerToken(c *gin.Context) string {
 			return parts[1]
 		}
 	}
+	if token, err := c.Cookie("token"); err == nil && token != "" {
+		return token
+	}
 	return ""
 }
 
@@ -74,6 +77,9 @@ func (m *AuthMiddleware) setClaims(c *gin.Context, tokenStr string) {
 	c.Set("user_id", claims["user_id"])
 	c.Set("email", claims["email"])
 	c.Set("actor_type", actorType)
+
+	jti, _ := claims["jti"].(string)
+	c.Set("jti", jti)
 
 	c.Next()
 }

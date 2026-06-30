@@ -20,16 +20,19 @@ func SetupRoutes(
 	productService *services.ProductService,
 	cloudinaryService *services.CloudinaryService,
 	notificationService *notification.NotificationService,
+	auditService *services.AuditService,
 	hub *ws.Hub,
 	campayService *services.CamPayService,
 	receiptService *services.ReceiptService,
 	allowedOrigins []string,
 	adminBootstrapToken string,
+	cookieDomain string,
+	cookieSecure bool,
 ) {
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
-	authHandler := NewAuthHandler(queries, authService, cloudinaryService)
-	adminHandler := NewAdminHandler(queries, authService, notificationService, adminBootstrapToken)
+	authHandler := NewAuthHandler(queries, authService, cloudinaryService, cookieDomain, cookieSecure)
+	adminHandler := NewAdminHandler(queries, authService, notificationService, auditService, adminBootstrapToken, cookieDomain, cookieSecure)
 	productHandler := NewProductHandler(queries, productService)
 	categoryHandler := NewCategoryHandler(queries)
 	reportHandler := NewReportHandler(queries)
@@ -63,6 +66,7 @@ func SetupRoutes(
 	{
 		auth.POST("/register", registerRateLimit, authHandler.Register)
 		auth.POST("/login", loginRateLimit, authHandler.Login)
+		auth.POST("/refresh", authHandler.RefreshToken)
 	}
 
 	adminAuth := api.Group("/admin/auth")
@@ -102,6 +106,7 @@ func SetupRoutes(
 	protected.Use(authMiddleware.RequireStudent())
 	{
 		protected.GET("/profile", authHandler.GetProfile)
+		protected.POST("/logout", authHandler.Logout)
 
 		protected.GET("/my-products", productHandler.GetMyProducts)
 		protected.POST("/products", productHandler.CreateProduct)

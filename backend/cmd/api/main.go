@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -16,9 +17,25 @@ import (
 	"campus-marketplace/internal/ws"
 )
 
+func validateConfig(cfg *config.Config) {
+	if cfg.Env == "production" {
+		if cfg.DBPass == "" || cfg.DBPass == "password" {
+			log.Fatal("DB_PASSWORD is unset or still the default — refusing to start")
+		}
+		if cfg.AdminPassword == "" || cfg.AdminPassword == "password" {
+			log.Fatal("ADMIN_PASSWORD is unset or still the default — refusing to start")
+		}
+		if cfg.CamPayAppUsername == "" || cfg.CamPayAppPassword == "" {
+			log.Fatal("CamPay credentials are required in production")
+		}
+	}
+}
+
 func main() {
 	// Iinsted of Loading environment variables, loaded config insted since everything is alredy set there
 	cfg := config.LoadConfig()
+
+	validateConfig(cfg)
 
 	// Fail fast on an unset/placeholder JWT secret — signing tokens with an empty
 	// HMAC key lets anyone forge valid tokens.
@@ -40,12 +57,18 @@ func main() {
 	//  Initialize sqlc queries
 	queries := dbsqlc.New(database)
 
+	auditService := services.NewAuditService(queries)
+
 	hub := ws.NewHub()
 	go hub.Run()
 
 	//  Initialize service
 
-	authService := services.NewAuthService(cfg.JWTSecret)
+	refreshSecret := cfg.RefreshSecret
+	if refreshSecret == "" {
+		refreshSecret = cfg.JWTSecret + "_refresh"
+	}
+	authService := services.NewAuthService(cfg.JWTSecret, refreshSecret, queries, 15*time.Minute, 30*24*time.Hour)
 	services.EnsureDefaultAdmin(context.Background(), queries, authService, cfg.AdminUsername, cfg.AdminEmail, cfg.AdminPassword)
 
 
@@ -93,7 +116,7 @@ func main() {
    // Serve uploaded files in dev mode
    router.Static("/uploads", "./uploads")
 
-	handlers.SetupRoutes(router, queries, authService,  productService, cloudinaryService, notificationService, hub, campayService, receiptService, cfg.AllowedOrigins, cfg.AdminBootstrapToken)
+	handlers.SetupRoutes(router, queries, authService, productService, cloudinaryService, notificationService, auditService, hub, campayService, receiptService, cfg.AllowedOrigins, cfg.AdminBootstrapToken, cfg.CookieDomain, cfg.CookieSecure)
 
 
 	// Starts server

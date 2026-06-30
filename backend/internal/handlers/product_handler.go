@@ -138,6 +138,12 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
+	priceFloat, err := strconv.ParseFloat(price, 64)
+	if err != nil || priceFloat <= 0 || priceFloat > 10000000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "price must be a positive number"})
+		return
+	}
+
 	// 3. Validate condition
 	validConditions := map[string]bool{
 		"brand_new": true, "like_new": true,
@@ -151,6 +157,11 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	categoryID, err := strconv.Atoi(categoryIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category ID"})
+		return
+	}
+
+	if _, err := h.queries.GetCategoryByID(c.Request.Context(), int32(categoryID)); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "category does not exist"})
 		return
 	}
 
@@ -188,7 +199,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		c.Request.Context(),
 		sellerID,
 		int32(categoryID),
-		title, description, price, condition,
+		title, description, priceFloat, condition,
 		image1, image2, image3, image4,
 	)
 	if err != nil {
@@ -270,6 +281,12 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
+	priceFloat, err := strconv.ParseFloat(price, 64)
+	if err != nil || priceFloat <= 0 || priceFloat > 10000000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "price must be a positive number"})
+		return
+	}
+
 	validConditions := map[string]bool{
 		"brand_new": true, "like_new": true,
 		"good": true, "fair": true,
@@ -282,6 +299,11 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	categoryID, err := strconv.Atoi(categoryIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category ID"})
+		return
+	}
+
+	if _, err := h.queries.GetCategoryByID(c.Request.Context(), int32(categoryID)); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "category does not exist"})
 		return
 	}
 
@@ -310,7 +332,7 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		c.Request.Context(),
 		productID, sellerID,
 		int32(categoryID),
-		title, description, price, condition,
+		title, description, priceFloat, condition,
 		image1, image2, image3, image4,
 		existing.ImageUrl1, existing.ImageUrl2,
 		existing.ImageUrl3, existing.ImageUrl4,
