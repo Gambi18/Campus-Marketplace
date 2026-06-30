@@ -37,13 +37,18 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	if !strings.Contains(email, "@") || !strings.Contains(email, ".") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid email format"})
+		return
+	}
+
 	if len(phoneNumber) < 9 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "phone_number must be at least 9 digits"})
 		return
 	}
 
-	if len(password) < 6 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "password must be at least 6 characters"})
+	if len(password) < 8 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "password must be at least 8 characters"})
 		return
 	}
 

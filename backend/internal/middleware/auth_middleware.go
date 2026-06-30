@@ -19,40 +19,63 @@ func NewAuthMiddleware(authService *services.AuthService) *AuthMiddleware {
 
 func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenStr := ""
-
-		authHeader := c.GetHeader("Authorization")
-		if authHeader != "" {
-			parts := strings.SplitN(authHeader, " ", 2)
-			if len(parts) == 2 && parts[0] == "Bearer" {
-				tokenStr = parts[1]
-			}
-		}
-
-		if tokenStr == "" {
-			tokenStr = c.Query("token")
-		}
-
+		tokenStr := extractBearerToken(c)
 		if tokenStr == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization required"})
 			c.Abort()
 			return
 		}
 
-		claims, err := m.authService.ValidateToken(tokenStr)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
+		m.setClaims(c, tokenStr)
+	}
+}
+
+// RequireWebSocketAuth is identical to RequireAuth but also accepts the token
+// from a query parameter, which is unavoidable for browser WebSocket connections
+// (the WebSocket API does not support setting custom headers). The query-param
+// path is intentionally separated from RequireAuth so that REST endpoints never
+// accept tokens via URL, preventing log/referrer leakage.
+func (m *AuthMiddleware) RequireWebSocketAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenStr := extractBearerToken(c)
+		if tokenStr == "" {
+			tokenStr = c.Query("token")
+		}
+		if tokenStr == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization required"})
 			c.Abort()
 			return
 		}
 
-		actorType, _ := claims["actor_type"].(string)
-		c.Set("user_id", claims["user_id"])
-		c.Set("email", claims["email"])
-		c.Set("actor_type", actorType)
-
-		c.Next()
+		m.setClaims(c, tokenStr)
 	}
+}
+
+func extractBearerToken(c *gin.Context) string {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader != "" {
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) == 2 && parts[0] == "Bearer" {
+			return parts[1]
+		}
+	}
+	return ""
+}
+
+func (m *AuthMiddleware) setClaims(c *gin.Context, tokenStr string) {
+	claims, err := m.authService.ValidateToken(tokenStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
+		c.Abort()
+		return
+	}
+
+	actorType, _ := claims["actor_type"].(string)
+	c.Set("user_id", claims["user_id"])
+	c.Set("email", claims["email"])
+	c.Set("actor_type", actorType)
+
+	c.Next()
 }
 
 func (m *AuthMiddleware) RequireStudent() gin.HandlerFunc {

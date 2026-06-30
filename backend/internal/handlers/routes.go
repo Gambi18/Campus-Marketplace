@@ -92,6 +92,10 @@ func SetupRoutes(
 
 	// 
 
+	// WebSocket uses its own auth middleware that accepts the token from a query
+	// parameter (browser WebSocket API cannot set custom headers).
+	api.GET("/ws", authMiddleware.RequireWebSocketAuth(), authMiddleware.RequireStudent(), messageHandler.HandleWebSocket)
+
 	protected := api.Group("/")
 	protected.Use(authMiddleware.RequireAuth())
 	protected.Use(authMiddleware.RequireStudent())
@@ -105,7 +109,6 @@ func SetupRoutes(
 		protected.DELETE("/products/:id", productHandler.DeleteProduct)
 		protected.POST("/reports", reportHandler.CreateReport)
 		protected.GET("/my-reports", reportHandler.GetMyReports)
-		protected.GET("/ws", messageHandler.HandleWebSocket)
 		protected.POST("/messages", messageHandler.CreateMessageREST)
 		protected.GET("/conversations", messageHandler.GetConversations)
 		protected.GET("/conversations/:product_id/:user_id", messageHandler.GetMessages)
