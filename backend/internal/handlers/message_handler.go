@@ -47,7 +47,6 @@ func NewMessageHandler(queries *db.Queries, hub *ws.Hub, notificationService *no
 	}
 }
 
-//  WEBSOCKET ENDPOINT
 func (h *MessageHandler) HandleWebSocket(c *gin.Context) {
     userIDStr := c.GetString("user_id")
     if userIDStr == "" {
@@ -61,14 +60,12 @@ func (h *MessageHandler) HandleWebSocket(c *gin.Context) {
         return
     }
 
-    // Fetch username from DB
     user, err := h.queries.GetUserByID(c.Request.Context(), userID)
     if err != nil {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
         return
     }
 
-    // Upgrade HTTP to WebSocket
     conn, err := h.upgrader.Upgrade(c.Writer, c.Request, nil)
     if err != nil {
         log.Printf("WebSocket upgrade error: %v", err)
@@ -107,22 +104,25 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 	windowStart := time.Now()
 
 	for {
-		mu.Lock()
-		if time.Since(windowStart) > rateWindow {
-			msgCount = 0
-			windowStart = time.Now()
-		}
-		msgCount++
-		if msgCount > maxMessagesPerWindow {
-			mu.Unlock()
+		rateLimited := func() bool {
+			mu.Lock()
+			defer mu.Unlock()
+			if time.Since(windowStart) > rateWindow {
+				msgCount = 0
+				windowStart = time.Now()
+			}
+			msgCount++
+			return msgCount > maxMessagesPerWindow
+		}()
+
+		if rateLimited {
 			log.Printf("WebSocket rate limit exceeded for user %s", client.UserID)
-			err := client.Conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"error","content":"rate limit exceeded, please slow down"}`))
-			if err != nil {
-				break
+			client.Send <- ws.Message{
+				Type:    "error",
+				Content: "rate limit exceeded, please slow down",
 			}
 			continue
 		}
-		mu.Unlock()
 
 		var msg ws.Message
 		if err := client.Conn.ReadJSON(&msg); err != nil {
@@ -135,7 +135,7 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 			break
 		}
 
-		// Set sender from authenticated user (never trust the client's value)
+			// Never trust the client's self-identified sender
 		msg.SenderID = client.UserID
 
 		if len(msg.Content) > 5000 {
@@ -212,11 +212,9 @@ func (h *MessageHandler) persistAndBroadcast(msg ws.Message) {
 		CreatedAt:    saved.CreatedAt.String(),
 	}
 
-	// Broadcast to both receiver and sender
 	h.hub.BroadcastToUser(broadcastMsg.ReceiverID, broadcastMsg)
 	h.hub.BroadcastToUser(broadcastMsg.SenderID, broadcastMsg)
 
-	// Create in-app notification for the receiver
 	_, _ = h.notificationService.Create(
 		ctx,
 		receiverID,
@@ -248,7 +246,7 @@ func (h *MessageHandler) canChat(ctx context.Context, productID, userA, userB uu
 	return ok
 }
 
-//REST ENDPOINTS 
+
 
 func (h *MessageHandler) CreateMessageREST(c *gin.Context) {
 	userIDStr := c.GetString("user_id")
@@ -287,7 +285,6 @@ func (h *MessageHandler) CreateMessageREST(c *gin.Context) {
 		return
 	}
 
-	// Verify receiver exists
 	_, err = h.queries.GetUserByID(c.Request.Context(), receiverID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "receiver not found"})
@@ -324,7 +321,6 @@ func (h *MessageHandler) CreateMessageREST(c *gin.Context) {
 		return
 	}
 
-	// Broadcast via WebSocket
 	broadcastMsg := ws.Message{
 		Type:         "chat",
 		ID:           saved.ID.String(),
@@ -339,7 +335,6 @@ func (h *MessageHandler) CreateMessageREST(c *gin.Context) {
 	h.hub.BroadcastToUser(broadcastMsg.ReceiverID, broadcastMsg)
 	h.hub.BroadcastToUser(broadcastMsg.SenderID, broadcastMsg)
 
-	// Notification for receiver
 	_, _ = h.notificationService.Create(
 		c.Request.Context(),
 		receiverID,
@@ -445,7 +440,6 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 		return
 	}
 
-	// Get messages
 	messages, err := h.queries.GetMessagesByConversation(c.Request.Context(), db.GetMessagesByConversationParams{
 		SenderID:   userID,
 		ReceiverID: otherUserID,
@@ -456,7 +450,6 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 		return
 	}
 
-	// Mark messages as read
 	_ = h.queries.MarkMessagesAsRead(c.Request.Context(), db.MarkMessagesAsReadParams{
 		ProductID:  productID,
 		SenderID:   otherUserID,

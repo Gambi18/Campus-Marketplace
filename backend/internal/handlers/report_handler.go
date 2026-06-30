@@ -18,10 +18,7 @@ func NewReportHandler(queries *db.Queries) *ReportHandler {
 	return &ReportHandler{queries: queries}
 }
 
-// STUDENT ENDPOINTS 
-
 func (h *ReportHandler) CreateReport(c *gin.Context) {
-	// Get reporter ID from JWT
 	reporterIDStr := c.GetString("user_id")
 	reporterID, err := uuid.Parse(reporterIDStr)
 	if err != nil {
@@ -29,21 +26,23 @@ func (h *ReportHandler) CreateReport(c *gin.Context) {
 		return
 	}
 
-	// Parse and validate request body
 	var req models.CreateReportRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	//  Parse product ID
 	productID, err := uuid.Parse(req.ProductID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
 		return
 	}
 
-	//  Create report
+	if _, err := h.queries.GetProductByID(c.Request.Context(), productID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		return
+	}
+
 	report, err := h.queries.CreateReport(c.Request.Context(), db.CreateReportParams{
 		ReporterID: reporterID,
 		ProductID:  productID,
@@ -87,7 +86,7 @@ func (h *ReportHandler) GetMyReports(c *gin.Context) {
 	})
 }
 
-// ADMIN ENDPOINTS 
+
 
 func (h *ReportHandler) GetAllReports(c *gin.Context) {
 	// Optional status filter via query param e.g. ?status=pending

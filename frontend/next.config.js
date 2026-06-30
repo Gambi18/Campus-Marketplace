@@ -12,7 +12,9 @@ const nextConfig = {
     // next/image never crashes on an unconfigured host; src values are generated
     // server-side, not free-form user input.
     remotePatterns: [
-      { protocol: 'https', hostname: '**' },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'via.placeholder.com' },
       { protocol: 'http', hostname: 'localhost' },
     ],
   },

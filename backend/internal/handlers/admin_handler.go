@@ -199,7 +199,6 @@ func (h *AdminHandler) ApproveUser(c *gin.Context) {
 	adminID := uuid.MustParse(c.GetString("user_id"))
 	h.auditService.Log(c.Request.Context(), adminID, services.AuditApproveUser, &userID, "user", services.ClientIP(c))
 
-	// Send notification
 	_, _ = h.notificationService.Create(
 		c.Request.Context(),
 		userID,
@@ -242,7 +241,6 @@ func (h *AdminHandler) RejectUser(c *gin.Context) {
 	adminID := uuid.MustParse(c.GetString("user_id"))
 	h.auditService.Log(c.Request.Context(), adminID, services.AuditRejectUser, &userID, "user", services.ClientIP(c))
 
-	// Send notification
 	_, _ = h.notificationService.Create(
 		c.Request.Context(),
 		userID,

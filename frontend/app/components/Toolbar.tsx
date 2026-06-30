@@ -22,7 +22,6 @@ function Toolbar() {
   };
 
   const handleFilterOpen = () => {
-    // keep this for later if you add a real filter modal
   };
 
   return (

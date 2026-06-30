@@ -86,7 +86,6 @@ export default function Navbar() {
           <div className="flex items-center space-x-4 sm:space-x-8">
             <Logo />
 
-            {/* Desktop Navigation - Core Minimal Links */}
             <div className="hidden md:flex items-center space-x-6 text-sm font-medium">
               {desktopCoreLinks.map((link) => (
                 <Link
@@ -111,22 +110,17 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center space-x-2 sm:space-x-4">
-            {/* Sell Item Button */}
-            <Link href="/sell" className="hidden sm:block" onClick={(e) => handleProtectedAction(e, "/sell")}>
-              <Button variant="primary" size="md">
-                <span className="flex items-center gap-1.5 font-semibold text-xs sm:text-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                  <span className="hidden sm:inline">Sell Item</span>
-                </span>
-              </Button>
-            </Link>
+            <Button variant="primary" size="md" className="hidden sm:inline-flex" onClick={() => router.push("/sell")}>
+              <span className="flex items-center gap-1.5 font-semibold text-xs sm:text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                <span className="hidden sm:inline">Sell Item</span>
+              </span>
+            </Button>
 
-            {/* Notifications */}
             {isLoggedIn && <NotificationCenter />}
 
-            {/* Profile / Auth Section */}
             {!isLoggedIn ? (
               <Link
                 href="/login"
@@ -138,7 +132,6 @@ export default function Navbar() {
                 </div>
               </Link>
             ) : (
-              /* Desktop Profile Dropdown */
               <div className="relative hidden md:block" ref={dropdownRef}>
                 <button
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
@@ -177,7 +170,6 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Mobile Menu Button Toggler */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -196,7 +188,6 @@ export default function Navbar() {
         <div id="mobile-menu" className="md:hidden fixed inset-0 top-16 bg-white border-b border-gray-100 z-30 overflow-y-auto">
           <div className="flex flex-col p-4 space-y-5">
             
-            {/* SECTION 1: DISCOVER */}
             <div>
               <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400 px-4 mb-2">
                 Discover
@@ -235,7 +226,6 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* SECTION 2: USER ACCOUNT (Only visible when authenticated) */}
             {isLoggedIn && (
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400 px-4 mb-2">
@@ -262,7 +252,6 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Footer Group (CTA Actions and Auth Status) */}
             <div className="border-t border-gray-100 pt-4 flex flex-col space-y-2">
               <Link
                 href="/sell"

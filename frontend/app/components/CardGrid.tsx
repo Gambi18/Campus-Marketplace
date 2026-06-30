@@ -47,7 +47,6 @@ export default function CardGrid({
         }
 
         if (!ignore) {
-          // Fallback to response itself if API returns the raw array directly
           setProducts(response?.products ?? response ?? []);
         }
       } catch (err) {
@@ -107,14 +106,12 @@ export default function CardGrid({
 
   return (
   <div className="flex flex-col items-center gap-10 w-full">
-      {/* Product Display Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 w-full">
         {visibleProducts.map((product) => (
           <ItemCard key={product.id} item={product} />
         ))}
       </div>
 
-      {/* Conditional Load More Button  */}
       {products.length > visibleCount && (
   <div className="flex flex-col items-center gap-2 mt-4 pb-8">
     <button

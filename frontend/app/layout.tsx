@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { NotificationProvider } from "./context/NotificationContext";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 
 export const metadata: Metadata = {
     title: "Campus Marketplace",
@@ -13,19 +13,13 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-jakarta",
-});
-
 export default function RootLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en" className={`${inter.variable} ${jakarta.variable}`}>
+        <html lang="en" className={`${inter.variable}`}>
             <body>
                 <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand-primary focus:text-white focus:rounded-md focus:outline-none">
                     Skip to main content

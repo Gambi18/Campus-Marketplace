@@ -69,7 +69,6 @@ func (s *ProductService) CreateProduct(
 		return db.Product{}, err
 	}
 
-	// Save product to database
 	product, err := s.queries.CreateProduct(ctx, db.CreateProductParams{
 		SellerID:    sellerID,
 		CategoryID:  categoryID,
@@ -150,7 +149,6 @@ func (s *ProductService) UpdateProduct(
 		url4 = u
 	}
 
-	// Update product in database
 	product, err := s.queries.UpdateProduct(ctx, db.UpdateProductParams{
 		ID:          productID,
 		SellerID:    sellerID,

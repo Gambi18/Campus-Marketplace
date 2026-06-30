@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/ws"
@@ -67,7 +68,8 @@ func (s *NotificationService) Create(ctx context.Context, userID uuid.UUID, nTyp
 }
 
 func (s *NotificationService) processEmailNotification(n db.Notification) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	prefs, err := s.queries.GetNotificationPreferences(ctx, n.UserID)
 	if err != nil {
 		// If no preferences, create default

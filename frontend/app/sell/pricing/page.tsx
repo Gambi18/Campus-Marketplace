@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
 import Button from '../../components/Button';
@@ -27,6 +27,13 @@ export default function SellPricingPage() {
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const publishTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    return () => {
+      if (publishTimeoutRef.current) clearTimeout(publishTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined" && !localStorage.getItem("token")) {
@@ -93,7 +100,7 @@ export default function SellPricingPage() {
 
       resetForm();
       setToastVisible(true);
-      setTimeout(() => router.push('/mylistings'), 1500);
+      publishTimeoutRef.current = setTimeout(() => router.push('/mylistings'), 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to publish listing');
     } finally {

@@ -27,7 +27,6 @@ func NewProductHandler(queries *db.Queries, productService *services.ProductServ
 	}
 }
 
-// PUBLIC ENDPOINTS
 
 func (h *ProductHandler) GetAllProducts(c *gin.Context) {
 	products, err := h.queries.GetAllProducts(c.Request.Context())
@@ -115,10 +114,8 @@ func (h *ProductHandler) GetProductsByCategory(c *gin.Context) {
 	})
 }
 
-//PROTECTED ENDPOINTS 
 
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
-	// 1. Get seller ID from JWT
 	sellerIDStr := c.GetString("user_id")
 	sellerID, err := uuid.Parse(sellerIDStr)
 	if err != nil {
@@ -126,7 +123,6 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	// 2. Parse form fields
 	title       := c.PostForm("title")
 	description := c.PostForm("description")
 	price       := c.PostForm("price")
@@ -144,7 +140,6 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	// 3. Validate condition
 	validConditions := map[string]bool{
 		"brand_new": true, "like_new": true,
 		"good": true, "fair": true,
@@ -165,7 +160,6 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	// 4. Get image 1 — required
 	fileHeader1, err := c.FormFile("image_1")
 	if err != nil || fileHeader1 == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "at least one image is required (image_1)"})
@@ -178,7 +172,6 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	}
 	defer image1.Close()
 
-	// 5. Get images 2, 3, 4 — optional
 	var image2, image3, image4 multipart.File
 
 	if fh, err := c.FormFile("image_2"); err == nil && fh != nil {
@@ -194,7 +187,6 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		defer image4.Close()
 	}
 
-	// 6. Call service
 	product, err := h.productService.CreateProduct(
 		c.Request.Context(),
 		sellerID,
@@ -240,7 +232,6 @@ func (h *ProductHandler) GetMyProducts(c *gin.Context) {
 }
 
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
-	// 1. Get seller ID from JWT
 	sellerIDStr := c.GetString("user_id")
 	sellerID, err := uuid.Parse(sellerIDStr)
 	if err != nil {
@@ -248,28 +239,23 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	// 2. Get product ID from URL
 	productID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
 		return
 	}
 
-	// 3. Get existing product
 	existing, err := h.queries.GetProductByID(c.Request.Context(), productID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
 		return
 	}
 
-	// 3b. Enforce ownership explicitly so a non-owner gets 403 rather than a
-	// misleading 500 from the seller-scoped UPDATE returning no rows.
 	if existing.SellerID != sellerID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "you do not own this product"})
 		return
 	}
 
-	// 4. Parse form fields
 	title         := c.PostForm("title")
 	description   := c.PostForm("description")
 	price         := c.PostForm("price")
@@ -307,7 +293,6 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	// 5. Get new images if provided
 	var image1, image2, image3, image4 multipart.File
 
 	if fh, err := c.FormFile("image_1"); err == nil && fh != nil {
@@ -327,7 +312,6 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		defer image4.Close()
 	}
 
-	// 6. Call service
 	product, err := h.productService.UpdateProduct(
 		c.Request.Context(),
 		productID, sellerID,

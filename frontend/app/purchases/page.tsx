@@ -31,7 +31,7 @@ export default function PurchasesPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load().catch(() => {}); }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined" && !localStorage.getItem("token")) {
@@ -42,7 +42,7 @@ export default function PurchasesPage() {
   const handleConfirm = async (id: string) => {
     try {
       await confirmDelivery(id);
-      load();
+      await load();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to confirm delivery');
     }
@@ -60,7 +60,7 @@ export default function PurchasesPage() {
     try {
       await rejectDelivery(rejectTarget, rejectReason.trim());
       setShowRejectModal(false);
-      load();
+      await load();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to reject delivery');
     } finally {
