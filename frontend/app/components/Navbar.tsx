@@ -133,14 +133,14 @@ export default function Navbar() {
               </Link>
             ) : (
               <div className="relative hidden md:block" ref={dropdownRef}>
-                <button
+                <Button
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                   className="w-9 h-9 rounded-full border border-gray-200 cursor-pointer overflow-hidden hover:ring-2 hover:ring-offset-2 hover:ring-brand-primary transition-all duration-150 flex items-center justify-center bg-slate-100 text-gray-600 hover:text-brand-primary"
                   aria-haspopup="true"
                   aria-expanded={profileDropdownOpen}
                 >
                   <User className="w-5 h-5" />
-                </button>
+                </Button>
 
                 {profileDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-100">
@@ -170,7 +170,7 @@ export default function Navbar() {
               </div>
             )}
 
-            <button
+            <Button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
@@ -178,7 +178,7 @@ export default function Navbar() {
               aria-controls="mobile-menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5 text-gray-600" /> : <Menu className="w-5 h-5 text-gray-600" />}
-            </button>
+            </Button>
           </div>
         </div>
       </nav>
