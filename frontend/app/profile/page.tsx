@@ -1,47 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import StatCard from '@/components/StatCard';
 import { getProfile } from '../utils/authApi';
 import { fetchMyProducts } from '../utils/productApi';
+import { useApiResource } from '../../customHooks/useApiResource';
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const [profile, setProfile] = useState<{
-    username: string;
-    email: string;
-    full_name: string;
-    phone_number: string;
-    account_status: string;
-    is_verified: boolean;
-    created_at: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [listingCount, setListingCount] = useState(0);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
-      router.replace("/login");
-      return;
-    }
-    (async () => {
-      try {
-        const [profileData, productsData] = await Promise.all([
-          getProfile(),
-          fetchMyProducts(),
-        ]);
-        setProfile(profileData);
-        setListingCount(productsData.products?.length || 0);
-      } catch {
-        // profile load failed
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [router]);
+  const { data, loading } = useApiResource(async () => {
+    const [profileData, productsData] = await Promise.all([
+      getProfile(),
+      fetchMyProducts(),
+    ]);
+    return { profile: profileData, listingCount: productsData.products?.length || 0 };
+  }, []);
+  const profile = data?.profile ?? null;
+  const listingCount = data?.listingCount ?? 0;
 
   if (loading) {
     return (

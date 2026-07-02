@@ -11,7 +11,7 @@ import Button from '../../components/Button';
 import Badge from '../../components/Badge';
 import Input from '../../components/Input';
 import { formatPrice, formatTimeAgo } from '../../utils/format';
-import { API_URL, postAPI } from '../../utils/api';
+import { apiCall, fetchAPI, postAPI } from '../../utils/api';
 import { initiatePayment, checkPaymentStatus } from '../../utils/paymentApi';
 import type { ProductCard } from '../../types';
 import { useRouter } from 'next/navigation';
@@ -68,19 +68,16 @@ export default function ProductDetailsPage() {
         return;
       }
       try {
-        const res = await fetch(`${API_URL}/api/v1/products/${id}`);
-        if (res.ok) {
-          const data: ProductCard = await res.json();
-          if (data.status !== 'available') {
-            router.push('/?sold=' + encodeURIComponent(data.title));
-            return;
-          }
-          setProduct((prev) => ({
-            ...prev,
-            ...data,
-          }));
-          setSelectedImageIndex(0);
+        const data = await fetchAPI<ProductCard>(`/api/v1/products/${id}`);
+        if (data.status !== 'available') {
+          router.push('/?sold=' + encodeURIComponent(data.title));
+          return;
         }
+        setProduct((prev) => ({
+          ...prev,
+          ...data,
+        }));
+        setSelectedImageIndex(0);
       } catch {
         // keep mock on error
       } finally {
@@ -96,11 +93,13 @@ export default function ProductDetailsPage() {
     let cancelled = false;
     (async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/api/v1/conversations/${id}/${product.seller_id}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        // A 2xx means the buyer already paid and can access the thread. Disable
+        // the 401 redirect so simply browsing a product while logged out (or with
+        // an expired token) never bounces the visitor to /login.
+        await apiCall(`/api/v1/conversations/${id}/${product.seller_id}`, undefined, {
+          redirectOnUnauthorized: false,
         });
-        if (!cancelled) setHasPaid(res.ok);
+        if (!cancelled) setHasPaid(true);
       } catch {
         if (!cancelled) setHasPaid(false);
       } finally {

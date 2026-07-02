@@ -8,6 +8,7 @@ import Input from "@/components/Input";
 import registerImage from "../images/college students-rafiki.svg";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { loginStudent } from '../utils/authApi';
+import { setCookie } from '../utils/cookie';
 
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -36,6 +37,9 @@ function LoginForm() {
 
       if (response && response.token) {
         localStorage.setItem("token", response.token);
+        // Also mirror the token into a cookie so Next.js middleware (which cannot
+        // read localStorage) can gate protected routes server-side.
+        setCookie("token", response.token);
         if (response.user?.id) localStorage.setItem("user_id", response.user.id);
         router.push("/");
       } else {

@@ -13,6 +13,34 @@ import (
 	"github.com/google/uuid"
 )
 
+const claimProductForPurchase = `-- name: ClaimProductForPurchase :one
+UPDATE products SET status = 'in_escrow', updated_at = NOW()
+WHERE id = $1 AND status = 'available'
+RETURNING id, seller_id, category_id, title, description, price, status, created_at, updated_at, condition, image_url_1, image_url_2, image_url_3, image_url_4
+`
+
+func (q *Queries) ClaimProductForPurchase(ctx context.Context, id uuid.UUID) (Product, error) {
+	row := q.db.QueryRowContext(ctx, claimProductForPurchase, id)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.SellerID,
+		&i.CategoryID,
+		&i.Title,
+		&i.Description,
+		&i.Price,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Condition,
+		&i.ImageUrl1,
+		&i.ImageUrl2,
+		&i.ImageUrl3,
+		&i.ImageUrl4,
+	)
+	return i, err
+}
+
 const createProduct = `-- name: CreateProduct :one
 INSERT INTO products (
     seller_id,
@@ -103,7 +131,13 @@ JOIN users      u ON u.id = p.seller_id
 JOIN categories c ON c.id = p.category_id
 WHERE p.status = 'available'
 ORDER BY p.created_at DESC
+LIMIT $2 OFFSET $1
 `
+
+type GetAllProductsParams struct {
+	Offset int32 `json:"offset"`
+	Limit  int32 `json:"limit"`
+}
 
 type GetAllProductsRow struct {
 	ID           uuid.UUID `json:"id"`
@@ -124,8 +158,8 @@ type GetAllProductsRow struct {
 	CategoryName string    `json:"category_name"`
 }
 
-func (q *Queries) GetAllProducts(ctx context.Context) ([]GetAllProductsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getAllProducts)
+func (q *Queries) GetAllProducts(ctx context.Context, arg GetAllProductsParams) ([]GetAllProductsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllProducts, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +263,14 @@ JOIN categories c ON c.id = p.category_id
 WHERE p.category_id = $1
 AND   p.status = 'available'
 ORDER BY p.created_at DESC
+LIMIT $3 OFFSET $2
 `
+
+type GetProductsByCategoryParams struct {
+	CategoryID int32 `json:"category_id"`
+	Offset     int32 `json:"offset"`
+	Limit      int32 `json:"limit"`
+}
 
 type GetProductsByCategoryRow struct {
 	ID           uuid.UUID `json:"id"`
@@ -250,8 +291,8 @@ type GetProductsByCategoryRow struct {
 	CategoryName string    `json:"category_name"`
 }
 
-func (q *Queries) GetProductsByCategory(ctx context.Context, categoryID int32) ([]GetProductsByCategoryRow, error) {
-	rows, err := q.db.QueryContext(ctx, getProductsByCategory, categoryID)
+func (q *Queries) GetProductsByCategory(ctx context.Context, arg GetProductsByCategoryParams) ([]GetProductsByCategoryRow, error) {
+	rows, err := q.db.QueryContext(ctx, getProductsByCategory, arg.CategoryID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +341,14 @@ JOIN users      u ON u.id = p.seller_id
 JOIN categories c ON c.id = p.category_id
 WHERE p.seller_id = $1
 ORDER BY p.created_at DESC
+LIMIT $3 OFFSET $2
 `
+
+type GetProductsBySellerIDParams struct {
+	SellerID uuid.UUID `json:"seller_id"`
+	Offset   int32     `json:"offset"`
+	Limit    int32     `json:"limit"`
+}
 
 type GetProductsBySellerIDRow struct {
 	ID           uuid.UUID `json:"id"`
@@ -321,8 +369,8 @@ type GetProductsBySellerIDRow struct {
 	CategoryName string    `json:"category_name"`
 }
 
-func (q *Queries) GetProductsBySellerID(ctx context.Context, sellerID uuid.UUID) ([]GetProductsBySellerIDRow, error) {
-	rows, err := q.db.QueryContext(ctx, getProductsBySellerID, sellerID)
+func (q *Queries) GetProductsBySellerID(ctx context.Context, arg GetProductsBySellerIDParams) ([]GetProductsBySellerIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, getProductsBySellerID, arg.SellerID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +423,14 @@ AND  (
     OR p.description ILIKE '%' || $1 || '%'
 )
 ORDER BY p.created_at DESC
+LIMIT $3 OFFSET $2
 `
+
+type SearchProductsParams struct {
+	Keyword sql.NullString `json:"keyword"`
+	Offset  int32          `json:"offset"`
+	Limit   int32          `json:"limit"`
+}
 
 type SearchProductsRow struct {
 	ID           uuid.UUID `json:"id"`
@@ -396,8 +451,8 @@ type SearchProductsRow struct {
 	CategoryName string    `json:"category_name"`
 }
 
-func (q *Queries) SearchProducts(ctx context.Context, dollar_1 sql.NullString) ([]SearchProductsRow, error) {
-	rows, err := q.db.QueryContext(ctx, searchProducts, dollar_1)
+func (q *Queries) SearchProducts(ctx context.Context, arg SearchProductsParams) ([]SearchProductsRow, error) {
+	rows, err := q.db.QueryContext(ctx, searchProducts, arg.Keyword, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

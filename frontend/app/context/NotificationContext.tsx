@@ -6,7 +6,7 @@ import type {
   NotificationResponse,
   UnreadCountResponse,
 } from '../types/notifications';
-import { fetchAPI, patchAPI, postAPI, API_URL } from '../utils/api';
+import { fetchAPI, patchAPI, postAPI, getWsUrl } from '../utils/api';
 
 interface NotificationContextType {
   notifications: AppNotification[];
@@ -81,8 +81,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     const connect = () => {
       if (cancelled) return;
-      const wsUrl = API_URL.replace('http', 'ws') + '/api/v1/ws';
-      ws = new WebSocket(`${wsUrl}?token=${token}`);
+      ws = new WebSocket(`${getWsUrl()}?token=${token}`);
 
       ws.onmessage = (event) => {
         try {

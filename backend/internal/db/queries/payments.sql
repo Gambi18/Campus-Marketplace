@@ -47,7 +47,8 @@ JOIN users    u1 ON u1.id = p.buyer_id
 JOIN users    u2 ON u2.id = p.seller_id
 JOIN products pr ON pr.id = p.product_id
 WHERE p.buyer_id = $1
-ORDER BY p.created_at DESC;
+ORDER BY p.created_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: GetSellerPayments :many
 SELECT
@@ -60,7 +61,8 @@ JOIN users    u1 ON u1.id = p.buyer_id
 JOIN users    u2 ON u2.id = p.seller_id
 JOIN products pr ON pr.id = p.product_id
 WHERE p.seller_id = $1
-ORDER BY p.created_at DESC;
+ORDER BY p.created_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: GetAllHeldPayments :many
 SELECT
@@ -73,7 +75,8 @@ JOIN users    u1 ON u1.id = p.buyer_id
 JOIN users    u2 ON u2.id = p.seller_id
 JOIN products pr ON pr.id = p.product_id
 WHERE p.status = 'held'
-ORDER BY p.created_at ASC;
+ORDER BY p.created_at ASC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: UpdatePaymentStatus :one
 UPDATE payments
@@ -102,7 +105,7 @@ UPDATE payments
 SET
     status     = 'held',
     updated_at = NOW()
-WHERE reference = $1
+WHERE reference = $1 AND status = 'pending'
 RETURNING *;
 
 -- name: HasActivePayment :one
@@ -137,3 +140,13 @@ RETURNING *;
 SELECT * FROM payments
 WHERE status = 'pending'
   AND created_at < NOW() - INTERVAL '5 minutes';
+
+-- GetStuckReleasingPayments returns payments that entered an in-progress
+-- money-movement state ('releasing'/'refunding') but never reached a terminal
+-- state within the reconciliation window — i.e. a CamPay withdrawal likely
+-- succeeded while the follow-up DB write was lost to a crash. Surfaced to
+-- operators for manual follow-up.
+-- name: GetStuckReleasingPayments :many
+SELECT * FROM payments
+WHERE status IN ('releasing', 'refunding')
+  AND updated_at < NOW() - INTERVAL '10 minutes';

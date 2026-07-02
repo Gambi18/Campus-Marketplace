@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { adminFetch } from '../../utils/adminApi';
+import StatusBadge from '../../components/StatusBadge';
+import { useApiResource } from '../../../customHooks/useApiResource';
 
 interface HeldPayment {
   id: string;
@@ -14,33 +15,11 @@ interface HeldPayment {
 }
 
 export default function AdminPaymentsPage() {
-  const [payments, setPayments] = useState<HeldPayment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await adminFetch<{ payments: HeldPayment[] }>('/api/v1/admin/payments/held');
-        setPayments(res.payments || []);
-      } catch (e) {
-        // Surface the failure instead of masquerading as an empty escrow.
-        setError(e instanceof Error ? e.message : 'Failed to load payments');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const statusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      held: 'bg-blue-100 text-blue-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-      released: 'bg-green-100 text-green-800',
-      refunded: 'bg-red-100 text-red-800',
-    };
-    return `px-2 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-600'}`;
-  };
+  const { data, loading, error } = useApiResource(
+    () => adminFetch<{ payments: HeldPayment[] }>('/api/v1/admin/payments/held?limit=100&offset=0'),
+    [],
+  );
+  const payments = data?.payments ?? [];
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -81,7 +60,7 @@ export default function AdminPaymentsPage() {
                   <td className="p-4 text-text-muted">{p.buyer_name}</td>
                   <td className="p-4 text-text-muted">{p.seller_name}</td>
                   <td className="p-4 text-text-muted">{p.amount} XAF</td>
-                  <td className="p-4"><span className={statusBadge(p.status)}>{p.status}</span></td>
+                  <td className="p-4"><StatusBadge status={p.status} /></td>
                   <td className="p-4 text-text-muted">{new Date(p.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	db "campus-marketplace/internal/db/sqlc"
@@ -16,6 +17,7 @@ import (
 func SetupRoutes(
 	ctx context.Context,
 	router *gin.Engine,
+	sqlDB *sql.DB,
 	queries *db.Queries,
 	authService *services.AuthService,
 	productService *services.ProductService,
@@ -40,15 +42,20 @@ func SetupRoutes(
 	messageHandler := NewMessageHandler(queries, hub, notificationService, allowedOrigins)
 	notificationHandler := NewNotificationHandler(notificationService)
 	paymentHandler := NewPaymentHandler(
-    queries,
-    campayService,
-    receiptService,
-    cloudinaryService,
-    hub,
-    )
+		sqlDB,
+		queries,
+		campayService,
+		receiptService,
+		cloudinaryService,
+		hub,
+	)
 
 	// Start background expirer for stale pending payments
 	go paymentHandler.StartPendingPaymentExpirer(ctx, 60*time.Second)
+
+	// Surface payments stuck mid-release (money moved but status never advanced)
+	// for operator follow-up.
+	go paymentHandler.StartStuckPaymentReconciler(ctx, 5*time.Minute)
 
 	api := router.Group("/api/v1")
 
@@ -104,6 +111,9 @@ func SetupRoutes(
 	protected := api.Group("/")
 	protected.Use(authMiddleware.RequireAuth())
 	protected.Use(authMiddleware.RequireStudent())
+	// CSRF double-submit protection for cookie-authenticated requests; skipped for
+	// Bearer-token API calls (see middleware.CSRF).
+	protected.Use(middleware.CSRF())
 	{
 		protected.GET("/profile", authHandler.GetProfile)
 		protected.POST("/logout", authHandler.Logout)
@@ -119,14 +129,13 @@ func SetupRoutes(
 		protected.GET("/conversations", messageHandler.GetConversations)
 		protected.GET("/conversations/:product_id/:user_id", messageHandler.GetMessages)
 		protected.GET("/unread-count", messageHandler.GetUnreadCount)
-		protected.POST("/payments/initiate",          paymentHandler.InitiatePayment)
-		protected.GET("/payments/:id/status",         paymentHandler.CheckPaymentStatus)
-		protected.POST("/payments/:id/confirm",       paymentHandler.ConfirmDelivery)
-		protected.POST("/payments/:id/reject",        paymentHandler.RejectDelivery)
-		protected.GET("/payments/:id/receipt",        paymentHandler.GetReceipt)
-		protected.GET("/my-purchases",                paymentHandler.GetMyPurchases)
-		protected.GET("/my-sales",                    paymentHandler.GetMySales)
-
+		protected.POST("/payments/initiate", paymentHandler.InitiatePayment)
+		protected.GET("/payments/:id/status", paymentHandler.CheckPaymentStatus)
+		protected.POST("/payments/:id/confirm", paymentHandler.ConfirmDelivery)
+		protected.POST("/payments/:id/reject", paymentHandler.RejectDelivery)
+		protected.GET("/payments/:id/receipt", paymentHandler.GetReceipt)
+		protected.GET("/my-purchases", paymentHandler.GetMyPurchases)
+		protected.GET("/my-sales", paymentHandler.GetMySales)
 
 		// Notification routes
 		notifications := protected.Group("/notifications")
@@ -141,6 +150,7 @@ func SetupRoutes(
 	admin := api.Group("/admin")
 	admin.Use(authMiddleware.RequireAuth())
 	admin.Use(authMiddleware.RequireAdmin())
+	admin.Use(middleware.CSRF())
 	{
 		admin.GET("/profile", adminHandler.GetProfile)
 		admin.GET("/users", adminHandler.GetAllUsers)
@@ -154,6 +164,6 @@ func SetupRoutes(
 		admin.GET("/reports", reportHandler.GetAllReports)
 		admin.GET("/reports/:id", reportHandler.GetReportByID)
 		admin.PATCH("/reports/:id/status", reportHandler.UpdateReportStatus)
-		admin.GET("/payments/held",   paymentHandler.GetAllHeldPayments)
+		admin.GET("/payments/held", paymentHandler.GetAllHeldPayments)
 	}
 }

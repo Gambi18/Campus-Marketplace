@@ -76,7 +76,6 @@ export function useRegister() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Form event listener active");
     if (loading) return;
     if (password !== confirmPassword) {
       setError("Passwords do not match");

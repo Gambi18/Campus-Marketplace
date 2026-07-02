@@ -75,23 +75,22 @@ func main() {
 	authService := services.NewAuthService(cfg.JWTSecret, refreshSecret, queries, 15*time.Minute, 30*24*time.Hour)
 	services.EnsureDefaultAdmin(context.Background(), queries, authService, cfg.AdminUsername, cfg.AdminEmail, cfg.AdminPassword)
 
-
-        // cloudinary  initialization
-    cloudinaryService, err := services.NewCloudinaryService(
-        cfg.CloudinaryCloudName,
-        cfg.CloudinaryAPIKey,
-        cfg.CloudinaryAPISecret,
-    )
-    campayService := services.NewCamPayService(
-    cfg.CamPayBaseURL,
-    cfg.CamPayAppUsername,
-    cfg.CamPayAppPassword,
-    cfg.CamPayPermanentToken,
-    )
-    receiptService := services.NewReceiptService(cloudinaryService)
-    if err != nil {
-        log.Fatalf("Cloudinary error: %v", err)
-    }
+	// cloudinary  initialization
+	cloudinaryService, err := services.NewCloudinaryService(
+		cfg.CloudinaryCloudName,
+		cfg.CloudinaryAPIKey,
+		cfg.CloudinaryAPISecret,
+	)
+	campayService := services.NewCamPayService(
+		cfg.CamPayBaseURL,
+		cfg.CamPayAppUsername,
+		cfg.CamPayAppPassword,
+		cfg.CamPayPermanentToken,
+	)
+	receiptService := services.NewReceiptService(cloudinaryService)
+	if err != nil {
+		log.Fatalf("Cloudinary error: %v", err)
+	}
 
 	productService := services.NewProductService(queries, cloudinaryService)
 	notificationService := notification.NewNotificationService(queries, hub)
@@ -104,6 +103,20 @@ func main() {
 	// Creates Gin router
 	router := gin.Default()
 
+	// Trusted proxies: with an empty list gin trusts no proxy headers, so
+	// ClientIP() derives from RemoteAddr and X-Forwarded-For spoofing cannot
+	// defeat the rate limiter or forge audit-log IPs. Behind a real proxy/LB,
+	// set TRUSTED_PROXIES to its CIDR(s).
+	if len(cfg.TrustedProxies) == 0 {
+		if err := router.SetTrustedProxies(nil); err != nil {
+			log.Fatalf("failed to configure trusted proxies: %v", err)
+		}
+	} else {
+		if err := router.SetTrustedProxies(cfg.TrustedProxies); err != nil {
+			log.Fatalf("invalid TRUSTED_PROXIES: %v", err)
+		}
+	}
+
 	// Cap request bodies to bound memory use from uploads. Product create/update
 	// can carry up to 5 images (1 student ID + 4 product photos), so allow some
 	// headroom while still rejecting abusive payloads.
@@ -111,19 +124,23 @@ func main() {
 	router.MaxMultipartMemory = 8 << 20
 	router.Use(middleware.BodySizeLimit(maxUploadBytes))
 
-   //CORS — restricted to the configured allow-list
-   router.Use(middleware.CORSMiddleware(cfg.AllowedOrigins))
+	//CORS — restricted to the configured allow-list
+	router.Use(middleware.CORSMiddleware(cfg.AllowedOrigins))
 
-   // Security headers
-   router.Use(middleware.SecurityHeaders())
+	// Security headers
+	router.Use(middleware.SecurityHeaders())
 
-   // Serve uploaded files in dev mode
-   router.Static("/uploads", "./uploads")
+	// Serve uploaded files in dev mode
+	router.Static("/uploads", "./uploads")
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	handlers.SetupRoutes(ctx, router, queries, authService, productService, cloudinaryService, notificationService, auditService, hub, campayService, receiptService, cfg.AllowedOrigins, cfg.AdminBootstrapToken, cfg.CookieDomain, cfg.CookieSecure)
+	// Periodically purge expired rows from token_blacklist so the table (and the
+	// in-process negative cache) stay bounded.
+	go authService.StartBlacklistCleanup(ctx, time.Hour)
+
+	handlers.SetupRoutes(ctx, router, database, queries, authService, productService, cloudinaryService, notificationService, auditService, hub, campayService, receiptService, cfg.AllowedOrigins, cfg.AdminBootstrapToken, cfg.CookieDomain, cfg.CookieSecure)
 
 	// Starts server
 	srv := &http.Server{

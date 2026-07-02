@@ -7,7 +7,8 @@ import Footer from '../../components/Footer';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import Select from '../../components/Select';
-import { fetchAPI, API_URL } from '../../utils/api';
+import { fetchAPI, putAPI } from '../../utils/api';
+import type { ProductCard } from '../../types';
 
 const CATEGORY_OPTIONS = [
   { value: '1', label: 'Electronics' },
@@ -38,7 +39,7 @@ export default function EditProductPage() {
     }
     (async () => {
       try {
-        const product = await fetchAPI<any>(`/api/v1/products/${id}`);
+        const product = await fetchAPI<ProductCard>(`/api/v1/products/${id}`);
         setTitle(product.title || '');
         setDescription(product.description || '');
         setPrice(product.price?.toString() || '');
@@ -56,24 +57,12 @@ export default function EditProductPage() {
     setSaving(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/v1/products/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          title,
-          description,
-          price,
-          category_id: parseInt(categoryId),
-        }),
+      await putAPI(`/api/v1/products/${id}`, {
+        title,
+        description,
+        price,
+        category_id: parseInt(categoryId),
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to update product');
-      }
       router.push(`/details/${id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update product');

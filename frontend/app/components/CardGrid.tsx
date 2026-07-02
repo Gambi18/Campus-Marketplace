@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ItemCard from "./Card";
 import type { ProductCard } from "../types";
 import {
@@ -14,6 +14,8 @@ interface CardGridProps {
   categoryId?: string;
 }
 
+// Server default is 24 (max 100); each "Load More" pulls the next page.
+const PAGE_SIZE = 24;
 
 export default function CardGrid({
   query = "",
@@ -23,36 +25,44 @@ export default function CardGrid({
   const [products, setProducts] = useState<ProductCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [visibleCount, setVisibleCount] = useState(5);
   const [isBatchLoading, setIsBatchLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+
+  // Fetch a single server page starting at `offset`, honouring the active filter.
+  const fetchPage = useCallback(
+    async (offset: number) => {
+      const cleanQuery = query?.trim();
+      const cleanCategory = categoryId?.trim();
+      let response;
+      if (cleanQuery) {
+        response = await searchProducts(cleanQuery, PAGE_SIZE, offset);
+      } else if (cleanCategory) {
+        response = await getProductsByCategory(cleanCategory, PAGE_SIZE, offset);
+      } else {
+        response = await getAllProducts(PAGE_SIZE, offset);
+      }
+      return response?.products ?? [];
+    },
+    [query, categoryId],
+  );
 
   useEffect(() => {
     let ignore = false;
 
-    const loadProducts = async () => {
+    const loadFirstPage = async () => {
       setLoading(true);
       setError(null);
-      setVisibleCount(5);
-
       try {
-        const cleanQuery = query?.trim();
-        const cleanCategory = categoryId?.trim();
-        let response;
-        if (cleanQuery) {
-          response = await searchProducts(cleanQuery);
-        } else if (cleanCategory) {
-          response = await getProductsByCategory(cleanCategory);
-        } else {
-          response = await getAllProducts();
-        }
-
+        const batch = await fetchPage(0);
         if (!ignore) {
-          setProducts(response?.products ?? response ?? []);
+          setProducts(batch);
+          setHasMore(batch.length === PAGE_SIZE);
         }
       } catch (err) {
         if (!ignore) {
           setError(err instanceof Error ? err.message : "Could not load products");
           setProducts([]);
+          setHasMore(false);
         }
       } finally {
         if (!ignore) {
@@ -61,12 +71,25 @@ export default function CardGrid({
       }
     };
 
-    loadProducts();
+    loadFirstPage();
 
     return () => {
       ignore = true;
     };
-  }, [query, categoryId]); // Re-runs data fetching whenever the search string OR category changes
+  }, [fetchPage]); // Re-runs whenever the search string OR category changes
+
+  const handleLoadMore = async () => {
+    setIsBatchLoading(true);
+    try {
+      const batch = await fetchPage(products.length);
+      setProducts((prev) => [...prev, ...batch]);
+      setHasMore(batch.length === PAGE_SIZE);
+    } catch {
+      // Keep what we already have; the button stays available for a retry.
+    } finally {
+      setIsBatchLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -96,23 +119,15 @@ export default function CardGrid({
     );
   }
 
-  const visibleProducts = products.slice(0, visibleCount);
-
-  const handleLoadMore = () => {
-    setIsBatchLoading(true);
-    setVisibleCount((prev) => prev + 6);
-    setIsBatchLoading(false);
-  };
-
   return (
   <div className="flex flex-col items-center gap-10 w-full">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 w-full">
-        {visibleProducts.map((product) => (
+        {products.map((product) => (
           <ItemCard key={product.id} item={product} />
         ))}
       </div>
 
-      {products.length > visibleCount && (
+      {hasMore && (
   <div className="flex flex-col items-center gap-2 mt-4 pb-8">
     <button
       onClick={handleLoadMore}
@@ -132,7 +147,7 @@ export default function CardGrid({
       )}
     </button>
     <span className="text-xs text-gray-400">
-      Showing {visibleProducts.length} of {products.length} items
+      Showing {products.length} items
     </span>
   </div>
 )}

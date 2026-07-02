@@ -7,6 +7,7 @@ import (
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/models"
 	"campus-marketplace/internal/notification"
+	"campus-marketplace/internal/platform/httpx"
 	"campus-marketplace/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -59,6 +60,7 @@ func (h *AdminHandler) Login(c *gin.Context) {
 		return
 	}
 
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("token", tokenStr, 86400, "/", h.cookieDomain, h.cookieSecure, true)
 	c.JSON(http.StatusOK, models.AdminAuthResponse{
 		Token: tokenStr,
@@ -126,11 +128,14 @@ func (h *AdminHandler) CreateAdmin(c *gin.Context) {
 }
 
 func (h *AdminHandler) GetProfile(c *gin.Context) {
-	adminID := c.GetString("user_id")
+	adminID, ok := httpx.CurrentUserID(c)
+	if !ok {
+		return
+	}
 
-	admin, err := h.queries.GetAdminByID(c.Request.Context(), uuid.MustParse(adminID))
+	admin, err := h.queries.GetAdminByID(c.Request.Context(), adminID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "admin not found"})
+		httpx.Error(c, http.StatusNotFound, "admin not found")
 		return
 	}
 
@@ -138,9 +143,13 @@ func (h *AdminHandler) GetProfile(c *gin.Context) {
 }
 
 func (h *AdminHandler) GetAllUsers(c *gin.Context) {
-	users, err := h.queries.GetAllUsers(c.Request.Context())
+	p := httpx.ParsePagination(c, 50, 100)
+	users, err := h.queries.GetAllUsers(c.Request.Context(), db.GetAllUsersParams{
+		Limit:  p.Limit,
+		Offset: p.Offset,
+	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch users"})
+		httpx.Error(c, http.StatusInternalServerError, "could not fetch users")
 		return
 	}
 
@@ -156,9 +165,13 @@ func (h *AdminHandler) GetAllUsers(c *gin.Context) {
 }
 
 func (h *AdminHandler) GetPendingUsers(c *gin.Context) {
-	users, err := h.queries.GetPendingUsers(c.Request.Context())
+	p := httpx.ParsePagination(c, 50, 100)
+	users, err := h.queries.GetPendingUsers(c.Request.Context(), db.GetPendingUsersParams{
+		Limit:  p.Limit,
+		Offset: p.Offset,
+	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch pending users"})
+		httpx.Error(c, http.StatusInternalServerError, "could not fetch pending users")
 		return
 	}
 
@@ -190,13 +203,17 @@ func (h *AdminHandler) ApproveUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.queries.ApproveUser(c.Request.Context(), userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not approve user"})
+	adminID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
-	adminID := uuid.MustParse(c.GetString("user_id"))
+	user, err := h.queries.ApproveUser(c.Request.Context(), userID)
+	if err != nil {
+		httpx.Error(c, http.StatusInternalServerError, "could not approve user")
+		return
+	}
+
 	h.auditService.Log(c.Request.Context(), adminID, services.AuditApproveUser, &userID, "user", services.ClientIP(c))
 
 	_, _ = h.notificationService.Create(
@@ -232,13 +249,17 @@ func (h *AdminHandler) RejectUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.queries.RejectUser(c.Request.Context(), userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not reject user"})
+	adminID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
-	adminID := uuid.MustParse(c.GetString("user_id"))
+	user, err := h.queries.RejectUser(c.Request.Context(), userID)
+	if err != nil {
+		httpx.Error(c, http.StatusInternalServerError, "could not reject user")
+		return
+	}
+
 	h.auditService.Log(c.Request.Context(), adminID, services.AuditRejectUser, &userID, "user", services.ClientIP(c))
 
 	_, _ = h.notificationService.Create(
@@ -264,29 +285,31 @@ func (h *AdminHandler) BlockUser(c *gin.Context) {
 		return
 	}
 
-	adminIDStr := c.GetString("user_id")
-	if userID.String() == adminIDStr {
-		c.JSON(http.StatusForbidden, gin.H{"error": "cannot block yourself"})
+	adminID, ok := httpx.CurrentUserID(c)
+	if !ok {
+		return
+	}
+	if userID == adminID {
+		httpx.Error(c, http.StatusForbidden, "cannot block yourself")
 		return
 	}
 
 	targetUser, err := h.queries.GetUserByID(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		httpx.Error(c, http.StatusNotFound, "user not found")
 		return
 	}
 	if targetUser.AccountStatus == "blocked" {
-		c.JSON(http.StatusConflict, gin.H{"error": "user is already blocked"})
+		httpx.Error(c, http.StatusConflict, "user is already blocked")
 		return
 	}
 
 	user, err := h.queries.BlockUser(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not block user"})
+		httpx.Error(c, http.StatusInternalServerError, "could not block user")
 		return
 	}
 
-	adminID := uuid.MustParse(c.GetString("user_id"))
 	h.auditService.Log(c.Request.Context(), adminID, services.AuditBlockUser, &userID, "user", services.ClientIP(c))
 
 	c.JSON(http.StatusOK, gin.H{

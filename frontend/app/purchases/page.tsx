@@ -1,48 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import StatusBadge from '../components/StatusBadge';
 import { MessageCircle } from 'lucide-react';
 import { getMyPurchases, confirmDelivery, rejectDelivery, getReceipt } from '../utils/paymentApi';
-import type { Payment } from '../types/payment';
+import { useApiResource } from '../../customHooks/useApiResource';
 
 export default function PurchasesPage() {
   const router = useRouter();
-  const [purchases, setPurchases] = useState<Payment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, loading, refetch } = useApiResource(() => getMyPurchases(), []);
+  const purchases = data?.purchases ?? [];
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectTarget, setRejectTarget] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
 
-  const load = async () => {
-    try {
-      const res = await getMyPurchases();
-      setPurchases(res.purchases);
-    } catch {
-      setPurchases([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { load().catch(() => {}); }, []);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
-      router.replace("/login");
-    }
-  }, [router]);
-
   const handleConfirm = async (id: string) => {
     try {
       await confirmDelivery(id);
-      await load();
+      await refetch();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to confirm delivery');
     }
@@ -60,23 +42,12 @@ export default function PurchasesPage() {
     try {
       await rejectDelivery(rejectTarget, rejectReason.trim());
       setShowRejectModal(false);
-      await load();
+      await refetch();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to reject delivery');
     } finally {
       setRejecting(false);
     }
-  };
-
-  const statusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      held: 'bg-blue-100 text-blue-800',
-      released: 'bg-green-100 text-green-800',
-      refunded: 'bg-red-100 text-red-800',
-      expired: 'bg-gray-100 text-gray-600',
-    };
-    return `px-2 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-600'}`;
   };
 
   return (
@@ -114,7 +85,7 @@ export default function PurchasesPage() {
                       </p>
                     )}
                   </div>
-                  <span className={statusBadge(p.status)}>{p.status}</span>
+                  <StatusBadge status={p.status} />
                 </div>
                 <div className="mt-3 flex gap-2 flex-wrap">
                   {p.status === 'held' && (

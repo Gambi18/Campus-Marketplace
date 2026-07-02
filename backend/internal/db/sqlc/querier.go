@@ -20,6 +20,7 @@ type Querier interface {
 	// concurrent caller can succeed; the loser gets sql.ErrNoRows. This guards
 	// the escrow withdrawal against double-spend.
 	ClaimPaymentForRelease(ctx context.Context, arg ClaimPaymentForReleaseParams) (Payment, error)
+	ClaimProductForPurchase(ctx context.Context, id uuid.UUID) (Product, error)
 	CountAdmins(ctx context.Context) (int64, error)
 	CreateAdmin(ctx context.Context, arg CreateAdminParams) (Admin, error)
 	CreateAuditLog(ctx context.Context, arg CreateAuditLogParams) error
@@ -33,34 +34,41 @@ type Querier interface {
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteCategory(ctx context.Context, id int32) error
+	DeleteExpiredBlacklistedTokens(ctx context.Context) error
 	DeleteProduct(ctx context.Context, arg DeleteProductParams) error
 	GetAdminByEmail(ctx context.Context, email string) (Admin, error)
 	GetAdminByID(ctx context.Context, id uuid.UUID) (Admin, error)
 	GetAllCategories(ctx context.Context) ([]Category, error)
-	GetAllHeldPayments(ctx context.Context) ([]GetAllHeldPaymentsRow, error)
-	GetAllProducts(ctx context.Context) ([]GetAllProductsRow, error)
-	GetAllReports(ctx context.Context) ([]GetAllReportsRow, error)
-	GetAllUsers(ctx context.Context) ([]User, error)
+	GetAllHeldPayments(ctx context.Context, arg GetAllHeldPaymentsParams) ([]GetAllHeldPaymentsRow, error)
+	GetAllProducts(ctx context.Context, arg GetAllProductsParams) ([]GetAllProductsRow, error)
+	GetAllReports(ctx context.Context, arg GetAllReportsParams) ([]GetAllReportsRow, error)
+	GetAllUsers(ctx context.Context, arg GetAllUsersParams) ([]User, error)
 	GetAuditLogsByAction(ctx context.Context, action string) ([]AuditLog, error)
 	GetAuditLogsByAdmin(ctx context.Context, adminID uuid.UUID) ([]AuditLog, error)
 	GetBlacklistedTokensByUser(ctx context.Context, userID uuid.UUID) ([]TokenBlacklist, error)
-	GetBuyerPayments(ctx context.Context, buyerID uuid.UUID) ([]GetBuyerPaymentsRow, error)
+	GetBuyerPayments(ctx context.Context, arg GetBuyerPaymentsParams) ([]GetBuyerPaymentsRow, error)
 	GetCategoryByID(ctx context.Context, id int32) (Category, error)
-	GetConversations(ctx context.Context, receiverID uuid.UUID) ([]GetConversationsRow, error)
+	GetConversations(ctx context.Context, senderID uuid.UUID) ([]GetConversationsRow, error)
 	GetMessagesByConversation(ctx context.Context, arg GetMessagesByConversationParams) ([]GetMessagesByConversationRow, error)
 	GetNotificationPreferences(ctx context.Context, userID uuid.UUID) (NotificationPreference, error)
 	GetPaymentByID(ctx context.Context, id uuid.UUID) (GetPaymentByIDRow, error)
 	GetPaymentByReference(ctx context.Context, reference sql.NullString) (GetPaymentByReferenceRow, error)
 	GetPendingEmailJobs(ctx context.Context, limit int32) ([]EmailQueue, error)
-	GetPendingUsers(ctx context.Context) ([]User, error)
+	GetPendingUsers(ctx context.Context, arg GetPendingUsersParams) ([]User, error)
 	GetProductByID(ctx context.Context, id uuid.UUID) (GetProductByIDRow, error)
-	GetProductsByCategory(ctx context.Context, categoryID int32) ([]GetProductsByCategoryRow, error)
-	GetProductsBySellerID(ctx context.Context, sellerID uuid.UUID) ([]GetProductsBySellerIDRow, error)
+	GetProductsByCategory(ctx context.Context, arg GetProductsByCategoryParams) ([]GetProductsByCategoryRow, error)
+	GetProductsBySellerID(ctx context.Context, arg GetProductsBySellerIDParams) ([]GetProductsBySellerIDRow, error)
 	GetReportByID(ctx context.Context, id uuid.UUID) (GetReportByIDRow, error)
-	GetReportsByReporterID(ctx context.Context, reporterID uuid.UUID) ([]GetReportsByReporterIDRow, error)
-	GetReportsByStatus(ctx context.Context, status string) ([]GetReportsByStatusRow, error)
-	GetSellerPayments(ctx context.Context, sellerID uuid.UUID) ([]GetSellerPaymentsRow, error)
+	GetReportsByReporterID(ctx context.Context, arg GetReportsByReporterIDParams) ([]GetReportsByReporterIDRow, error)
+	GetReportsByStatus(ctx context.Context, arg GetReportsByStatusParams) ([]GetReportsByStatusRow, error)
+	GetSellerPayments(ctx context.Context, arg GetSellerPaymentsParams) ([]GetSellerPaymentsRow, error)
 	GetStalePendingPayments(ctx context.Context) ([]Payment, error)
+	// GetStuckReleasingPayments returns payments that entered an in-progress
+	// money-movement state ('releasing'/'refunding') but never reached a terminal
+	// state within the reconciliation window — i.e. a CamPay withdrawal likely
+	// succeeded while the follow-up DB write was lost to a crash. Surfaced to
+	// operators for manual follow-up.
+	GetStuckReleasingPayments(ctx context.Context) ([]Payment, error)
 	GetUnreadCount(ctx context.Context, receiverID uuid.UUID) (int64, error)
 	GetUnreadNotificationCount(ctx context.Context, userID uuid.UUID) (int64, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
@@ -75,7 +83,7 @@ type Querier interface {
 	// RevertPaymentToHeld puts a claimed payment back to 'held' when the
 	// CamPay withdrawal fails, so the buyer can retry.
 	RevertPaymentToHeld(ctx context.Context, id uuid.UUID) (Payment, error)
-	SearchProducts(ctx context.Context, dollar_1 sql.NullString) ([]SearchProductsRow, error)
+	SearchProducts(ctx context.Context, arg SearchProductsParams) ([]SearchProductsRow, error)
 	UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error)
 	UpdateEmailJobStatus(ctx context.Context, arg UpdateEmailJobStatusParams) error
 	UpdateNotificationPreferences(ctx context.Context, arg UpdateNotificationPreferencesParams) (NotificationPreference, error)

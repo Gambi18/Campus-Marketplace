@@ -125,7 +125,13 @@ JOIN users    u2 ON u2.id = p.seller_id
 JOIN products pr ON pr.id = p.product_id
 WHERE p.status = 'held'
 ORDER BY p.created_at ASC
+LIMIT $2 OFFSET $1
 `
+
+type GetAllHeldPaymentsParams struct {
+	Offset int32 `json:"offset"`
+	Limit  int32 `json:"limit"`
+}
 
 type GetAllHeldPaymentsRow struct {
 	ID                uuid.UUID      `json:"id"`
@@ -150,8 +156,8 @@ type GetAllHeldPaymentsRow struct {
 	ProductTitle      string         `json:"product_title"`
 }
 
-func (q *Queries) GetAllHeldPayments(ctx context.Context) ([]GetAllHeldPaymentsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getAllHeldPayments)
+func (q *Queries) GetAllHeldPayments(ctx context.Context, arg GetAllHeldPaymentsParams) ([]GetAllHeldPaymentsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllHeldPayments, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +212,14 @@ JOIN users    u2 ON u2.id = p.seller_id
 JOIN products pr ON pr.id = p.product_id
 WHERE p.buyer_id = $1
 ORDER BY p.created_at DESC
+LIMIT $3 OFFSET $2
 `
+
+type GetBuyerPaymentsParams struct {
+	BuyerID uuid.UUID `json:"buyer_id"`
+	Offset  int32     `json:"offset"`
+	Limit   int32     `json:"limit"`
+}
 
 type GetBuyerPaymentsRow struct {
 	ID                uuid.UUID      `json:"id"`
@@ -231,8 +244,8 @@ type GetBuyerPaymentsRow struct {
 	ProductTitle      string         `json:"product_title"`
 }
 
-func (q *Queries) GetBuyerPayments(ctx context.Context, buyerID uuid.UUID) ([]GetBuyerPaymentsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getBuyerPayments, buyerID)
+func (q *Queries) GetBuyerPayments(ctx context.Context, arg GetBuyerPaymentsParams) ([]GetBuyerPaymentsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getBuyerPayments, arg.BuyerID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -415,7 +428,14 @@ JOIN users    u2 ON u2.id = p.seller_id
 JOIN products pr ON pr.id = p.product_id
 WHERE p.seller_id = $1
 ORDER BY p.created_at DESC
+LIMIT $3 OFFSET $2
 `
+
+type GetSellerPaymentsParams struct {
+	SellerID uuid.UUID `json:"seller_id"`
+	Offset   int32     `json:"offset"`
+	Limit    int32     `json:"limit"`
+}
 
 type GetSellerPaymentsRow struct {
 	ID                uuid.UUID      `json:"id"`
@@ -440,8 +460,8 @@ type GetSellerPaymentsRow struct {
 	ProductTitle      string         `json:"product_title"`
 }
 
-func (q *Queries) GetSellerPayments(ctx context.Context, sellerID uuid.UUID) ([]GetSellerPaymentsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getSellerPayments, sellerID)
+func (q *Queries) GetSellerPayments(ctx context.Context, arg GetSellerPaymentsParams) ([]GetSellerPaymentsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getSellerPayments, arg.SellerID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -492,6 +512,58 @@ WHERE status = 'pending'
 
 func (q *Queries) GetStalePendingPayments(ctx context.Context) ([]Payment, error) {
 	rows, err := q.db.QueryContext(ctx, getStalePendingPayments)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Payment
+	for rows.Next() {
+		var i Payment
+		if err := rows.Scan(
+			&i.ID,
+			&i.BuyerID,
+			&i.SellerID,
+			&i.ProductID,
+			&i.Amount,
+			&i.PlatformFee,
+			&i.NetAmount,
+			&i.PhoneNumber,
+			&i.Operator,
+			&i.Reference,
+			&i.WithdrawReference,
+			&i.Status,
+			&i.ReceiptNumber,
+			&i.ReceiptPdfUrl,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.RejectionReason,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getStuckReleasingPayments = `-- name: GetStuckReleasingPayments :many
+SELECT id, buyer_id, seller_id, product_id, amount, platform_fee, net_amount, phone_number, operator, reference, withdraw_reference, status, receipt_number, receipt_pdf_url, created_at, updated_at, rejection_reason FROM payments
+WHERE status IN ('releasing', 'refunding')
+  AND updated_at < NOW() - INTERVAL '10 minutes'
+`
+
+// GetStuckReleasingPayments returns payments that entered an in-progress
+// money-movement state ('releasing'/'refunding') but never reached a terminal
+// state within the reconciliation window — i.e. a CamPay withdrawal likely
+// succeeded while the follow-up DB write was lost to a crash. Surfaced to
+// operators for manual follow-up.
+func (q *Queries) GetStuckReleasingPayments(ctx context.Context) ([]Payment, error) {
+	rows, err := q.db.QueryContext(ctx, getStuckReleasingPayments)
 	if err != nil {
 		return nil, err
 	}
@@ -692,7 +764,7 @@ UPDATE payments
 SET
     status     = 'held',
     updated_at = NOW()
-WHERE reference = $1
+WHERE reference = $1 AND status = 'pending'
 RETURNING id, buyer_id, seller_id, product_id, amount, platform_fee, net_amount, phone_number, operator, reference, withdraw_reference, status, receipt_number, receipt_pdf_url, created_at, updated_at, rejection_reason
 `
 

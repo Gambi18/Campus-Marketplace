@@ -1,4 +1,4 @@
-import { API_URL } from './api';
+import { apiCall } from './api';
 
 const ADMIN_TOKEN_KEY = 'admin_token';
 
@@ -19,20 +19,12 @@ export async function adminFetch<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token = getAdminToken();
-  const headers: Record<string, string> = {
-    ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
-    ...((options.headers as Record<string, string>) ?? {}),
-  };
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.error || response.statusText || 'Request failed');
-  }
-  return data as T;
+  // Reuse the shared client's token/header/error handling, but key off the
+  // admin token and never redirect to the student /login on a 401.
+  return apiCall<T>(endpoint, options, {
+    tokenKey: ADMIN_TOKEN_KEY,
+    redirectOnUnauthorized: false,
+  });
 }
 
 export async function adminLogin(email: string, password: string) {

@@ -26,11 +26,8 @@ export default function SellDetailsPage() {
   const router = useRouter();
   const { form, updateForm, primaryPhoto } = useListingForm();
 
+  // Auth is enforced centrally by middleware.ts; this only gates the wizard step.
   useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
-      router.replace("/login");
-      return;
-    }
     if (!primaryPhoto) router.replace('/sell');
   }, [primaryPhoto, router]);
 

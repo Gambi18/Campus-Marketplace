@@ -34,12 +34,14 @@ RETURNING *;
 
 -- name: GetAllUsers :many
 SELECT * FROM users
-ORDER BY created_at DESC;
+ORDER BY created_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: GetPendingUsers :many
 SELECT * FROM users
 WHERE account_status = 'pending'
-ORDER BY created_at ASC;
+ORDER BY created_at ASC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: BlockUser :one
 UPDATE users

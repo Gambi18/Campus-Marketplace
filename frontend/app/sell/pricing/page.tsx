@@ -11,7 +11,7 @@ import ReviewSummary from '../../components/listing/ReviewSummary';
 import Select from '../../components/Select';
 import Toast from '../../components/Toast';
 import { useListingForm } from '../../context/ListingFormContext';
-import { API_URL } from '../../utils/api';
+import { createProduct } from '../../utils/productApi';
 
 const LOCATION_OPTIONS = [
   { value: 'Main Campus', label: 'Main Campus' },
@@ -35,13 +35,10 @@ export default function SellPricingPage() {
     };
   }, []);
 
+  // Auth is enforced centrally by middleware.ts; this only gates the wizard step.
+  // Wait for the draft to load before deciding whether to bounce back to step 1,
+  // otherwise a fresh reload of /sell/pricing redirects away from a valid draft.
   useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
-      router.replace("/login");
-      return;
-    }
-    // Wait for the draft to load before deciding whether to bounce back to step 1,
-    // otherwise a fresh reload of /sell/pricing redirects away from a valid draft.
     if (hydrated && !form.title) router.replace('/sell/details');
   }, [hydrated, form.title, router]);
 
@@ -86,17 +83,7 @@ export default function SellPricingPage() {
         }
       }
 
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const res = await fetch(`${API_URL}/api/v1/products`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body,
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Could not publish listing. Sign in and try again.');
-      }
+      await createProduct(body);
 
       resetForm();
       setToastVisible(true);

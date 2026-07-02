@@ -34,7 +34,8 @@ FROM products p
 JOIN users      u ON u.id = p.seller_id
 JOIN categories c ON c.id = p.category_id
 WHERE p.status = 'available'
-ORDER BY p.created_at DESC;
+ORDER BY p.created_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: GetProductsBySellerID :many
 SELECT
@@ -45,7 +46,8 @@ FROM products p
 JOIN users      u ON u.id = p.seller_id
 JOIN categories c ON c.id = p.category_id
 WHERE p.seller_id = $1
-ORDER BY p.created_at DESC;
+ORDER BY p.created_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: GetProductsByCategory :many
 SELECT
@@ -57,7 +59,8 @@ JOIN users      u ON u.id = p.seller_id
 JOIN categories c ON c.id = p.category_id
 WHERE p.category_id = $1
 AND   p.status = 'available'
-ORDER BY p.created_at DESC;
+ORDER BY p.created_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: SearchProducts :many
 SELECT
@@ -69,10 +72,16 @@ JOIN users      u ON u.id = p.seller_id
 JOIN categories c ON c.id = p.category_id
 WHERE p.status = 'available'
 AND  (
-    p.title       ILIKE '%' || $1 || '%'
-    OR p.description ILIKE '%' || $1 || '%'
+    p.title       ILIKE '%' || sqlc.arg('keyword') || '%'
+    OR p.description ILIKE '%' || sqlc.arg('keyword') || '%'
 )
-ORDER BY p.created_at DESC;
+ORDER BY p.created_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- name: ClaimProductForPurchase :one
+UPDATE products SET status = 'in_escrow', updated_at = NOW()
+WHERE id = $1 AND status = 'available'
+RETURNING *;
 
 -- name: UpdateProduct :one
 UPDATE products

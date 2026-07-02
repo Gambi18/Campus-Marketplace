@@ -1,6 +1,9 @@
 package ws
 
-import "sync"
+import (
+	"log"
+	"sync"
+)
 
 // Message represents a WebSocket message passed through the hub
 type Message struct {
@@ -40,11 +43,22 @@ func NewHub() *Hub {
 }
 
 func (h *Hub) Run() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("ws goroutine recovered: %v", r)
+		}
+	}()
+
 	for {
 		select {
 		// register new client
 		case client := <-h.Register:
 			h.mu.Lock()
+			// If a client already exists for this user, drop the OLD one so its
+			// goroutines/fd don't leak, then store the new connection.
+			if old, ok := h.clients[client.UserID]; ok && old != client {
+				old.close()
+			}
 			h.clients[client.UserID] = client
 			h.mu.Unlock()
 
@@ -61,6 +75,8 @@ func (h *Hub) Run() {
 			if online {
 				select {
 				case receiver.Send <- message:
+				case <-receiver.done:
+					// receiver gone — drop
 				default:
 					// receiver buffer full — disconnect them
 					h.dropClient(receiver.UserID, receiver)
@@ -70,18 +86,21 @@ func (h *Hub) Run() {
 	}
 }
 
-// dropClient removes a client and closes its Send channel exactly once. The
-// identity check (cur == client) under the write lock prevents two goroutines
-// (e.g. the broadcast loop and BroadcastToUser) from double-closing the same
-// channel, and prevents an unregister of a stale connection from closing a newer
-// connection that reused the same userID.
+// dropClient removes a client from the registry and signals its shutdown exactly
+// once via close(client.done). The identity check (cur == client) under the
+// write lock prevents an unregister of a stale connection from tearing down a
+// newer connection that reused the same userID. Send is NEVER closed here — the
+// old design closed Send, which raced with concurrent senders and caused
+// send-on-closed-channel panics that crashed the process.
 func (h *Hub) dropClient(userID string, client *Client) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if cur, ok := h.clients[userID]; ok && cur == client {
 		delete(h.clients, userID)
-		close(client.Send)
 	}
+	// Signal shutdown regardless of map identity: close() is idempotent and the
+	// goroutines watching done must always be released.
+	client.close()
 }
 
 // BroadcastToUser sends a message to a specific user if they are online
@@ -93,7 +112,10 @@ func (h *Hub) BroadcastToUser(userID string, message Message) {
 	if online {
 		select {
 		case client.Send <- message:
+		case <-client.done:
+			// client gone — drop
 		default:
+			// buffer full — disconnect them
 			h.dropClient(userID, client)
 		}
 	}

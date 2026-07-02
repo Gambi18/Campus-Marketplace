@@ -61,7 +61,13 @@ FROM reports r
 JOIN users    u ON u.id = r.reporter_id
 JOIN products p ON p.id = r.product_id
 ORDER BY r.created_at DESC
+LIMIT $2 OFFSET $1
 `
+
+type GetAllReportsParams struct {
+	Offset int32 `json:"offset"`
+	Limit  int32 `json:"limit"`
+}
 
 type GetAllReportsRow struct {
 	ID           uuid.UUID `json:"id"`
@@ -76,8 +82,8 @@ type GetAllReportsRow struct {
 	ProductTitle string    `json:"product_title"`
 }
 
-func (q *Queries) GetAllReports(ctx context.Context) ([]GetAllReportsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getAllReports)
+func (q *Queries) GetAllReports(ctx context.Context, arg GetAllReportsParams) ([]GetAllReportsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllReports, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +168,14 @@ JOIN users    u ON u.id = r.reporter_id
 JOIN products p ON p.id = r.product_id
 WHERE r.reporter_id = $1
 ORDER BY r.created_at DESC
+LIMIT $3 OFFSET $2
 `
+
+type GetReportsByReporterIDParams struct {
+	ReporterID uuid.UUID `json:"reporter_id"`
+	Offset     int32     `json:"offset"`
+	Limit      int32     `json:"limit"`
+}
 
 type GetReportsByReporterIDRow struct {
 	ID           uuid.UUID `json:"id"`
@@ -177,8 +190,8 @@ type GetReportsByReporterIDRow struct {
 	ProductTitle string    `json:"product_title"`
 }
 
-func (q *Queries) GetReportsByReporterID(ctx context.Context, reporterID uuid.UUID) ([]GetReportsByReporterIDRow, error) {
-	rows, err := q.db.QueryContext(ctx, getReportsByReporterID, reporterID)
+func (q *Queries) GetReportsByReporterID(ctx context.Context, arg GetReportsByReporterIDParams) ([]GetReportsByReporterIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, getReportsByReporterID, arg.ReporterID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +234,14 @@ JOIN users    u ON u.id = r.reporter_id
 JOIN products p ON p.id = r.product_id
 WHERE r.status = $1
 ORDER BY r.created_at DESC
+LIMIT $3 OFFSET $2
 `
+
+type GetReportsByStatusParams struct {
+	Status string `json:"status"`
+	Offset int32  `json:"offset"`
+	Limit  int32  `json:"limit"`
+}
 
 type GetReportsByStatusRow struct {
 	ID           uuid.UUID `json:"id"`
@@ -236,8 +256,8 @@ type GetReportsByStatusRow struct {
 	ProductTitle string    `json:"product_title"`
 }
 
-func (q *Queries) GetReportsByStatus(ctx context.Context, status string) ([]GetReportsByStatusRow, error) {
-	rows, err := q.db.QueryContext(ctx, getReportsByStatus, status)
+func (q *Queries) GetReportsByStatus(ctx context.Context, arg GetReportsByStatusParams) ([]GetReportsByStatusRow, error) {
+	rows, err := q.db.QueryContext(ctx, getReportsByStatus, arg.Status, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
