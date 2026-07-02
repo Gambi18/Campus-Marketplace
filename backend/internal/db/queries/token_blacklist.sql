@@ -12,3 +12,6 @@ SELECT EXISTS(
 SELECT * FROM token_blacklist
 WHERE user_id = $1
 ORDER BY created_at DESC;
+
+-- name: DeleteExpiredBlacklistedTokens :exec
+DELETE FROM token_blacklist WHERE expires_at < NOW();

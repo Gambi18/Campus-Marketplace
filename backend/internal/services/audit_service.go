@@ -14,12 +14,12 @@ import (
 type AuditAction string
 
 const (
-	AuditBlockUser    AuditAction = "block_user"
-	AuditApproveUser  AuditAction = "approve_user"
-	AuditRejectUser   AuditAction = "reject_user"
+	AuditBlockUser     AuditAction = "block_user"
+	AuditApproveUser   AuditAction = "approve_user"
+	AuditRejectUser    AuditAction = "reject_user"
 	AuditRefundPayment AuditAction = "refund_payment"
-	AuditAdminLogin   AuditAction = "admin_login"
-	AuditBootstrap    AuditAction = "bootstrap_admin"
+	AuditAdminLogin    AuditAction = "admin_login"
+	AuditBootstrap     AuditAction = "bootstrap_admin"
 )
 
 type AuditService struct {
@@ -37,8 +37,8 @@ func (s *AuditService) Log(ctx context.Context, adminID uuid.UUID, action AuditA
 	}
 
 	err := s.queries.CreateAuditLog(ctx, db.CreateAuditLogParams{
-		AdminID: adminID,
-		Action:  string(action),
+		AdminID:  adminID,
+		Action:   string(action),
 		TargetID: tid,
 		TargetType: sql.NullString{
 			String: targetType,
@@ -58,12 +58,10 @@ func (s *AuditService) Log(ctx context.Context, adminID uuid.UUID, action AuditA
 	}
 }
 
+// ClientIP returns the caller's IP as determined by gin's trusted-proxy-aware
+// ClientIP(). With SetTrustedProxies configured (see main.go) this cannot be
+// forged via X-Forwarded-For/X-Real-IP by untrusted clients, so recorded
+// admin-action IPs are trustworthy.
 func ClientIP(c *gin.Context) string {
-	if ip := c.GetHeader("X-Forwarded-For"); ip != "" {
-		return ip
-	}
-	if ip := c.GetHeader("X-Real-IP"); ip != "" {
-		return ip
-	}
 	return c.ClientIP()
 }

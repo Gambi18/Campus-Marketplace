@@ -1,43 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import StatusBadge from '../components/StatusBadge';
 import { getMySales } from '../utils/paymentApi';
-import type { Payment } from '../types/payment';
+import { useApiResource } from '../../customHooks/useApiResource';
 
 export default function SalesPage() {
-  const router = useRouter();
-  const [sales, setSales] = useState<Payment[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
-      router.replace("/login");
-      return;
-    }
-    (async () => {
-      try {
-        const res = await getMySales();
-        setSales(res.sales);
-      } catch {
-        setSales([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const statusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      held: 'bg-blue-100 text-blue-800',
-      released: 'bg-green-100 text-green-800',
-      refunded: 'bg-red-100 text-red-800',
-    };
-    return `px-2 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-600'}`;
-  };
+  const { data, loading } = useApiResource(() => getMySales(), []);
+  const sales = data?.sales ?? [];
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-page">
@@ -69,7 +40,7 @@ export default function SalesPage() {
                       {new Date(s.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <span className={statusBadge(s.status)}>{s.status}</span>
+                  <StatusBadge status={s.status} />
                 </div>
               </div>
             ))}

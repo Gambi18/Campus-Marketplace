@@ -11,8 +11,19 @@ import (
 	"campus-marketplace/internal/services"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
+
+// expFromClaims extracts the token expiry from JWT claims, falling back to
+// now+fallback when the exp claim is missing or malformed. Used to blacklist a
+// revoked token only until it would naturally expire.
+func expFromClaims(claims jwt.MapClaims, fallback time.Duration) time.Time {
+	if expF, ok := claims["exp"].(float64); ok {
+		return time.Unix(int64(expF), 0)
+	}
+	return time.Now().Add(fallback)
+}
 
 type AuthHandler struct {
 	queries           *db.Queries
@@ -154,16 +165,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	refreshToken, err := h.authService.GenerateRefreshToken(user.ID.String(), user.Email)
+	refreshToken, _, err := h.authService.GenerateRefreshToken(user.ID.String(), user.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate refresh token"})
 		return
 	}
 
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("token", tokenStr, 86400, "/", h.cookieDomain, h.cookieSecure, true)
 	c.SetCookie("refresh_token", refreshToken, 86400*30, "/", h.cookieDomain, h.cookieSecure, true)
 
-	_ = jti // available for future blacklist on login
+	_ = jti // access-token jti; blacklisted on logout
 
 	c.JSON(http.StatusOK, gin.H{
 		"token":         tokenStr,
@@ -205,7 +217,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	claims, err := h.authService.ValidateRefreshToken(refreshTokenStr)
+	claims, err := h.authService.ValidateRefreshToken(c.Request.Context(), refreshTokenStr)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired refresh token"})
 		return
@@ -220,12 +232,22 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	newRefreshToken, err := h.authService.GenerateRefreshToken(userID, email)
+	newRefreshToken, _, err := h.authService.GenerateRefreshToken(userID, email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate refresh token"})
 		return
 	}
 
+	// Rotation: revoke the OLD refresh token's jti so a stolen/replayed copy of it
+	// can no longer be used to mint fresh tokens. Blacklist only until it would
+	// have naturally expired.
+	if oldJti, _ := claims["jti"].(string); oldJti != "" {
+		if uid, perr := uuid.Parse(userID); perr == nil {
+			h.authService.BlacklistToken(c.Request.Context(), oldJti, uid, expFromClaims(claims, 30*24*time.Hour))
+		}
+	}
+
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("token", newToken, 86400, "/", h.cookieDomain, h.cookieSecure, true)
 	c.SetCookie("refresh_token", newRefreshToken, 86400*30, "/", h.cookieDomain, h.cookieSecure, true)
 
@@ -242,15 +264,39 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		return
 	}
 
-	// Blacklist the current token's jti if available
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+		return
+	}
+
+	// Blacklist the current access token's jti if available.
 	if jti, exists := c.Get("jti"); exists && jti != "" {
 		if jtiStr, ok := jti.(string); ok && jtiStr != "" {
-			userID := uuid.MustParse(userIDStr)
 			// Blacklist until token would naturally expire (max 15min from now)
 			h.authService.BlacklistToken(c.Request.Context(), jtiStr, userID, time.Now().Add(15*time.Minute))
 		}
 	}
 
+	// Also blacklist the refresh token's jti so it cannot be replayed after logout.
+	refreshTokenStr, _ := c.Cookie("refresh_token")
+	if refreshTokenStr == "" {
+		var req struct {
+			RefreshToken string `json:"refresh_token"`
+		}
+		if err := c.ShouldBindJSON(&req); err == nil {
+			refreshTokenStr = req.RefreshToken
+		}
+	}
+	if refreshTokenStr != "" {
+		if rc, err := h.authService.ValidateRefreshToken(c.Request.Context(), refreshTokenStr); err == nil {
+			if rjti, _ := rc["jti"].(string); rjti != "" {
+				h.authService.BlacklistToken(c.Request.Context(), rjti, userID, expFromClaims(rc, 30*24*time.Hour))
+			}
+		}
+	}
+
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("token", "", -1, "/", h.cookieDomain, h.cookieSecure, true)
 	c.SetCookie("refresh_token", "", -1, "/", h.cookieDomain, h.cookieSecure, true)
 	c.SetCookie("csrf_token", "", -1, "/", h.cookieDomain, false, false)

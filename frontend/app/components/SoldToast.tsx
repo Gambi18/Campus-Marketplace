@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { TriangleAlert } from 'lucide-react';
+import Toast from './Toast';
 
+/**
+ * Thin wrapper over the shared Toast: reads the `?sold=` query param and shows
+ * the red top banner. Kept as its own export so existing imports don't break.
+ */
 export default function SoldToast() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -13,31 +17,22 @@ export default function SoldToast() {
   useEffect(() => {
     if (!sold) return;
     setVisible(true);
-    const t = setTimeout(() => {
-      setVisible(false);
-      router.replace('/', { scroll: false });
-    }, 6000);
-    return () => clearTimeout(t);
-  }, [sold, router]);
+  }, [sold]);
 
-  if (!visible || !sold) return null;
+  if (!sold) return null;
 
   return (
-    <div
-      className="fixed top-0 left-0 right-0 z-50 bg-red-600 text-white shadow-xl"
-      style={{ animation: 'slideDown 0.35s ease-out' }}
-    >
-      <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
-        <TriangleAlert className="w-6 h-6 flex-shrink-0" />
-        <div>
-          <p className="font-bold text-base">
-            &ldquo;{decodeURIComponent(sold)}&rdquo; has been sold already
-          </p>
-          <p className="text-sm text-red-100 mt-0.5">
-            Browse other available items from the listings below.
-          </p>
-        </div>
-      </div>
-    </div>
+    <Toast
+      variant="banner"
+      color="red"
+      duration={6000}
+      visible={visible}
+      message={`“${decodeURIComponent(sold)}” has been sold already`}
+      description="Browse other available items from the listings below."
+      onClose={() => {
+        setVisible(false);
+        router.replace('/', { scroll: false });
+      }}
+    />
   );
 }

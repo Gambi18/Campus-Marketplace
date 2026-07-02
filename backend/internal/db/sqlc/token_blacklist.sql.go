@@ -28,6 +28,15 @@ func (q *Queries) BlacklistToken(ctx context.Context, arg BlacklistTokenParams) 
 	return err
 }
 
+const deleteExpiredBlacklistedTokens = `-- name: DeleteExpiredBlacklistedTokens :exec
+DELETE FROM token_blacklist WHERE expires_at < NOW()
+`
+
+func (q *Queries) DeleteExpiredBlacklistedTokens(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, deleteExpiredBlacklistedTokens)
+	return err
+}
+
 const getBlacklistedTokensByUser = `-- name: GetBlacklistedTokensByUser :many
 SELECT jti, user_id, expires_at, created_at FROM token_blacklist
 WHERE user_id = $1

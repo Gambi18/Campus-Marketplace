@@ -6,7 +6,7 @@ import { Lock } from 'lucide-react';
 import { ChatHeader } from "./ChatHeader";
 import { ChatInputArea } from "./ChatInputArea";
 import { MessageList } from "./MessageList";
-import { API_URL, fetchAPI } from '../../utils/api';
+import { fetchAPI, getWsUrl } from '../../utils/api';
 import { checkPaymentStatus, rejectDelivery } from '../../utils/paymentApi';
 import type { BackendMessage } from "@/types";
 
@@ -17,8 +17,6 @@ interface ProductDetail {
   price: string;
   image_url_1: string;
 }
-
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080';
 
 interface ChatPaneProps {
   productId: string;
@@ -101,8 +99,7 @@ export function ChatPane({ productId, otherUserId, otherUserName, paymentId, onB
     if (!productId) return;
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/api/v1/products/${productId}`);
-        if (res.ok) setProduct(await res.json());
+        setProduct(await fetchAPI<ProductDetail>(`/api/v1/products/${productId}`));
       } catch {
         // product details are non-critical
       }
@@ -148,7 +145,7 @@ export function ChatPane({ productId, otherUserId, otherUserName, paymentId, onB
 
     function connect() {
       if (cancelled) return;
-      const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${token}`);
+      const ws = new WebSocket(`${getWsUrl()}?token=${token}`);
       wsRef.current = ws;
 
       ws.onopen = () => {

@@ -5,6 +5,7 @@ import (
 
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/models"
+	"campus-marketplace/internal/platform/httpx"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -19,27 +20,25 @@ func NewReportHandler(queries *db.Queries) *ReportHandler {
 }
 
 func (h *ReportHandler) CreateReport(c *gin.Context) {
-	reporterIDStr := c.GetString("user_id")
-	reporterID, err := uuid.Parse(reporterIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	reporterID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
 	var req models.CreateReportRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		httpx.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	productID, err := uuid.Parse(req.ProductID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
+		httpx.Error(c, http.StatusBadRequest, "invalid product ID")
 		return
 	}
 
 	if _, err := h.queries.GetProductByID(c.Request.Context(), productID); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		httpx.Error(c, http.StatusNotFound, "product not found")
 		return
 	}
 
@@ -51,7 +50,7 @@ func (h *ReportHandler) CreateReport(c *gin.Context) {
 	})
 	if err != nil {
 		// unique constraint violation - already reported this product
-		c.JSON(http.StatusConflict, gin.H{"error": "you have already reported this product"})
+		httpx.Error(c, http.StatusConflict, "you have already reported this product")
 		return
 	}
 
@@ -62,16 +61,19 @@ func (h *ReportHandler) CreateReport(c *gin.Context) {
 }
 
 func (h *ReportHandler) GetMyReports(c *gin.Context) {
-	reporterIDStr := c.GetString("user_id")
-	reporterID, err := uuid.Parse(reporterIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	reporterID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
-	reports, err := h.queries.GetReportsByReporterID(c.Request.Context(), reporterID)
+	p := httpx.ParsePagination(c, 50, 100)
+	reports, err := h.queries.GetReportsByReporterID(c.Request.Context(), db.GetReportsByReporterIDParams{
+		ReporterID: reporterID,
+		Limit:      p.Limit,
+		Offset:     p.Offset,
+	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch your reports"})
+		httpx.Error(c, http.StatusInternalServerError, "could not fetch your reports")
 		return
 	}
 
@@ -86,16 +88,19 @@ func (h *ReportHandler) GetMyReports(c *gin.Context) {
 	})
 }
 
-
-
 func (h *ReportHandler) GetAllReports(c *gin.Context) {
 	// Optional status filter via query param e.g. ?status=pending
 	status := c.Query("status")
+	p := httpx.ParsePagination(c, 50, 100)
 
 	if status != "" {
-		reports, err := h.queries.GetReportsByStatus(c.Request.Context(), status)
+		reports, err := h.queries.GetReportsByStatus(c.Request.Context(), db.GetReportsByStatusParams{
+			Status: status,
+			Limit:  p.Limit,
+			Offset: p.Offset,
+		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch reports"})
+			httpx.Error(c, http.StatusInternalServerError, "could not fetch reports")
 			return
 		}
 
@@ -113,9 +118,12 @@ func (h *ReportHandler) GetAllReports(c *gin.Context) {
 	}
 
 	// No filter - return all
-	reports, err := h.queries.GetAllReports(c.Request.Context())
+	reports, err := h.queries.GetAllReports(c.Request.Context(), db.GetAllReportsParams{
+		Limit:  p.Limit,
+		Offset: p.Offset,
+	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch reports"})
+		httpx.Error(c, http.StatusInternalServerError, "could not fetch reports")
 		return
 	}
 
@@ -133,13 +141,13 @@ func (h *ReportHandler) GetAllReports(c *gin.Context) {
 func (h *ReportHandler) GetReportByID(c *gin.Context) {
 	reportID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid report ID"})
+		httpx.Error(c, http.StatusBadRequest, "invalid report ID")
 		return
 	}
 
 	report, err := h.queries.GetReportByID(c.Request.Context(), reportID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "report not found"})
+		httpx.Error(c, http.StatusNotFound, "report not found")
 		return
 	}
 
@@ -149,13 +157,13 @@ func (h *ReportHandler) GetReportByID(c *gin.Context) {
 func (h *ReportHandler) UpdateReportStatus(c *gin.Context) {
 	reportID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid report ID"})
+		httpx.Error(c, http.StatusBadRequest, "invalid report ID")
 		return
 	}
 
 	var req models.UpdateReportStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		httpx.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -164,7 +172,7 @@ func (h *ReportHandler) UpdateReportStatus(c *gin.Context) {
 		Status: req.Status,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update report status"})
+		httpx.Error(c, http.StatusInternalServerError, "could not update report status")
 		return
 	}
 

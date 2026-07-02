@@ -4,11 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ConversationList } from '@/components/Chats/ConversationList';
 import Navbar from '@/components/Navbar';
-import { fetchAPI } from '../utils/api';
+import { fetchAPI, getWsUrl } from '../utils/api';
 import { getMyPurchases, getMySales } from '../utils/paymentApi';
 import type { BackendConversation } from '@/types';
-
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8080';
 
 interface ConversationItem {
   id: string;
@@ -100,15 +98,11 @@ export default function ConversationsLayout({ children }: { children: React.Reac
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
-      router.replace("/login");
-      return;
-    }
-
+    // Route protection is handled centrally by middleware.ts (cookie-based).
     fetchConversations();
 
     // Layout-level WebSocket for real-time conversation list updates
-    const token = localStorage.getItem('token');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) return;
 
     let cancelled = false;
@@ -124,7 +118,7 @@ export default function ConversationsLayout({ children }: { children: React.Reac
 
     function connectWs() {
       if (cancelled) return;
-      const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${token}`);
+      const ws = new WebSocket(`${getWsUrl()}?token=${token}`);
       wsRef.current = ws;
 
       ws.onmessage = (event) => {

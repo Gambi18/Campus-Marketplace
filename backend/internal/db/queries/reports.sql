@@ -27,7 +27,8 @@ SELECT
 FROM reports r
 JOIN users    u ON u.id = r.reporter_id
 JOIN products p ON p.id = r.product_id
-ORDER BY r.created_at DESC;
+ORDER BY r.created_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: GetReportsByStatus :many
 SELECT
@@ -38,7 +39,8 @@ FROM reports r
 JOIN users    u ON u.id = r.reporter_id
 JOIN products p ON p.id = r.product_id
 WHERE r.status = $1
-ORDER BY r.created_at DESC;
+ORDER BY r.created_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: GetReportsByReporterID :many
 SELECT
@@ -49,7 +51,8 @@ FROM reports r
 JOIN users    u ON u.id = r.reporter_id
 JOIN products p ON p.id = r.product_id
 WHERE r.reporter_id = $1
-ORDER BY r.created_at DESC;
+ORDER BY r.created_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: UpdateReportStatus :one
 UPDATE reports

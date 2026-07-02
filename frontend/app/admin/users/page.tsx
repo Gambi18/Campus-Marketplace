@@ -1,9 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import Button from '../../components/Button';
+import StatusBadge from '../../components/StatusBadge';
 import { adminFetch } from '../../utils/adminApi';
+import { useApiResource } from '../../../customHooks/useApiResource';
 import type { AdminUser } from '../../types/admin';
 
 type Tab = 'all' | 'pending';
@@ -17,41 +19,33 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function AdminUsersPage() {
   const [tab, setTab] = useState<Tab>('all');
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, loading, error: loadError, refetch } = useApiResource(
+    () => {
+      const endpoint =
+        tab === 'pending'
+          ? '/api/v1/admin/pending-users?limit=100&offset=0'
+          : '/api/v1/admin/users?limit=100&offset=0';
+      return adminFetch<{ users: AdminUser[] }>(endpoint);
+    },
+    [tab],
+  );
+  const users = data?.users ?? [];
+  const [actionError, setActionError] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
-
-  const loadUsers = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const endpoint = tab === 'pending' ? '/api/v1/admin/pending-users' : '/api/v1/admin/users';
-      const data = await adminFetch<{ users: AdminUser[] }>(endpoint);
-      setUsers(data.users ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  }, [tab]);
-
-  useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+  const error = actionError ?? loadError;
 
   const runAction = async (userId: string, action: 'approve' | 'reject' | 'block') => {
     setActionId(userId);
-    setError(null);
+    setActionError(null);
     try {
       const path =
         action === 'block'
           ? `/api/v1/admin/users/${userId}/block`
           : `/api/v1/admin/users/${userId}/${action}`;
       await adminFetch(path, { method: 'PATCH' });
-      await loadUsers();
+      await refetch();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Action failed');
+      setActionError(e instanceof Error ? e.message : 'Action failed');
     } finally {
       setActionId(null);
     }
@@ -109,12 +103,11 @@ export default function AdminUsersPage() {
                       <p className="text-text-muted text-xs">{user.email}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize ${STATUS_STYLES[user.account_status] ?? 'bg-gray-100 text-gray-600'
-                          }`}
-                      >
-                        {user.account_status}
-                      </span>
+                      <StatusBadge
+                        status={user.account_status}
+                        colors={STATUS_STYLES}
+                        baseClassName="inline-flex px-2 py-0.5 rounded text-xs font-medium capitalize"
+                      />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap justify-end gap-2">

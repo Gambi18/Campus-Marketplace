@@ -60,6 +60,10 @@ SELECT DISTINCT ON (
     p.title     AS product_title,
     p.image_url_1 AS product_image,
     (
+        SELECT ou.username FROM users ou
+        WHERE ou.id = CASE WHEN m.sender_id = $1 THEN m.receiver_id ELSE m.sender_id END
+    ) AS other_user_name,
+    (
         SELECT COUNT(*) FROM messages um
         WHERE um.product_id = m.product_id
           AND um.receiver_id = $1
@@ -77,21 +81,22 @@ ORDER BY
 `
 
 type GetConversationsRow struct {
-	ID           uuid.UUID `json:"id"`
-	SenderID     uuid.UUID `json:"sender_id"`
-	ReceiverID   uuid.UUID `json:"receiver_id"`
-	ProductID    uuid.UUID `json:"product_id"`
-	Content      string    `json:"content"`
-	IsRead       bool      `json:"is_read"`
-	CreatedAt    time.Time `json:"created_at"`
-	SenderName   string    `json:"sender_name"`
-	ProductTitle string    `json:"product_title"`
-	ProductImage string    `json:"product_image"`
-	UnreadCount  int64     `json:"unread_count"`
+	ID            uuid.UUID `json:"id"`
+	SenderID      uuid.UUID `json:"sender_id"`
+	ReceiverID    uuid.UUID `json:"receiver_id"`
+	ProductID     uuid.UUID `json:"product_id"`
+	Content       string    `json:"content"`
+	IsRead        bool      `json:"is_read"`
+	CreatedAt     time.Time `json:"created_at"`
+	SenderName    string    `json:"sender_name"`
+	ProductTitle  string    `json:"product_title"`
+	ProductImage  string    `json:"product_image"`
+	OtherUserName string    `json:"other_user_name"`
+	UnreadCount   int64     `json:"unread_count"`
 }
 
-func (q *Queries) GetConversations(ctx context.Context, receiverID uuid.UUID) ([]GetConversationsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getConversations, receiverID)
+func (q *Queries) GetConversations(ctx context.Context, senderID uuid.UUID) ([]GetConversationsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getConversations, senderID)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +115,7 @@ func (q *Queries) GetConversations(ctx context.Context, receiverID uuid.UUID) ([
 			&i.SenderName,
 			&i.ProductTitle,
 			&i.ProductImage,
+			&i.OtherUserName,
 			&i.UnreadCount,
 		); err != nil {
 			return nil, err

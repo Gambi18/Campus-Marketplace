@@ -32,6 +32,10 @@ SELECT DISTINCT ON (
     p.title     AS product_title,
     p.image_url_1 AS product_image,
     (
+        SELECT ou.username FROM users ou
+        WHERE ou.id = CASE WHEN m.sender_id = $1 THEN m.receiver_id ELSE m.sender_id END
+    ) AS other_user_name,
+    (
         SELECT COUNT(*) FROM messages um
         WHERE um.product_id = m.product_id
           AND um.receiver_id = $1

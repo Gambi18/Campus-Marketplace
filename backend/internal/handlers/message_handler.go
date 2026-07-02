@@ -7,13 +7,13 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/middleware"
 	"campus-marketplace/internal/models"
 	"campus-marketplace/internal/notification"
+	"campus-marketplace/internal/platform/httpx"
 	"campus-marketplace/internal/ws"
 
 	"github.com/gin-gonic/gin"
@@ -48,47 +48,47 @@ func NewMessageHandler(queries *db.Queries, hub *ws.Hub, notificationService *no
 }
 
 func (h *MessageHandler) HandleWebSocket(c *gin.Context) {
-    userIDStr := c.GetString("user_id")
-    if userIDStr == "" {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-        return
-    }
+	userIDStr := c.GetString("user_id")
+	if userIDStr == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 
-    userID, err := uuid.Parse(userIDStr)
-    if err != nil {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
-        return
-    }
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+		return
+	}
 
-    user, err := h.queries.GetUserByID(c.Request.Context(), userID)
-    if err != nil {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
-        return
-    }
+	user, err := h.queries.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		return
+	}
 
-    conn, err := h.upgrader.Upgrade(c.Writer, c.Request, nil)
-    if err != nil {
-        log.Printf("WebSocket upgrade error: %v", err)
-        return
-    }
+	conn, err := h.upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Printf("WebSocket upgrade error: %v", err)
+		return
+	}
 
-    client := &ws.Client{
-        UserID: userIDStr,
-        Hub:    h.hub,
-        Conn:   conn,
-        Send:   make(chan ws.Message, 256),
-    }
+	client := ws.NewClient(userIDStr, h.hub, conn)
 
-    h.hub.Register <- client
-    log.Printf("User %s connected via WebSocket", user.Username)
+	h.hub.Register <- client
+	log.Printf("User %s connected via WebSocket", user.Username)
 
-    go h.readAndPersist(client)
-    go client.WritePump()
+	go h.readAndPersist(client)
+	go client.WritePump()
 }
 
 // readAndPersist reads messages off the socket and hands each one to
 // persistAndBroadcast. The read loop itself stays free of DB work.
 func (h *MessageHandler) readAndPersist(client *ws.Client) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("ws goroutine recovered: %v", r)
+		}
+	}()
 	defer func() {
 		h.hub.Unregister <- client
 		client.Conn.Close()
@@ -96,34 +96,25 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 
 	client.Conn.SetReadLimit(4096)
 
+	// Read deadline + pong handler so dead connections are reaped instead of
+	// leaking this goroutine forever. Each pong pushes the deadline forward.
+	client.Conn.SetReadDeadline(time.Now().Add(ws.PongWait))
+	client.Conn.SetPongHandler(func(string) error {
+		client.Conn.SetReadDeadline(time.Now().Add(ws.PongWait))
+		return nil
+	})
+
 	const maxMessagesPerWindow = 10
 	const rateWindow = 10 * time.Second
 
-	var mu sync.Mutex
+	// This runs in a single goroutine per connection, so plain ints suffice —
+	// no mutex needed.
 	msgCount := 0
 	windowStart := time.Now()
 
 	for {
-		rateLimited := func() bool {
-			mu.Lock()
-			defer mu.Unlock()
-			if time.Since(windowStart) > rateWindow {
-				msgCount = 0
-				windowStart = time.Now()
-			}
-			msgCount++
-			return msgCount > maxMessagesPerWindow
-		}()
-
-		if rateLimited {
-			log.Printf("WebSocket rate limit exceeded for user %s", client.UserID)
-			client.Send <- ws.Message{
-				Type:    "error",
-				Content: "rate limit exceeded, please slow down",
-			}
-			continue
-		}
-
+		// Always read the inbound frame first. This blocks on socket
+		// backpressure, so an abusive client cannot make us spin a CPU core.
 		var msg ws.Message
 		if err := client.Conn.ReadJSON(&msg); err != nil {
 			if websocket.IsUnexpectedCloseError(err,
@@ -135,7 +126,22 @@ func (h *MessageHandler) readAndPersist(client *ws.Client) {
 			break
 		}
 
-			// Never trust the client's self-identified sender
+		if time.Since(windowStart) > rateWindow {
+			msgCount = 0
+			windowStart = time.Now()
+		}
+		msgCount++
+		if msgCount > maxMessagesPerWindow {
+			// Frame already read+discarded above; just warn and drop it.
+			log.Printf("WebSocket rate limit exceeded for user %s", client.UserID)
+			client.TrySend(ws.Message{
+				Type:    "error",
+				Content: "rate limit exceeded, please slow down",
+			})
+			continue
+		}
+
+		// Never trust the client's self-identified sender
 		msg.SenderID = client.UserID
 
 		if len(msg.Content) > 5000 {
@@ -246,13 +252,9 @@ func (h *MessageHandler) canChat(ctx context.Context, productID, userA, userB uu
 	return ok
 }
 
-
-
 func (h *MessageHandler) CreateMessageREST(c *gin.Context) {
-	userIDStr := c.GetString("user_id")
-	senderID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	senderID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -361,10 +363,8 @@ func (h *MessageHandler) CreateMessageREST(c *gin.Context) {
 }
 
 func (h *MessageHandler) GetConversations(c *gin.Context) {
-	userIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	userID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -377,18 +377,13 @@ func (h *MessageHandler) GetConversations(c *gin.Context) {
 	response := make([]models.ConversationResponse, 0, len(conversations))
 	for _, conv := range conversations {
 		// The conversation partner is whichever side isn't the requesting user.
-		// conv.SenderName is the latest message's sender — that's the partner's
-		// name only when the partner sent it. When the requesting user sent the
-		// last message, look up the receiver so we never display the user's own
-		// name as the partner.
+		// conv.OtherUserName is resolved server-side by the query (join on the
+		// partner's user row), so no per-row GetUserByID lookup is needed.
 		otherUserID := conv.SenderID
-		otherUserName := conv.SenderName
 		if conv.SenderID == userID {
 			otherUserID = conv.ReceiverID
-			if other, err := h.queries.GetUserByID(c.Request.Context(), conv.ReceiverID); err == nil {
-				otherUserName = other.Username
-			}
 		}
+		otherUserName := conv.OtherUserName
 		response = append(response, models.ConversationResponse{
 			ID:            conv.ID.String(),
 			SenderID:      conv.SenderID.String(),
@@ -396,13 +391,13 @@ func (h *MessageHandler) GetConversations(c *gin.Context) {
 			ReceiverID:    conv.ReceiverID.String(),
 			OtherUserID:   otherUserID.String(),
 			OtherUserName: otherUserName,
-			ProductID:    conv.ProductID.String(),
-			ProductTitle: conv.ProductTitle,
-			ProductImage: conv.ProductImage,
-			Content:      conv.Content,
-			IsRead:       conv.IsRead,
-			UnreadCount:  conv.UnreadCount,
-			CreatedAt:    conv.CreatedAt.String(),
+			ProductID:     conv.ProductID.String(),
+			ProductTitle:  conv.ProductTitle,
+			ProductImage:  conv.ProductImage,
+			Content:       conv.Content,
+			IsRead:        conv.IsRead,
+			UnreadCount:   conv.UnreadCount,
+			CreatedAt:     conv.CreatedAt.String(),
 		})
 	}
 
@@ -413,10 +408,8 @@ func (h *MessageHandler) GetConversations(c *gin.Context) {
 }
 
 func (h *MessageHandler) GetMessages(c *gin.Context) {
-	userIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	userID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -477,10 +470,8 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 }
 
 func (h *MessageHandler) GetUnreadCount(c *gin.Context) {
-	userIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	userID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 

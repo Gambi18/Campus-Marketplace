@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	db "campus-marketplace/internal/db/sqlc"
@@ -68,6 +69,12 @@ func (s *NotificationService) Create(ctx context.Context, userID uuid.UUID, nTyp
 }
 
 func (s *NotificationService) processEmailNotification(n db.Notification) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("ws goroutine recovered: %v", r)
+		}
+	}()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	prefs, err := s.queries.GetNotificationPreferences(ctx, n.UserID)
@@ -87,7 +94,7 @@ func (s *NotificationService) processEmailNotification(n db.Notification) {
 		shouldSendEmail = prefs.EmailOffers.Bool
 	case NotificationItemSold:
 		shouldSendEmail = prefs.EmailSales.Bool
-	// Add other mappings
+		// Add other mappings
 	}
 
 	if shouldSendEmail {

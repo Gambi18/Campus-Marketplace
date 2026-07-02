@@ -121,10 +121,16 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 const getAllUsers = `-- name: GetAllUsers :many
 SELECT id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number, full_name FROM users
 ORDER BY created_at DESC
+LIMIT $2 OFFSET $1
 `
 
-func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, getAllUsers)
+type GetAllUsersParams struct {
+	Offset int32 `json:"offset"`
+	Limit  int32 `json:"limit"`
+}
+
+func (q *Queries) GetAllUsers(ctx context.Context, arg GetAllUsersParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getAllUsers, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -162,10 +168,16 @@ const getPendingUsers = `-- name: GetPendingUsers :many
 SELECT id, username, email, password_hash, is_verified, created_at, updated_at, student_id_url, account_status, phone_number, full_name FROM users
 WHERE account_status = 'pending'
 ORDER BY created_at ASC
+LIMIT $2 OFFSET $1
 `
 
-func (q *Queries) GetPendingUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, getPendingUsers)
+type GetPendingUsersParams struct {
+	Offset int32 `json:"offset"`
+	Limit  int32 `json:"limit"`
+}
+
+func (q *Queries) GetPendingUsers(ctx context.Context, arg GetPendingUsersParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getPendingUsers, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

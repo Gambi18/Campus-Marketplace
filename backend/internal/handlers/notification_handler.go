@@ -5,6 +5,7 @@ import (
 
 	"campus-marketplace/internal/models"
 	"campus-marketplace/internal/notification"
+	"campus-marketplace/internal/platform/httpx"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -19,16 +20,14 @@ func NewNotificationHandler(service *notification.NotificationService) *Notifica
 }
 
 func (h *NotificationHandler) GetNotifications(c *gin.Context) {
-	userIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	userID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
 	notifications, err := h.service.GetUserNotifications(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch notifications"})
+		httpx.Error(c, http.StatusInternalServerError, "could not fetch notifications")
 		return
 	}
 
@@ -44,16 +43,14 @@ func (h *NotificationHandler) GetNotifications(c *gin.Context) {
 }
 
 func (h *NotificationHandler) GetUnreadCount(c *gin.Context) {
-	userIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	userID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
 	count, err := h.service.GetUnreadCount(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch unread count"})
+		httpx.Error(c, http.StatusInternalServerError, "could not fetch unread count")
 		return
 	}
 
@@ -61,22 +58,20 @@ func (h *NotificationHandler) GetUnreadCount(c *gin.Context) {
 }
 
 func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
-	userIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	userID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
 	notificationID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid notification ID"})
+		httpx.Error(c, http.StatusBadRequest, "invalid notification ID")
 		return
 	}
 
 	err = h.service.MarkAsRead(c.Request.Context(), userID, notificationID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not mark notification as read"})
+		httpx.Error(c, http.StatusInternalServerError, "could not mark notification as read")
 		return
 	}
 
@@ -84,16 +79,14 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 }
 
 func (h *NotificationHandler) MarkAllAsRead(c *gin.Context) {
-	userIDStr := c.GetString("user_id")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	userID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
-	err = h.service.MarkAllAsRead(c.Request.Context(), userID)
+	err := h.service.MarkAllAsRead(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not mark all notifications as read"})
+		httpx.Error(c, http.StatusInternalServerError, "could not mark all notifications as read")
 		return
 	}
 

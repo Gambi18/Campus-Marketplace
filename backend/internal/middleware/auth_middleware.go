@@ -66,7 +66,7 @@ func extractBearerToken(c *gin.Context) string {
 }
 
 func (m *AuthMiddleware) setClaims(c *gin.Context, tokenStr string) {
-	claims, err := m.authService.ValidateToken(tokenStr)
+	claims, err := m.authService.ValidateToken(c.Request.Context(), tokenStr)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
 		c.Abort()

@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { adminFetch } from '../../utils/adminApi';
+import StatusBadge from '../../components/StatusBadge';
+import { useApiResource } from '../../../customHooks/useApiResource';
 
 interface AdminReport {
   id: string;
@@ -23,35 +23,12 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 export default function AdminReportsPage() {
-  const router = useRouter();
-  const [reports, setReports] = useState<AdminReport[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem('admin_token')) {
-      router.replace('/admin/login');
-      return;
-    }
-    (async () => {
-      try {
-        const res = await adminFetch<{ reports: AdminReport[] }>('/api/v1/admin/reports');
-        setReports(res.reports || []);
-      } catch {
-        setReports([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [router]);
-
-  const statusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      resolved: 'bg-green-100 text-green-800',
-      dismissed: 'bg-gray-100 text-gray-600',
-    };
-    return `px-2 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-600'}`;
-  };
+  // Admin auth is enforced centrally by AdminGuard in app/admin/layout.tsx.
+  const { data, loading } = useApiResource(
+    () => adminFetch<{ reports: AdminReport[] }>('/api/v1/admin/reports?limit=100&offset=0'),
+    [],
+  );
+  const reports = data?.reports ?? [];
 
   if (loading) {
     return <div className="p-8 text-text-muted text-sm">Loading reports...</div>;
@@ -92,7 +69,7 @@ export default function AdminReportsPage() {
                 <td className="p-4 text-text-muted max-w-xs whitespace-pre-wrap break-words">
                   {r.details?.trim() ? r.details : <span className="text-gray-300">—</span>}
                 </td>
-                <td className="p-4"><span className={statusBadge(r.status)}>{r.status}</span></td>
+                <td className="p-4"><StatusBadge status={r.status} /></td>
                 <td className="p-4 text-text-muted">{new Date(r.created_at).toLocaleDateString()}</td>
               </tr>
             ))}

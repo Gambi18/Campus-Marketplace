@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from 'react';
 import StatCard from '@/components/StatCard';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -10,43 +9,24 @@ import NoCard from "../images/undraw_not-found_6bgl.svg"
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useMyProducts } from '../../customHooks/useGetProducts';
-import { API_URL } from '../utils/api';
+import { patchAPI, deleteAPI } from '../utils/api';
 
 export default function MyListingsDashboard() {
 const router = useRouter();
   const { products: userListings, loading, error, refresh } = useMyProducts();
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!localStorage.getItem("token")) {
-      router.replace("/login");
-    }
-  }, [router]);
-
   const handleStatusChange = async (id: string, status: string) => {
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/v1/products/${id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ status }),
-      });
-      if (res.ok) refresh();
+      await patchAPI(`/api/v1/products/${id}/status`, { status });
+      refresh();
     } catch { /* ignore */ }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this listing permanently?')) return;
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/v1/products/${id}`, {
-        method: 'DELETE',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (res.ok) refresh();
+      await deleteAPI(`/api/v1/products/${id}`);
+      refresh();
     } catch { /* ignore */ }
   };
 

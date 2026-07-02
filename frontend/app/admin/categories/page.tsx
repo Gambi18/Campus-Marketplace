@@ -1,41 +1,29 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import Textarea from '../../components/Textarea';
 import { adminFetch } from '../../utils/adminApi';
 import { fetchAPI } from '../../utils/api';
+import { useApiResource } from '../../../customHooks/useApiResource';
 import type { AdminCategory } from '../../types/admin';
 
 const emptyForm = { name: '', description: '' };
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<AdminCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, loading, error: loadError, refetch } = useApiResource(
+    () => fetchAPI<{ categories: AdminCategory[] }>('/api/v1/categories'),
+    [],
+  );
+  const categories = data?.categories ?? [];
+  const [actionError, setActionError] = useState<string | null>(null);
+  const error = actionError ?? loadError;
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  const loadCategories = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchAPI<{ categories: AdminCategory[] }>('/api/v1/categories');
-      setCategories(data.categories ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load categories');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
 
   const openCreate = () => {
     setEditingId(null);
@@ -59,7 +47,7 @@ export default function AdminCategoriesPage() {
     e.preventDefault();
     if (!form.name.trim()) return;
     setSaving(true);
-    setError(null);
+    setActionError(null);
     try {
       if (editingId) {
         await adminFetch(`/api/v1/admin/categories/${editingId}`, {
@@ -73,9 +61,9 @@ export default function AdminCategoriesPage() {
         });
       }
       closeForm();
-      await loadCategories();
+      await refetch();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save category');
+      setActionError(err instanceof Error ? err.message : 'Could not save category');
     } finally {
       setSaving(false);
     }
@@ -83,12 +71,12 @@ export default function AdminCategoriesPage() {
 
   const handleDelete = async (id: number, name: string) => {
     if (!confirm(`Delete category "${name}"? Products using it may be affected.`)) return;
-    setError(null);
+    setActionError(null);
     try {
       await adminFetch(`/api/v1/admin/categories/${id}`, { method: 'DELETE' });
-      await loadCategories();
+      await refetch();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not delete category');
+      setActionError(err instanceof Error ? err.message : 'Could not delete category');
     }
   };
 

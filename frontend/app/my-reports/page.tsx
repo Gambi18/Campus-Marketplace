@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import StatusBadge from '../components/StatusBadge';
 import { fetchAPI } from '../utils/api';
+import { useApiResource } from '../../customHooks/useApiResource';
 
 interface MyReport {
   id: string;
@@ -16,34 +18,19 @@ interface MyReport {
 
 export default function MyReportsPage() {
   const router = useRouter();
-  const [reports, setReports] = useState<MyReport[]>([]);
-  const [loading, setLoading] = useState(true);
 
+  // /my-reports isn't in the middleware matcher, so it keeps a client-side guard.
   useEffect(() => {
     if (typeof window !== "undefined" && !localStorage.getItem("token")) {
       router.replace("/login");
-      return;
     }
-    (async () => {
-      try {
-        const res = await fetchAPI<{ reports: MyReport[] }>('/api/v1/my-reports');
-        setReports(res.reports || []);
-      } catch {
-        setReports([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
   }, [router]);
 
-  const statusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      resolved: 'bg-green-100 text-green-800',
-      dismissed: 'bg-gray-100 text-gray-600',
-    };
-    return `px-2 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-600'}`;
-  };
+  const { data, loading } = useApiResource(
+    () => fetchAPI<{ reports: MyReport[] }>('/api/v1/my-reports'),
+    [],
+  );
+  const reports = data?.reports ?? [];
 
   return (
     <div className="min-h-screen flex flex-col bg-surface-page">
@@ -68,7 +55,7 @@ export default function MyReportsPage() {
                       {new Date(r.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <span className={statusBadge(r.status)}>{r.status}</span>
+                  <StatusBadge status={r.status} />
                 </div>
               </div>
             ))}
