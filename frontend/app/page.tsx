@@ -10,6 +10,10 @@ import Toolbar from "./components/Toolbar";
 type HomeProps = {
   searchParams?: Promise<{
     q?: string;
+    sort?: string;
+    condition?: string;
+    min_price?: string;
+    max_price?: string;
   }>;
 };
 
@@ -40,7 +44,13 @@ export default async function Home({ searchParams }: HomeProps) {
             </div>
           }
         >
-          <CardGrid query={query} />
+          <CardGrid
+            query={query}
+            sort={params?.sort}
+            condition={params?.condition}
+            minPrice={params?.min_price}
+            maxPrice={params?.max_price}
+          />
         </Suspense>
       </main>
 

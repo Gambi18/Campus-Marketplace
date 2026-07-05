@@ -12,6 +12,10 @@ import {
 interface CardGridProps {
   query?: string;
   categoryId?: string;
+  sort?: string;
+  condition?: string;
+  minPrice?: string;
+  maxPrice?: string;
 }
 
 // Server default is 24 (max 100); each "Load More" pulls the next page.
@@ -20,6 +24,10 @@ const PAGE_SIZE = 24;
 export default function CardGrid({
   query = "",
   categoryId,
+  sort,
+  condition,
+  minPrice,
+  maxPrice,
 }: CardGridProps) {
 
   const [products, setProducts] = useState<ProductCard[]>([]);
@@ -33,17 +41,18 @@ export default function CardGrid({
     async (offset: number) => {
       const cleanQuery = query?.trim();
       const cleanCategory = categoryId?.trim();
+      const opts = { sort, condition, minPrice, maxPrice };
       let response;
       if (cleanQuery) {
-        response = await searchProducts(cleanQuery, PAGE_SIZE, offset);
+        response = await searchProducts(cleanQuery, PAGE_SIZE, offset, opts);
       } else if (cleanCategory) {
-        response = await getProductsByCategory(cleanCategory, PAGE_SIZE, offset);
+        response = await getProductsByCategory(cleanCategory, PAGE_SIZE, offset, opts);
       } else {
-        response = await getAllProducts(PAGE_SIZE, offset);
+        response = await getAllProducts(PAGE_SIZE, offset, opts);
       }
       return response?.products ?? [];
     },
-    [query, categoryId],
+    [query, categoryId, sort, condition, minPrice, maxPrice],
   );
 
   useEffect(() => {

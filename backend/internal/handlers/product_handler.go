@@ -108,11 +108,59 @@ func openProductImages(c *gin.Context, fields ...string) (files []multipart.File
 	return files, cleanup
 }
 
+// productListFilters holds the optional sort/filter query params shared by the
+// product list endpoints, already validated and mapped to sqlc arg types.
+type productListFilters struct {
+	Sort      string
+	Condition sql.NullString
+	MinPrice  sql.NullString
+	MaxPrice  sql.NullString
+}
+
+var allowedProductSorts = map[string]bool{"newest": true, "price_low": true, "price_high": true}
+var allowedProductConditions = map[string]bool{"brand_new": true, "like_new": true, "good": true, "fair": true}
+
+// parseProductListFilters reads and whitelists ?sort, ?condition, ?min_price and
+// ?max_price. Unknown/invalid values are silently dropped so a bad query param
+// degrades to the default (newest, no filter) rather than erroring. The sort
+// value is a plain string the SQL CASE matches; empty means created_at DESC.
+func parseProductListFilters(c *gin.Context) productListFilters {
+	f := productListFilters{}
+
+	if sort := c.Query("sort"); allowedProductSorts[sort] {
+		f.Sort = sort
+	}
+	if cond := c.Query("condition"); allowedProductConditions[cond] {
+		f.Condition = sql.NullString{String: cond, Valid: true}
+	}
+	f.MinPrice = parsePriceFilter(c.Query("min_price"))
+	f.MaxPrice = parsePriceFilter(c.Query("max_price"))
+	return f
+}
+
+// parsePriceFilter accepts a non-negative decimal and normalises it to the
+// canonical string the NUMERIC column expects; anything else yields NULL (no bound).
+func parsePriceFilter(raw string) sql.NullString {
+	if raw == "" {
+		return sql.NullString{}
+	}
+	n, err := strconv.ParseFloat(raw, 64)
+	if err != nil || n < 0 {
+		return sql.NullString{}
+	}
+	return sql.NullString{String: strconv.FormatFloat(n, 'f', -1, 64), Valid: true}
+}
+
 func (h *ProductHandler) GetAllProducts(c *gin.Context) {
 	p := httpx.ParsePagination(c, 24, 100)
+	f := parseProductListFilters(c)
 	products, err := h.queries.GetAllProducts(c.Request.Context(), db.GetAllProductsParams{
-		Limit:  p.Limit,
-		Offset: p.Offset,
+		Sort:      f.Sort,
+		Condition: f.Condition,
+		MinPrice:  f.MinPrice,
+		MaxPrice:  f.MaxPrice,
+		Limit:     p.Limit,
+		Offset:    p.Offset,
 	})
 	if err != nil {
 		httpx.Error(c, http.StatusInternalServerError, "could not fetch products")
@@ -154,10 +202,15 @@ func (h *ProductHandler) SearchProducts(c *gin.Context) {
 	}
 
 	p := httpx.ParsePagination(c, 24, 100)
+	f := parseProductListFilters(c)
 	products, err := h.queries.SearchProducts(c.Request.Context(), db.SearchProductsParams{
-		Keyword: sql.NullString{String: keyword, Valid: true},
-		Limit:   p.Limit,
-		Offset:  p.Offset,
+		Keyword:   sql.NullString{String: keyword, Valid: true},
+		Sort:      f.Sort,
+		Condition: f.Condition,
+		MinPrice:  f.MinPrice,
+		MaxPrice:  f.MaxPrice,
+		Limit:     p.Limit,
+		Offset:    p.Offset,
 	})
 	if err != nil {
 		httpx.Error(c, http.StatusInternalServerError, "could not search products")
@@ -184,8 +237,13 @@ func (h *ProductHandler) GetProductsByCategory(c *gin.Context) {
 	}
 
 	p := httpx.ParsePagination(c, 24, 100)
+	f := parseProductListFilters(c)
 	products, err := h.queries.GetProductsByCategory(c.Request.Context(), db.GetProductsByCategoryParams{
 		CategoryID: int32(categoryID),
+		Sort:       f.Sort,
+		Condition:  f.Condition,
+		MinPrice:   f.MinPrice,
+		MaxPrice:   f.MaxPrice,
 		Limit:      p.Limit,
 		Offset:     p.Offset,
 	})

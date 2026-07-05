@@ -34,7 +34,13 @@ FROM products p
 JOIN users      u ON u.id = p.seller_id
 JOIN categories c ON c.id = p.category_id
 WHERE p.status = 'available'
-ORDER BY p.created_at DESC
+  AND (sqlc.narg('condition')::text    IS NULL OR p.condition = sqlc.narg('condition'))
+  AND (sqlc.narg('min_price')::numeric IS NULL OR p.price >= sqlc.narg('min_price')::numeric)
+  AND (sqlc.narg('max_price')::numeric IS NULL OR p.price <= sqlc.narg('max_price')::numeric)
+ORDER BY
+    CASE WHEN sqlc.arg('sort')::text = 'price_low'  THEN p.price END ASC,
+    CASE WHEN sqlc.arg('sort')::text = 'price_high' THEN p.price END DESC,
+    p.created_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: GetProductsBySellerID :many
@@ -57,9 +63,15 @@ SELECT
 FROM products p
 JOIN users      u ON u.id = p.seller_id
 JOIN categories c ON c.id = p.category_id
-WHERE p.category_id = $1
+WHERE p.category_id = sqlc.arg('category_id')
 AND   p.status = 'available'
-ORDER BY p.created_at DESC
+  AND (sqlc.narg('condition')::text    IS NULL OR p.condition = sqlc.narg('condition'))
+  AND (sqlc.narg('min_price')::numeric IS NULL OR p.price >= sqlc.narg('min_price')::numeric)
+  AND (sqlc.narg('max_price')::numeric IS NULL OR p.price <= sqlc.narg('max_price')::numeric)
+ORDER BY
+    CASE WHEN sqlc.arg('sort')::text = 'price_low'  THEN p.price END ASC,
+    CASE WHEN sqlc.arg('sort')::text = 'price_high' THEN p.price END DESC,
+    p.created_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: SearchProducts :many
@@ -75,7 +87,13 @@ AND  (
     p.title       ILIKE '%' || sqlc.arg('keyword') || '%'
     OR p.description ILIKE '%' || sqlc.arg('keyword') || '%'
 )
-ORDER BY p.created_at DESC
+  AND (sqlc.narg('condition')::text    IS NULL OR p.condition = sqlc.narg('condition'))
+  AND (sqlc.narg('min_price')::numeric IS NULL OR p.price >= sqlc.narg('min_price')::numeric)
+  AND (sqlc.narg('max_price')::numeric IS NULL OR p.price <= sqlc.narg('max_price')::numeric)
+ORDER BY
+    CASE WHEN sqlc.arg('sort')::text = 'price_low'  THEN p.price END ASC,
+    CASE WHEN sqlc.arg('sort')::text = 'price_high' THEN p.price END DESC,
+    p.created_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: ClaimProductForPurchase :one

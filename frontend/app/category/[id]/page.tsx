@@ -10,12 +10,20 @@ type CategoryPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams?: Promise<{
+    sort?: string;
+    condition?: string;
+    min_price?: string;
+    max_price?: string;
+  }>;
 };
 
 export default async function CategoryPage({
   params,
+  searchParams,
 }: CategoryPageProps) {
   const { id } = await params;
+  const filters = await searchParams;
 
   return (
     <div>
@@ -33,7 +41,13 @@ export default async function CategoryPage({
             </div>
           }
         >
-          <CardGrid categoryId={id} />
+          <CardGrid
+            categoryId={id}
+            sort={filters?.sort}
+            condition={filters?.condition}
+            minPrice={filters?.min_price}
+            maxPrice={filters?.max_price}
+          />
         </Suspense>
       </main>
 
