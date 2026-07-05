@@ -8,7 +8,6 @@ import (
 	"log"
 	"math"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -735,10 +734,13 @@ func isUniqueViolation(err error) bool {
 }
 
 // devBypassEnabled reports whether payment collection should be simulated.
-// It requires the opt-in env flag AND a non-production environment, so a leaked
-// or copy-pasted DEV_BYPASS_PAYMENT=true can never disable real payments in prod.
+//
+// On this deployment branch the payment bypass is hard-disabled: it always
+// returns false, so real CamPay collection is enforced regardless of any
+// DEV_BYPASS_PAYMENT / ENV values set in the hosting environment. Do NOT
+// restore the env-driven behaviour here — that logic lives on the dev branch.
 func devBypassEnabled() bool {
-	return os.Getenv("DEV_BYPASS_PAYMENT") == "true" && os.Getenv("ENV") != "production"
+	return false
 }
 
 // computePlatformFee returns the platform fee for an amount at the given rate,
