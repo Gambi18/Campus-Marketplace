@@ -4,12 +4,12 @@
  * so a single map serves purchases, sales, reports and escrow tables.
  */
 const DEFAULT_STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  held: 'bg-blue-100 text-blue-800',
-  released: 'bg-green-100 text-green-800',
-  refunded: 'bg-red-100 text-red-800',
+  pending: 'bg-warning-bg text-warning',
+  held: 'bg-info-bg text-info',
+  released: 'bg-success-bg text-success',
+  refunded: 'bg-danger-bg text-danger',
   expired: 'bg-gray-100 text-gray-600',
-  resolved: 'bg-green-100 text-green-800',
+  resolved: 'bg-success-bg text-success',
   dismissed: 'bg-gray-100 text-gray-600',
 };
 

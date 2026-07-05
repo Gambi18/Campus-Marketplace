@@ -88,7 +88,7 @@ function LoginForm() {
               The Smartest Way to Trade on Campus
             </p>
             <p className="text-gray-500 leading-relaxed text-sm">
-              Join 15,000+ students buying and selling textbooks, furniture, and electronics daily with verified safe exchanges.
+              Buy and sell textbooks, furniture and electronics with students you can trust — payments held safely until you confirm.
             </p>
           </div>
         </div>

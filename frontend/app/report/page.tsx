@@ -69,7 +69,7 @@ function ReportContent() {
             </div>
             <div>
               <p className="text-sm font-bold text-gray-900">{sellerName}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Seller since 2023 • 4.8 Rating</p>
+              <p className="text-xs text-gray-500 mt-0.5">Reported seller</p>
             </div>
           </div>
 

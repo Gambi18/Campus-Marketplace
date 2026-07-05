@@ -42,17 +42,17 @@ export default function Hero() {
       <div className="relative z-10 min-h-dvh flex items-center justify-center px-6">
         <div className="max-w-5xl w-full text-center">
           
-          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl px-4 py-2 rounded-full text-sm text-blue-300">
-            Trusted by 5,000+ students across campus
+          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-white/90">
+            Buy and sell with students on your campus
           </div>
 
           <h1 className="mt-5 text-5xl md:text-7xl font-extrabold leading-[1.05] animate-fadeInUp">
             <span className="text-white">
               {typedText}
-              <span className="animate-pulse text-blue-500">|</span>
+              <span className="animate-pulse text-brand-accent">|</span>
             </span>
             <br />
-            <span className="text-blue-500">Within Your Campus Community</span>
+            <span className="text-brand-accent">Within Your Campus Community</span>
             </h1>
 
           <p className="mt-5 text-lg md:text-xl text-slate-200 max-w-3xl mx-auto">
