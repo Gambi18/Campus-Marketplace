@@ -15,7 +15,7 @@ services:
     name: campus-marketplace-api
     runtime: docker
     plan: free
-    region: oregon
+    region: ohio                    # us-east — co-located with the Neon (us-east-1) database
     dockerContext: ./backend
     dockerfilePath: ./backend/Dockerfile
     healthCheckPath: /health
@@ -27,17 +27,20 @@ services:
       - key: ENV
         value: production
 
-      # --- Database (Neon) — fill from your Neon dashboard ---
+      # --- Database (Neon project "Campus Marketplace", branch: production) ---
+      # Host/user/name are the provisioned Neon values; only the password is a
+      # secret you supply. Get it from the Neon dashboard (Connection Details) or
+      #   npx neonctl connection-string --project-id patient-tree-92163593
       - key: DB_HOST
-        sync: false
+        value: ep-delicate-pine-ats0mu55.c-9.us-east-1.aws.neon.tech
       - key: DB_PORT
         value: "5432"
       - key: DB_USER
-        sync: false
+        value: neondb_owner
       - key: DB_PASSWORD
-        sync: false
+        sync: false                  # from Neon — do NOT commit
       - key: DB_NAME
-        sync: false
+        value: neondb
       - key: DB_SSLMODE
         value: require
 
