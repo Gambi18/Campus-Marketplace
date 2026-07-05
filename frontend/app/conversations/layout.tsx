@@ -172,7 +172,7 @@ export default function ConversationsLayout({ children }: { children: React.Reac
   return (
     <div>
         <Navbar/>
-        <div className="flex w-full max-w-7xl mx-auto md:border md:border-gray-100 md:rounded-xl md:shadow-sm bg-white h-screen md:h-[calc(100vh-140px)] overflow-hidden">
+        <div className="flex w-full max-w-7xl mx-auto md:border md:border-gray-100 md:rounded-xl md:shadow-sm bg-white h-[calc(100dvh-4rem)] md:h-[calc(100dvh-140px)] overflow-hidden">
 
       {/* LEFT PANEL: Always visible on desktop. On mobile, hides if a chat is active */}
       <div className={`w-full md:w-80 md:border-r border-gray-100 flex flex-col bg-white ${

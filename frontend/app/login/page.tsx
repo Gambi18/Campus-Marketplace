@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { Eye, LogIn } from 'lucide-react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import registerImage from "../images/college students-rafiki.svg";
@@ -61,10 +61,10 @@ function LoginForm() {
 
           {/* Floating White Showcase Card Asset */}
           <div className="w-full bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/40 border border-gray-100 flex flex-col items-center">
-            <h3 className="text-xl font-bold text-slate-800 tracking-tight">
+            <p className="text-xl font-bold text-slate-800 tracking-tight">
               Student Marketplace Signup
-            </h3>
-            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1 mb-4">
+            </p>
+            <span className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-1 mb-4">
               Signup
             </span>
 
@@ -84,9 +84,9 @@ function LoginForm() {
           </div>
 
           <div className="space-y-3 px-4">
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+            <p className="text-2xl font-bold text-gray-900 tracking-tight">
               The Smartest Way to Trade on Campus
-            </h2>
+            </p>
             <p className="text-gray-500 leading-relaxed text-sm">
               Join 15,000+ students buying and selling textbooks, furniture, and electronics daily with verified safe exchanges.
             </p>
@@ -114,8 +114,8 @@ function LoginForm() {
           {/* Login Card Wrapper */}
           <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-xl shadow-slate-100/50">
             <div className="space-y-1 mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-              <p className="text-sm text-gray-400">Login to access your campus marketplace</p>
+              <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
+              <p className="text-sm text-gray-500">Login to access your campus marketplace</p>
             </div>
 
             <form onSubmit={handleSubmit} autoComplete="on" className="space-y-4">
@@ -125,6 +125,7 @@ function LoginForm() {
                 type="email"
                 name="email"
                 required
+                autoComplete="email"
                 placeholder="your.name@university.edu"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -137,22 +138,24 @@ function LoginForm() {
                   type={showPassword ? "text" : "password"}
                   name="password"
                   required
+                  autoComplete="current-password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
                 />
 
-
-                <Button
+                <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 bottom-3.5 text-gray-400 hover:text-gray-600 cursor-pointer outline-none focus:text-brand-primary"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  className="absolute right-2 bottom-2 p-2 text-gray-400 hover:text-gray-600 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-100 focus:text-brand-primary"
                 >
-                  <Eye className="w-4 h-4" />
-                </Button>
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
 
               <Button type="submit" variant="form" size="lg" className="w-full pt-3" disabled={loading}>

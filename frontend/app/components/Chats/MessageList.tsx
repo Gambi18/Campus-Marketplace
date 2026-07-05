@@ -1,5 +1,6 @@
 
 import Image from "next/image";
+import { ChevronRight } from "lucide-react";
 import { Message } from "@/types";
 
 interface ItemDetails {
@@ -43,7 +44,7 @@ export function MessageList({ messages, item, onItemClick }: MessageListProps) {
             <p className="text-sm font-bold text-blue-600 mt-0.5">{item.price}</p>
           </div>
         </div>
-        <span className="text-gray-400 font-bold text-lg px-2">&gt;</span>
+        <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" aria-hidden="true" />
       </div>
 
       {/* Date Divider */}

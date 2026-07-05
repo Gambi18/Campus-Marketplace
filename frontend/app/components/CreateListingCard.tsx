@@ -6,9 +6,9 @@ export default function CreateListingCard() {
    
     <Link
       href="/sell" 
-      className="w-full max-w-[320px] aspect-[4/5] bg-[#f0f4ff]/40 hover:bg-[#eaf0ff]/70 border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-6 flex flex-col items-center justify-center text-center transition-all duration-200 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      className="w-full max-w-[320px] aspect-[4/5] bg-blue-50/40 hover:bg-blue-100/50 border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-6 flex flex-col items-center justify-center text-center transition-all duration-200 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
     >
-      <div className="w-12 h-12 rounded-full bg-[#e0ebff] text-slate-900 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-100 group-hover:text-blue-600 transition-all duration-200 shadow-sm">
+      <div className="w-12 h-12 rounded-full bg-blue-100 text-slate-900 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-100 group-hover:text-blue-600 transition-all duration-200 shadow-sm">
         <Plus className="w-5 h-5" strokeWidth={2.5} />
       </div>
       <div className="mt-5 space-y-1">

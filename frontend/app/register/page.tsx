@@ -6,7 +6,7 @@ import Input from "@/components/Input"
 import registerImage from "../images/college students-rafiki.svg"
 import Link from "next/link"
 import { useRouter } from 'next/navigation'
-import { Eye, UserPlus } from 'lucide-react'
+import { Eye, EyeOff, UserPlus } from 'lucide-react'
 import { useRegister } from "../../customHooks/useRegister"
 
 export default function RegisterPage() {
@@ -34,10 +34,10 @@ export default function RegisterPage() {
         <div className="max-w-md text-center space-y-8 z-10">
 
           <div className="w-full bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/40 border border-gray-100 flex flex-col items-center">
-            <h3 className="text-xl font-bold text-slate-800 tracking-tight">
+            <p className="text-xl font-bold text-slate-800 tracking-tight">
               Student Marketplace
-            </h3>
-            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1 mb-4">
+            </p>
+            <span className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-1 mb-4">
               Signup
             </span>
 
@@ -57,9 +57,9 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-3 px-4">
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+            <p className="text-2xl font-bold text-gray-900 tracking-tight">
               The Smartest Way to Trade on Campus
-            </h2>
+            </p>
             <p className="text-gray-500 leading-relaxed text-sm">
               Join 15,000+ students buying and selling textbooks, furniture, and electronics daily with verified safe exchanges.
             </p>
@@ -78,36 +78,40 @@ export default function RegisterPage() {
 
           <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-xl shadow-slate-100/50">
             <div className="space-y-1 mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
-              <p className="text-sm text-gray-400">Join your campus marketplace and start buying and selling safely</p>
+              <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
+              <p className="text-sm text-gray-500">Join your campus marketplace and start buying and selling safely</p>
             </div>
 
             <form onSubmit={handleSubmit} autoComplete="on" className="space-y-3.5">
-              <Input required label="Username" disabled={loading} name="username" value={username} placeholder="john_doe" onChange={(e) => setUsername(e.target.value)} />
-              <Input required label="Full Name" disabled={loading} name="name" value={fullName} placeholder="John Doe" onChange={(e) => setFullName(e.target.value)} />
-              <Input required label="Email" disabled={loading} type="email" name="email" value={email} placeholder="name@university.edu" onChange={(e) => setEmail(e.target.value)} />
-<Input label="Phone Number (MTN or Orange)" name="phone" type="tel" value={phoneNumber} required={true} placeholder="XXXXXXXXX (9-digit number)" helperText="237 will be added automatically" onChange={(e) => setPhoneNumber(e.target.value)} />
+              <Input required label="Username" disabled={loading} name="username" autoComplete="username" value={username} placeholder="john_doe" onChange={(e) => setUsername(e.target.value)} />
+              <Input required label="Full Name" disabled={loading} name="name" autoComplete="name" value={fullName} placeholder="John Doe" onChange={(e) => setFullName(e.target.value)} />
+              <Input required label="Email" disabled={loading} type="email" name="email" autoComplete="email" value={email} placeholder="name@university.edu" onChange={(e) => setEmail(e.target.value)} />
+<Input label="Phone Number (MTN or Orange)" name="phone" type="tel" autoComplete="tel" value={phoneNumber} required={true} placeholder="XXXXXXXXX (9-digit number)" helperText="237 will be added automatically" onChange={(e) => setPhoneNumber(e.target.value)} />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="relative">
-                  <Input required label="Password" disabled={loading} name="password" value={password} type={showPassword ? "text" : "password"} placeholder="••••••••" onChange={(e) => setPassword(e.target.value)} />
-                  <Button
+                  <Input required label="Password" disabled={loading} name="password" autoComplete="new-password" value={password} type={showPassword ? "text" : "password"} placeholder="••••••••" onChange={(e) => setPassword(e.target.value)} />
+                  <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 bottom-3.5 text-gray-400 hover:text-gray-600 cursor-pointer outline-none focus:text-brand-primary"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                    className="absolute right-2 bottom-2 p-2 text-gray-400 hover:text-gray-600 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-100 focus:text-brand-primary"
                   >
-                    <Eye className="w-4 h-4" />
-                  </Button>
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
                 <div className="relative">
-                  <Input required label="Confirm Password" disabled={loading} name="confirmPassword" value={confirmPassword} type={showConfirm ? "text" : "password"} placeholder="••••••••" onChange={(e) => setConfirmPassword(e.target.value)} />
-                  <Button
+                  <Input required label="Confirm Password" disabled={loading} name="confirmPassword" autoComplete="new-password" value={confirmPassword} type={showConfirm ? "text" : "password"} placeholder="••••••••" onChange={(e) => setConfirmPassword(e.target.value)} />
+                  <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-4 bottom-3.5 text-gray-400 hover:text-gray-600 cursor-pointer outline-none focus:text-brand-primary"
+                    aria-label={showConfirm ? "Hide password" : "Show password"}
+                    aria-pressed={showConfirm}
+                    className="absolute right-2 bottom-2 p-2 text-gray-400 hover:text-gray-600 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-100 focus:text-brand-primary"
                   >
-                    <Eye className="w-4 h-4" />
-                  </Button>
+                    {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
               </div>
 
@@ -127,7 +131,7 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
               <Button type="submit" variant="form" size="lg" className="w-full pt-3" disabled={loading}>
                 {loading ? "Creating Account..." : "Create Account"}

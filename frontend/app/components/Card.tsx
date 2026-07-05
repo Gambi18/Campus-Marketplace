@@ -2,7 +2,7 @@ import { ProductCard } from '@/types';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
-import { Link as LinkIcon } from 'lucide-react';
+import { Link as LinkIcon, MapPin, Clock } from 'lucide-react';
 import { formatPrice } from '../utils/format';
 
 export const Product: ProductCard = {
@@ -82,7 +82,7 @@ export default function ItemCard({ item }: ItemCardProps) {
           className="object-cover group-hover:scale-102 transition-transform duration-300"
         />
 
-        <span className="absolute top-2.5 left-2.5 px-1.5 py-0.5 bg-white/95 backdrop-blur-xs text-[9px] font-bold text-gray-700 rounded-md shadow-xs uppercase tracking-wider">
+        <span className="absolute top-2.5 left-2.5 px-1.5 py-0.5 bg-white/95 backdrop-blur-xs text-[10px] font-bold text-gray-700 rounded-md shadow-xs uppercase tracking-wider">
           {displayCondition}
         </span>
 
@@ -111,7 +111,7 @@ export default function ItemCard({ item }: ItemCardProps) {
       </div>
 
       <div className="p-3 flex flex-col space-y-1">
-        <span className="text-[9px] font-bold uppercase tracking-wider text-brand-primary bg-blue-50/60 px-1.5 py-0.5 rounded-sm self-start">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-brand-primary bg-blue-50/60 px-1.5 py-0.5 rounded-sm self-start">
           {category}
         </span>
 
@@ -123,19 +123,14 @@ export default function ItemCard({ item }: ItemCardProps) {
           {formatPrice(price)}
         </p>
 
-        <div className="flex flex-col space-y-0.5 pt-1.5 border-t border-gray-50 text-[10px] text-text-muted font-medium">
+        <div className="flex flex-col space-y-0.5 pt-1.5 border-t border-gray-50 text-xs text-text-muted font-medium">
           <div className="flex items-center space-x-1">
-            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-3 h-3 flex-shrink-0">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-            </svg>
+            <MapPin aria-hidden="true" strokeWidth={1.8} className="w-3 h-3 flex-shrink-0" />
             <span className="truncate">Campus Area</span>
           </div>
 
           <div className="flex items-center space-x-1">
-            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-3 h-3 flex-shrink-0">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
+            <Clock aria-hidden="true" strokeWidth={1.8} className="w-3 h-3 flex-shrink-0" />
             <span>{formattedDate}</span>
           </div>
         </div>

@@ -38,7 +38,7 @@ export function SearchInput({ value, onChange }: SearchInputProps) {
         onChange={handleChange}
         placeholder="Search for books, furniture, electronics..."
         autoComplete="off"
-        className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-700 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-base md:text-sm text-gray-700 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
       />
     </div>
   );

@@ -12,7 +12,7 @@ export default function Hero() {
   const { currentSlide, setCurrentSlide, typedText } = useHeroEffects();
 
   return (
-    <section className="relative min-h-screen overflow-hidden text-white">
+    <section className="relative min-h-dvh overflow-hidden text-white">
       
       <div className="absolute inset-0">
         {slides.map((image, index) => (
@@ -39,7 +39,7 @@ export default function Hero() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-blue-600/20 blur-[140px]" />
 
     
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-6">
+      <div className="relative z-10 min-h-dvh flex items-center justify-center px-6">
         <div className="max-w-5xl w-full text-center">
           
           <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl px-4 py-2 rounded-full text-sm text-blue-300">

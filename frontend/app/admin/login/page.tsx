@@ -44,6 +44,7 @@ export default function AdminLoginPage() {
           name="email"
           type="email"
           required
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -52,15 +53,16 @@ export default function AdminLoginPage() {
           name="password"
           type="password"
           required
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
 
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+          <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
         )}
 
-        <Button type="submit" variant="form" size="lg" disabled={loading}>
+        <Button type="submit" variant="form" size="lg" loading={loading}>
           {loading ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>

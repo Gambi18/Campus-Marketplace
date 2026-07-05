@@ -30,7 +30,7 @@ export function ConversationList({
             <button
               key={chat.id}
               onClick={() => onSelectConversation(chat.id)}
-              className={`w-full text-left p-4 flex items-start gap-3 transition-colors text-slate-100/0 ${
+              className={`w-full text-left p-4 flex items-start gap-3 transition-colors cursor-pointer ${
                 isActive 
                   ? 'bg-blue-50/60' 
                   : 'hover:bg-gray-50 bg-white'
@@ -63,7 +63,7 @@ export function ConversationList({
                     {chat.itemTitle}
                   </h4>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs text-gray-400 font-light">
+                    <span className="text-xs text-gray-500">
                       {chat.timestamp}
                     </span>
                     {chat.unreadCount && chat.unreadCount > 0 ? (

@@ -93,8 +93,21 @@ export default function CardGrid({
 
   if (loading) {
     return (
-      <div className="p-8 text-center text-sm text-gray-500">
-        Loading products...
+      <div
+        className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 w-full"
+        aria-busy="true"
+        aria-label="Loading products"
+      >
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-xs animate-pulse">
+            <div className="w-full aspect-square bg-gray-100" />
+            <div className="p-3 space-y-2">
+              <div className="h-2 w-16 bg-gray-100 rounded" />
+              <div className="h-3 w-3/4 bg-gray-100 rounded" />
+              <div className="h-3 w-1/3 bg-gray-100 rounded" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -146,7 +159,7 @@ export default function CardGrid({
         "Load More Items"
       )}
     </button>
-    <span className="text-xs text-gray-400">
+    <span className="text-xs text-text-muted">
       Showing {products.length} items
     </span>
   </div>
