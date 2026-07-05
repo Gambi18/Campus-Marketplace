@@ -16,8 +16,8 @@ services:
     runtime: docker
     plan: free
     region: ohio                    # us-east — co-located with the Neon (us-east-1) database
-    dockerContext: ./backend
-    dockerfilePath: ./backend/Dockerfile
+    rootDir: backend                # monorepo: build runs inside backend/ (Dockerfile + go.mod live here)
+    dockerfilePath: ./Dockerfile    # relative to rootDir; build context is rootDir (backend/)
     healthCheckPath: /health
     autoDeploy: true
     envVars:
