@@ -126,26 +126,37 @@ cd frontend && cp .env.example .env.local && npm install && npm run dev
 
 ## Deployment (free tier, no credit card)
 
+**Live deployment**
+
+| | URL |
+|---|-----|
+| Frontend | https://campus-marketplace-hjod.vercel.app |
+| Backend API | https://campus-marketplace-gn71.onrender.com (health: `/health`) |
+
 The three parts host best on three services. The Go backend runs a **persistent
 WebSocket hub**, so it needs a long-running process — not serverless functions.
+Deployments track the `deploy` branch on both Render and Vercel.
 
 | Component | Platform | Notes |
 |-----------|----------|-------|
-| Frontend (Next.js) | **Vercel** | Import the repo, root directory `frontend/`. |
-| Backend (Go + WS) | **Render** free Web Service (Docker) | Uses `render.yaml` / `backend/Dockerfile`. |
+| Frontend (Next.js) | **Vercel** | Root Directory `frontend`, Framework Preset **Next.js**. |
+| Backend (Go + WS) | **Render** free Web Service (Docker) | `render.yaml` blueprint, Root Directory `backend`. |
 | Database (Postgres) | **Neon** free tier | Doesn't expire (Render's free Postgres deletes after 30 days). |
 | Images / receipts | **Cloudinary** | Required — Render's free disk is ephemeral. |
 
 **Steps**
 
-1. **Neon** — create a project; note host, database, user, password. Use `DB_SSLMODE=require`.
-2. **Render** — New → Blueprint, pointing at `render.yaml`. Fill the `sync: false`
-   env vars: the Neon `DB_*` values, `ALLOWED_ORIGINS=https://<your-vercel-domain>`,
-   `ADMIN_EMAIL` / `ADMIN_PASSWORD` (not `password`), the `CAMPAY_*` and
-   `CLOUDINARY_*` credentials. `JWT_SECRET` is generated automatically. Migrations
-   run on first boot.
+1. **Neon** — create a project; note host, database, user, password. Use the
+   **direct** (non-`-pooler`) host and `DB_SSLMODE=require` — golang-migrate takes
+   a session advisory lock at startup that the pooled endpoint doesn't support.
+2. **Render** — New → Blueprint, pointing at `render.yaml` (it sets `rootDir: backend`).
+   Fill the `sync: false` env vars: the Neon `DB_*` values,
+   `ALLOWED_ORIGINS=https://<your-vercel-domain>`, `ADMIN_EMAIL` / `ADMIN_PASSWORD`
+   (not `password`), and the `CAMPAY_*` / `CLOUDINARY_*` credentials. `JWT_SECRET`
+   is generated automatically. Migrations run — and the first admin is seeded — on boot.
 3. **CamPay dashboard** — set the webhook URL to `https://<render-backend>/webhook/campay`.
-4. **Vercel** — set build-time env (baked into the bundle):
+4. **Vercel** — import the repo with **Root Directory `frontend`** and **Framework
+   Preset Next.js**, then set build-time env (baked into the bundle):
    `NEXT_PUBLIC_API_URL=https://<render-backend>` and
    `NEXT_PUBLIC_WS_URL=wss://<render-backend>` (**wss**, since Render serves HTTPS).
 5. Update Render's `ALLOWED_ORIGINS` to the final Vercel domain and redeploy.
@@ -154,6 +165,20 @@ WebSocket hub**, so it needs a long-running process — not serverless functions
 > and cold-starts (~50s) on the next request; WebSockets reconnect on wake. This
 > is fine for demos. The CamPay webhook still wakes the service, so payments are
 > not lost.
+
+**Gotchas we hit (and fixed on the `deploy` branch)**
+
+- **Monorepo build context** — both platforms need the Root Directory set
+  (`backend` / `frontend`), or the build can't find `go.mod` / `package.json`.
+- **Next.js standalone on Vercel** — `next.config.js` gates `output: 'standalone'`
+  on `process.env.VERCEL` so it applies to the Docker image but not Vercel.
+- **Next.js 16 Edge middleware** — a `next/server` middleware pulls in
+  `ua-parser-js` and 404s the whole site on Vercel, so route protection lives in a
+  client-side `AuthGuard` (`frontend/app/components/AuthGuard.tsx`) instead.
+- **Vercel Framework Preset must be Next.js** — if left as "Other", Vercel serves
+  the build as static files and every route 404s.
+- **Payment bypass is hard-disabled** on `deploy` (`devBypassEnabled()` returns
+  `false`), so real CamPay collection is always enforced in production.
 
 ## Platform Model
 
