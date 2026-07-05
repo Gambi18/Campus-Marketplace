@@ -9,7 +9,7 @@ A peer-to-peer marketplace for university students. Every student can list items
 - **Frontend:** Next.js 16, React 18, TypeScript, Tailwind CSS, lucide-react
 - **Backend:** Go 1.25+, Gin web framework, sqlc, golang-migrate, JWT auth, bcrypt, gofpdf
 - **Database:** PostgreSQL (UUID primary keys)
-- **Infrastructure:** Docker, Vercel (frontend), Railway (backend), Cloudinary (images), CamPay (payments)
+- **Infrastructure:** Docker, Vercel (frontend), Render (backend), Neon (Postgres), Cloudinary (images), CamPay (payments)
 
 ## Project Structure
 
@@ -123,6 +123,37 @@ cd backend && cp .env.example .env && go mod download && go run cmd/api/main.go
 # Frontend
 cd frontend && cp .env.example .env.local && npm install && npm run dev
 ```
+
+## Deployment (free tier, no credit card)
+
+The three parts host best on three services. The Go backend runs a **persistent
+WebSocket hub**, so it needs a long-running process — not serverless functions.
+
+| Component | Platform | Notes |
+|-----------|----------|-------|
+| Frontend (Next.js) | **Vercel** | Import the repo, root directory `frontend/`. |
+| Backend (Go + WS) | **Render** free Web Service (Docker) | Uses `render.yaml` / `backend/Dockerfile`. |
+| Database (Postgres) | **Neon** free tier | Doesn't expire (Render's free Postgres deletes after 30 days). |
+| Images / receipts | **Cloudinary** | Required — Render's free disk is ephemeral. |
+
+**Steps**
+
+1. **Neon** — create a project; note host, database, user, password. Use `DB_SSLMODE=require`.
+2. **Render** — New → Blueprint, pointing at `render.yaml`. Fill the `sync: false`
+   env vars: the Neon `DB_*` values, `ALLOWED_ORIGINS=https://<your-vercel-domain>`,
+   `ADMIN_EMAIL` / `ADMIN_PASSWORD` (not `password`), the `CAMPAY_*` and
+   `CLOUDINARY_*` credentials. `JWT_SECRET` is generated automatically. Migrations
+   run on first boot.
+3. **CamPay dashboard** — set the webhook URL to `https://<render-backend>/webhook/campay`.
+4. **Vercel** — set build-time env (baked into the bundle):
+   `NEXT_PUBLIC_API_URL=https://<render-backend>` and
+   `NEXT_PUBLIC_WS_URL=wss://<render-backend>` (**wss**, since Render serves HTTPS).
+5. Update Render's `ALLOWED_ORIGINS` to the final Vercel domain and redeploy.
+
+> **Free-tier trade-off:** the Render Web Service spins down after ~15 min idle
+> and cold-starts (~50s) on the next request; WebSockets reconnect on wake. This
+> is fine for demos. The CamPay webhook still wakes the service, so payments are
+> not lost.
 
 ## Platform Model
 

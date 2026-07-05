@@ -1,0 +1,78 @@
+# Render Blueprint — Go/Gin backend (persistent WebSocket hub) for Campus Marketplace.
+#
+# Deploy: push this repo to GitHub, then in Render → New → Blueprint and point it
+# at this file. Render builds from backend/Dockerfile; DB migrations run on boot.
+#
+# The database is intentionally NOT defined here. Use an external free Neon
+# Postgres — Render's own free Postgres is deleted after 30 days. Fill the DB_*
+# values below from your Neon connection details (host, user, password, db name).
+#
+# Free-tier note: this Web Service spins down after ~15 min idle and cold-starts
+# (~50s) on the next request; WebSockets reconnect on wake. Fine for demos.
+
+services:
+  - type: web
+    name: campus-marketplace-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # --- Runtime ---
+      - key: PORT
+        value: "8080"
+      - key: ENV
+        value: production
+
+      # --- Database (Neon) — fill from your Neon dashboard ---
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+
+      # --- Auth / security ---
+      - key: JWT_SECRET
+        generateValue: true          # Render generates a strong random secret
+      - key: ALLOWED_ORIGINS
+        sync: false                  # e.g. https://your-app.vercel.app
+
+      # --- Admin seed (ADMIN_PASSWORD must NOT be "password" — prod guard blocks boot) ---
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_BOOTSTRAP_TOKEN
+        sync: false                  # optional — leave unset to disable HTTP bootstrap
+
+      # --- Payments (CamPay) ---
+      - key: DEV_BYPASS_PAYMENT
+        value: "false"
+      - key: CAMPAY_BASE_URL
+        value: https://demo.campay.net/api
+      - key: CAMPAY_APP_USERNAME
+        sync: false
+      - key: CAMPAY_APP_PASSWORD
+        sync: false
+      - key: CAMPAY_PERMANENT_TOKEN
+        sync: false
+
+      # --- Uploads (Cloudinary — required: Render free disk is ephemeral) ---
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
