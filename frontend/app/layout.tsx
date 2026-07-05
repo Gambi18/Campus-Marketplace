@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { NotificationProvider } from "./context/NotificationContext";
+import AuthGuard from "./components/AuthGuard";
 import { Inter } from "next/font/google";
 
 export const metadata: Metadata = {
@@ -25,7 +26,9 @@ export default function RootLayout({
                     Skip to main content
                 </a>
                 <NotificationProvider>
-                    <div id="main-content">{children}</div>
+                    <AuthGuard>
+                        <div id="main-content">{children}</div>
+                    </AuthGuard>
                 </NotificationProvider>
             </body>
         </html>
