@@ -19,3 +19,7 @@ SELECT COUNT(*)::bigint AS count FROM admins;
 -- name: ListAdmins :many
 SELECT * FROM admins
 ORDER BY created_at ASC;
+
+-- name: DeleteAdmin :exec
+DELETE FROM admins
+WHERE id = $1;

@@ -188,6 +188,41 @@ func (h *AdminHandler) CreateAdditionalAdmin(c *gin.Context) {
 	c.JSON(http.StatusCreated, models.ToAdminResponse(admin))
 }
 
+// DeleteAdmin removes another admin account. An admin cannot delete their own
+// account, which both avoids accidental self-lockout and guarantees at least
+// one admin always remains.
+func (h *AdminHandler) DeleteAdmin(c *gin.Context) {
+	adminID, ok := httpx.CurrentUserID(c)
+	if !ok {
+		return
+	}
+
+	targetID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		httpx.Error(c, http.StatusBadRequest, "invalid admin ID")
+		return
+	}
+
+	if targetID == adminID {
+		httpx.Error(c, http.StatusBadRequest, "you cannot remove your own admin account")
+		return
+	}
+
+	// Confirm the target exists for a clean 404 rather than a silent no-op.
+	if _, err := h.queries.GetAdminByID(c.Request.Context(), targetID); err != nil {
+		httpx.Error(c, http.StatusNotFound, "admin not found")
+		return
+	}
+
+	if err := h.queries.DeleteAdmin(c.Request.Context(), targetID); err != nil {
+		httpx.Error(c, http.StatusInternalServerError, "could not remove admin")
+		return
+	}
+
+	h.auditService.Log(c.Request.Context(), adminID, services.AuditDeleteAdmin, &targetID, "admin", services.ClientIP(c))
+	c.JSON(http.StatusOK, gin.H{"message": "admin removed"})
+}
+
 func (h *AdminHandler) GetProfile(c *gin.Context) {
 	adminID, ok := httpx.CurrentUserID(c)
 	if !ok {

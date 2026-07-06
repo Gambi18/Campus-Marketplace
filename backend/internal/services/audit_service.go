@@ -21,6 +21,7 @@ const (
 	AuditAdminLogin    AuditAction = "admin_login"
 	AuditBootstrap     AuditAction = "bootstrap_admin"
 	AuditCreateAdmin   AuditAction = "create_admin"
+	AuditDeleteAdmin   AuditAction = "delete_admin"
 )
 
 type AuditService struct {

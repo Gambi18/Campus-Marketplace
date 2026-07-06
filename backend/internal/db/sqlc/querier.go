@@ -33,6 +33,7 @@ type Querier interface {
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteAdmin(ctx context.Context, id uuid.UUID) error
 	DeleteCategory(ctx context.Context, id int32) error
 	DeleteExpiredBlacklistedTokens(ctx context.Context) error
 	DeleteProduct(ctx context.Context, arg DeleteProductParams) error
