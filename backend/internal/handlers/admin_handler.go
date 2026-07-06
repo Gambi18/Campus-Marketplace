@@ -127,6 +127,67 @@ func (h *AdminHandler) CreateAdmin(c *gin.Context) {
 	c.JSON(http.StatusCreated, models.ToAdminResponse(admin))
 }
 
+// GetAllAdmins lists the platform admins (without password hashes) so the admin
+// dashboard can show who has access.
+func (h *AdminHandler) GetAllAdmins(c *gin.Context) {
+	admins, err := h.queries.ListAdmins(c.Request.Context())
+	if err != nil {
+		httpx.Error(c, http.StatusInternalServerError, "could not fetch admins")
+		return
+	}
+
+	response := make([]models.AdminResponse, len(admins))
+	for i, a := range admins {
+		response[i] = models.ToAdminResponse(a)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"admins": response, "count": len(response)})
+}
+
+// CreateAdditionalAdmin lets an already-authenticated admin create another admin
+// account. Unlike the one-time bootstrap CreateAdmin, this stays available for
+// the life of the platform (guarded by RequireAuth + RequireAdmin on the route).
+func (h *AdminHandler) CreateAdditionalAdmin(c *gin.Context) {
+	adminID, ok := httpx.CurrentUserID(c)
+	if !ok {
+		return
+	}
+
+	var req models.CreateAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Reject a duplicate email up front for a clean message; the unique
+	// constraint would otherwise surface as a generic 500.
+	if _, err := h.queries.GetAdminByEmail(c.Request.Context(), req.Email); err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "an admin with that email already exists"})
+		return
+	}
+
+	hashedPassword, err := h.authService.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not process password"})
+		return
+	}
+
+	admin, err := h.queries.CreateAdmin(c.Request.Context(), db.CreateAdminParams{
+		Username:     req.Username,
+		Email:        req.Email,
+		PasswordHash: hashedPassword,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create admin"})
+		return
+	}
+
+	newAdminID := admin.ID
+	h.auditService.Log(c.Request.Context(), adminID, services.AuditCreateAdmin, &newAdminID, "admin", services.ClientIP(c))
+
+	c.JSON(http.StatusCreated, models.ToAdminResponse(admin))
+}
+
 func (h *AdminHandler) GetProfile(c *gin.Context) {
 	adminID, ok := httpx.CurrentUserID(c)
 	if !ok {

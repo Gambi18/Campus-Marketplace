@@ -15,3 +15,7 @@ RETURNING *;
 
 -- name: CountAdmins :one
 SELECT COUNT(*)::bigint AS count FROM admins;
+
+-- name: ListAdmins :many
+SELECT * FROM admins
+ORDER BY created_at ASC;
