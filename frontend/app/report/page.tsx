@@ -18,6 +18,7 @@ function ReportContent() {
   const [selectedReason, setSelectedReason] = useState<ReportPayload['reason']>('');
   const [additionalDetails, setAdditionalDetails] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const reasons: { id: ReportPayload['reason']; label: string }[] = [
     { id: 'fake_listing', label: 'Fake / Prohibited Listing' },
@@ -29,9 +30,10 @@ function ReportContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
     if (!selectedReason) return;
     if (!productId) {
-      alert('Missing product reference. Please start the report from the chat.');
+      setSubmitError('Missing product reference. Please start the report from the chat.');
       return;
     }
     setIsSubmitting(true);
@@ -42,15 +44,12 @@ function ReportContent() {
         reason: selectedReason,
         details: additionalDetails,
       });
-      setIsSubmitting(false);
-      alert('Report submitted successfully.');
       router.push('/');
     } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to submit report');
+    } finally {
       setIsSubmitting(false);
-      alert(err instanceof Error ? err.message : 'Failed to submit report');
     }
-      
-    
   };
 
   return (
@@ -69,61 +68,71 @@ function ReportContent() {
               {(sellerName?.trim()?.[0] || '?').toUpperCase()}
             </div>
             <div>
-              <h3 className="text-sm font-bold text-gray-900">{sellerName}</h3>
-              <p className="text-[11px] text-gray-400 mt-0.5">Seller since 2023 • 4.8 Rating</p>
+              <p className="text-sm font-bold text-gray-900">{sellerName}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Reported seller</p>
             </div>
           </div>
 
           <div className="p-6 space-y-6">
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex items-center justify-between">
               <div>
-                <span className="block text-[9px] uppercase font-bold text-gray-400">Reported ID</span>
+                <span className="block text-xs uppercase font-bold text-gray-500">Reported ID</span>
                 <span className="text-xs font-mono font-bold text-gray-700">R-98201</span>
               </div>
               <div className="w-5 h-5 border rounded bg-white"></div>
             </div>
 
-            <div>
-              <label className="block text-[10px] uppercase font-bold text-gray-500 mb-3">Reason for Reporting</label>
+            <fieldset>
+              <legend className="block text-xs uppercase font-bold text-gray-500 mb-3">Reason for Reporting</legend>
               <div className="space-y-2.5">
                 {reasons.map((reason) => (
-                  <label 
+                  <label
                     key={reason.id}
-                    onClick={() => setSelectedReason(reason.id)}
-                    className={`w-full flex items-center justify-between px-4 py-3 border rounded-xl text-xs font-medium cursor-pointer transition ${
+                    className={`w-full flex items-center justify-between px-4 py-3 border rounded-xl text-sm font-medium cursor-pointer transition focus-within:ring-2 focus-within:ring-blue-100 ${
                       selectedReason === reason.id ? 'border-blue-600 bg-blue-50/20 text-blue-700' : 'border-gray-200 text-gray-700'
                     }`}
                   >
                     <span>{reason.label}</span>
-                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedReason === reason.id ? 'border-blue-600 bg-blue-600' : 'border-gray-300'}`}>
-                      {selectedReason === reason.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                    </div>
+                    <input
+                      type="radio"
+                      name="reason"
+                      value={reason.id}
+                      checked={selectedReason === reason.id}
+                      onChange={() => setSelectedReason(reason.id)}
+                      className="sr-only"
+                    />
+                    <span aria-hidden="true" className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedReason === reason.id ? 'border-blue-600 bg-blue-600' : 'border-gray-300'}`}>
+                      {selectedReason === reason.id && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </span>
                   </label>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
             <div>
-              <label className="block text-[10px] uppercase font-bold text-gray-500 mb-2">Additional Details</label>
+              <label htmlFor="report-details" className="block text-xs uppercase font-bold text-gray-500 mb-2">Additional Details</label>
               <textarea
+                id="report-details"
                 value={additionalDetails}
                 onChange={(e) => setAdditionalDetails(e.target.value)}
                 maxLength={250}
                 placeholder="Provide context..."
                 required
                 rows={4}
-                className="w-full text-xs p-3.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 resize-none text-gray-800"
+                className="w-full text-base md:text-sm p-3.5 border border-gray-200 rounded-xl outline-none focus:border-brand-primary focus:ring-4 focus:ring-blue-100 resize-none text-gray-800"
               />
+              <p className="mt-1 text-xs text-gray-500 text-right">{additionalDetails.length}/250</p>
             </div>
-            {/* <Textarea 
-              label='Additional Details' placeholder="Provide context..."  value={additionalDetails}
-            /> */}
+
+            {submitError && (
+              <p role="alert" className="text-sm text-red-600 text-center">{submitError}</p>
+            )}
 
             <div className="flex items-center justify-center gap-8 pt-2">
-              <button type="button" onClick={() => router.back()} className="text-xs font-bold text-gray-500">
+              <button type="button" onClick={() => router.back()} className="text-sm font-bold text-gray-500 hover:text-gray-700 cursor-pointer">
                 Cancel
               </button>
-              <Button type="submit" disabled={!selectedReason || isSubmitting}>
+              <Button type="submit" loading={isSubmitting} disabled={!selectedReason}>
                 {isSubmitting ? 'Submitting...' : 'Submit Report'}
               </Button>
             </div>

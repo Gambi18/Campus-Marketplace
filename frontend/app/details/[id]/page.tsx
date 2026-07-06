@@ -11,7 +11,7 @@ import Button from '../../components/Button';
 import Badge from '../../components/Badge';
 import Input from '../../components/Input';
 import { formatPrice, formatTimeAgo } from '../../utils/format';
-import { apiCall, fetchAPI, postAPI } from '../../utils/api';
+import { apiCall, fetchAPI } from '../../utils/api';
 import { initiatePayment, checkPaymentStatus } from '../../utils/paymentApi';
 import type { ProductCard } from '../../types';
 import { useRouter } from 'next/navigation';
@@ -48,16 +48,11 @@ export default function ProductDetailsPage() {
   const [paymentRef, setPaymentRef] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
-  const [isDev, setIsDev] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [hasPaid, setHasPaid] = useState(false);
   const [, setCheckingPayment] = useState(true);
 
   const router = useRouter();
-
-  useEffect(() => {
-    setIsDev(process.env.NODE_ENV === 'development');
-  }, []);
 
   const images = [product.image_url_1, product.image_url_2, product.image_url_3, product.image_url_4].filter((u): u is string => !!u);
 
@@ -309,47 +304,19 @@ export default function ProductDetailsPage() {
               </Button>
             </div>
 
-            {!isDev && (
-              <div className="rounded-xl bg-amber-50/80 border border-amber-100 p-5 flex gap-3">
-                <ShieldCheck className="w-6 h-6 text-amber-600 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-brand-neutral">Pay before you chat</h3>
-                  <p className="text-sm text-text-muted mt-1 leading-relaxed">
-                    You must pay before you can message the seller. A 3% platform fee applies on completion.
-                    If you cancel, a 1% fee applies on the refund.
-                  </p>
-                </div>
+            <div className="rounded-xl bg-amber-50/80 border border-amber-100 p-5 flex gap-3">
+              <ShieldCheck className="w-6 h-6 text-amber-600 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-brand-neutral">Pay before you chat</h3>
+                <p className="text-sm text-text-muted mt-1 leading-relaxed">
+                  You must pay before you can message the seller. A 3% platform fee applies on completion.
+                  If you cancel, a 1% fee applies on the refund.
+                </p>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </main>
-
-      {isDev && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <button
-            onClick={async () => {
-              try {
-                // Create the escrow payment the pay-to-chat gate checks for.
-                // With DEV_BYPASS_PAYMENT=true the backend auto-confirms it to
-                // "held", so messaging unlocks and it shows in the admin escrow
-                // page. The dummy MTN number satisfies operator detection.
-                await postAPI('/api/v1/payments/initiate', {
-                  product_id: id,
-                  phone_number: '237670000000',
-                });
-                setHasPaid(true);
-              } catch {
-                // payment may already exist (product in escrow), navigate anyway
-              }
-              router.push(`/conversations/${id}?user=${product.seller_id}&name=${encodeURIComponent(product.seller_name || '')}`);
-            }}
-            className="bg-yellow-400 text-black text-xs font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-yellow-300"
-          >
-            Bypass Payment (Dev)
-          </button>
-        </div>
-      )}
 
       {/* Payment Modal */}
       {showPaymentModal && (

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FolderTree, Flag, Users, CreditCard, X } from 'lucide-react';
+import { FolderTree, Flag, Users, CreditCard, X, ArrowLeft } from 'lucide-react';
 import { clearAdminToken } from '../../utils/adminApi';
 
 const NAV = [
@@ -57,9 +57,10 @@ export default function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onC
       <div className="p-4 border-t border-gray-100 space-y-2">
         <Link
           href="/"
-          className="block text-sm text-text-muted hover:text-brand-primary transition-colors"
+          className="flex items-center gap-1.5 text-sm text-text-muted hover:text-brand-primary transition-colors"
         >
-          ← Back to marketplace
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+          Back to marketplace
         </Link>
         <button
           type="button"

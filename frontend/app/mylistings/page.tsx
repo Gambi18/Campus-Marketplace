@@ -8,26 +8,43 @@ import CreateListingCard from '@/components/CreateListingCard';
 import NoCard from "../images/undraw_not-found_6bgl.svg"
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useMyProducts } from '../../customHooks/useGetProducts';
 import { patchAPI, deleteAPI } from '../utils/api';
 
 export default function MyListingsDashboard() {
 const router = useRouter();
   const { products: userListings, loading, error, refresh } = useMyProducts();
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleStatusChange = async (id: string, status: string) => {
+    if (pendingId) return;
+    setActionError(null);
+    setPendingId(id);
     try {
       await patchAPI(`/api/v1/products/${id}/status`, { status });
       refresh();
-    } catch { /* ignore */ }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not update the listing');
+    } finally {
+      setPendingId(null);
+    }
   };
 
   const handleDelete = async (id: string) => {
+    if (pendingId) return;
     if (!confirm('Delete this listing permanently?')) return;
+    setActionError(null);
+    setPendingId(id);
     try {
       await deleteAPI(`/api/v1/products/${id}`);
       refresh();
-    } catch { /* ignore */ }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not delete the listing');
+    } finally {
+      setPendingId(null);
+    }
   };
 
   return (
@@ -60,6 +77,10 @@ const router = useRouter();
           />
         </div>
         
+        {actionError && (
+          <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{actionError}</p>
+        )}
+
         {/* Workspace Display Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 items-start">
         
@@ -80,21 +101,24 @@ const router = useRouter();
                 <div className="flex gap-2 px-1">
                   <button
                     onClick={() => router.push(`/edit/${listing.id}`)}
-                    className="flex-1 text-xs font-semibold py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                    disabled={pendingId !== null}
+                    className="flex-1 min-h-[44px] text-xs font-semibold px-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Edit
                   </button>
                   {listing.status === 'available' && (
                     <button
                       onClick={() => handleStatusChange(listing.id, 'sold')}
-                      className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                      disabled={pendingId !== null}
+                      className="flex-1 min-h-[44px] text-xs font-semibold px-2 rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Mark Sold
+                      {pendingId === listing.id ? 'Working…' : 'Mark Sold'}
                     </button>
                   )}
                   <button
                     onClick={() => handleDelete(listing.id)}
-                    className="flex-1 text-xs font-semibold py-1.5 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors"
+                    disabled={pendingId !== null}
+                    className="flex-1 min-h-[44px] text-xs font-semibold px-2 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Delete
                   </button>
@@ -105,7 +129,7 @@ const router = useRouter();
             <div className="col-span-full bg-white border border-slate-100 rounded-2xl p-8 flex flex-col justify-center h-full min-h-[280px] shadow-sm">
               <h3 className="text-lg font-bold text-slate-800">No items listed yet</h3>
            
-              <p className="text-sm text-slate-400 mt-1 max-w-sm leading-relaxed">
+              <p className="text-sm text-slate-500 mt-1 max-w-sm leading-relaxed">
                
                 You haven&apos;t uploaded any products to the campus marketplace. Use the action card to create your first listing.
               </p>

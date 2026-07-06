@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { Eye, LogIn } from 'lucide-react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import registerImage from "../images/college students-rafiki.svg";
@@ -55,42 +55,31 @@ function LoginForm() {
   return (
     <div className="min-h-screen w-full flex bg-surface-page">
 
-      {/* LEFT COLUMN: Image Showcase Side */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-50 to-indigo-50 flex-col items-center justify-center p-12 relative border-r border-gray-100">
-        <div className="max-w-md text-center space-y-8 z-10">
-
-          {/* Floating White Showcase Card Asset */}
-          <div className="w-full bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/40 border border-gray-100 flex flex-col items-center">
-            <h3 className="text-xl font-bold text-slate-800 tracking-tight">
-              Student Marketplace Signup
-            </h3>
-            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1 mb-4">
-              Signup
-            </span>
-
-            <div className="w-full max-w-[240px] py-2">
-              {/* Local static SVG illustration — next/image doesn't optimize SVG, so a plain img is correct here. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={registerImage.src || registerImage}
-                alt="Students collaborating"
-                className="w-full h-auto object-contain mx-auto"
-              />
-            </div>
-
-            <Button variant="primary" size="sm" className="mt-4 px-6 rounded-lg font-semibold shadow-sm shadow-blue-200" onClick={() => router.push('/register')}>
-              Join Now
-            </Button>
+      {/* LEFT COLUMN: brand showcase (single layer, no nested card) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-brand-tertiary flex-col items-center justify-center p-12 border-r border-gray-100">
+        <div className="max-w-md text-center space-y-8">
+          <div className="w-full max-w-[280px] mx-auto">
+            {/* Local static SVG illustration — next/image doesn't optimize SVG, so a plain img is correct here. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={registerImage.src || registerImage}
+              alt="Students collaborating"
+              className="w-full h-auto object-contain mx-auto"
+            />
           </div>
 
-          <div className="space-y-3 px-4">
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
-              The Smartest Way to Trade on Campus
-            </h2>
-            <p className="text-gray-500 leading-relaxed text-sm">
-              Join 15,000+ students buying and selling textbooks, furniture, and electronics daily with verified safe exchanges.
+          <div className="space-y-3">
+            <p className="font-display text-3xl font-bold text-brand-neutral tracking-tight">
+              The smart way to trade on campus
+            </p>
+            <p className="text-text-body leading-relaxed">
+              Buy and sell textbooks, furniture and electronics with students you can trust — payments held safely until you confirm.
             </p>
           </div>
+
+          <Button variant="primary" size="lg" onClick={() => router.push('/register')}>
+            Create an account
+          </Button>
         </div>
       </div>
 
@@ -114,8 +103,8 @@ function LoginForm() {
           {/* Login Card Wrapper */}
           <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-xl shadow-slate-100/50">
             <div className="space-y-1 mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-              <p className="text-sm text-gray-400">Login to access your campus marketplace</p>
+              <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
+              <p className="text-sm text-gray-500">Login to access your campus marketplace</p>
             </div>
 
             <form onSubmit={handleSubmit} autoComplete="on" className="space-y-4">
@@ -125,6 +114,7 @@ function LoginForm() {
                 type="email"
                 name="email"
                 required
+                autoComplete="email"
                 placeholder="your.name@university.edu"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -137,22 +127,24 @@ function LoginForm() {
                   type={showPassword ? "text" : "password"}
                   name="password"
                   required
+                  autoComplete="current-password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
                 />
 
-
-                <Button
+                <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 bottom-3.5 text-gray-400 hover:text-gray-600 cursor-pointer outline-none focus:text-brand-primary"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  className="absolute right-2 bottom-2 p-2 text-gray-400 hover:text-gray-600 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-100 focus:text-brand-primary"
                 >
-                  <Eye className="w-4 h-4" />
-                </Button>
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
 
               <Button type="submit" variant="form" size="lg" className="w-full pt-3" disabled={loading}>

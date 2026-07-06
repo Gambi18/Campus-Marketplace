@@ -1,0 +1,24 @@
+# Pings the Render backend so it doesn't spin down on the free tier (which
+# otherwise cold-starts for ~50s on the next request). Runs every 10 minutes.
+#
+# Caveats:
+#   - GitHub cron is best-effort and can be delayed by several minutes.
+#   - Scheduled workflows are auto-disabled after 60 days with no repo activity.
+#   - Keeping the service warm ~24/7 consumes most of Render's 750 free
+#     instance-hours/month (one always-on service fits, but only just).
+name: Keep backend warm
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: |
+          curl -fsS --max-time 60 https://campus-marketplace-gn71.onrender.com/health \
+            && echo "backend is awake" \
+            || echo "ping failed (backend may be cold-starting)"

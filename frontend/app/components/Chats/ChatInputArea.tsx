@@ -32,15 +32,15 @@ export function ChatInputArea({
             aria-label="Message"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="flex-1 bg-transparent text-sm text-gray-800 focus:outline-none"
+            className="flex-1 bg-transparent text-base md:text-sm text-gray-800 focus:outline-none"
           />
           <button
             type="submit"
             disabled={!text.trim()}
             aria-label="Send message"
-            className="text-blue-600 hover:text-blue-700 disabled:opacity-40 transition ml-2"
+            className="flex items-center justify-center min-h-[44px] min-w-[44px] -mr-2 rounded-full text-brand-primary hover:text-brand-primary-strong hover:bg-brand-tertiary disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-5 h-5" />
           </button>
         </div>
       </form>

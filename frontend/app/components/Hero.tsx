@@ -4,15 +4,16 @@
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Button from "./Button";
-import { useHeroEffects, slides } from "../../customHooks/useHerroEffects"; 
+import HeroHeadline from "./HeroHeadline";
+import { useHeroEffects, slides } from "../../customHooks/useHerroEffects";
 import { ArrowRight } from "lucide-react";
 
 export default function Hero() {
   const router = useRouter();
-  const { currentSlide, setCurrentSlide, typedText } = useHeroEffects();
+  const { currentSlide, setCurrentSlide } = useHeroEffects();
 
   return (
-    <section className="relative min-h-screen overflow-hidden text-white">
+    <section className="relative min-h-dvh overflow-hidden text-white">
       
       <div className="absolute inset-0">
         {slides.map((image, index) => (
@@ -39,20 +40,17 @@ export default function Hero() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-blue-600/20 blur-[140px]" />
 
     
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-6">
+      <div className="relative z-10 min-h-dvh flex items-center justify-center px-6">
         <div className="max-w-5xl w-full text-center">
           
-          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl px-4 py-2 rounded-full text-sm text-blue-300">
-            Trusted by 5,000+ students across campus
+          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-white/90">
+            Buy and sell with students on your campus
           </div>
 
           <h1 className="mt-5 text-5xl md:text-7xl font-extrabold leading-[1.05] animate-fadeInUp">
-            <span className="text-white">
-              {typedText}
-              <span className="animate-pulse text-blue-500">|</span>
-            </span>
+            <HeroHeadline />
             <br />
-            <span className="text-blue-500">Within Your Campus Community</span>
+            <span className="text-brand-accent">Within Your Campus Community</span>
             </h1>
 
           <p className="mt-5 text-lg md:text-xl text-slate-200 max-w-3xl mx-auto">

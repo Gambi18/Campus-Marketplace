@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ItemCard from "./Card";
 import type { ProductCard } from "../types";
 import {
@@ -12,6 +12,13 @@ import {
 interface CardGridProps {
   query?: string;
   categoryId?: string;
+  sort?: string;
+  condition?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  /** First page rendered on the server so listings are in the initial HTML. */
+  initialProducts?: ProductCard[];
+  initialHasMore?: boolean;
 }
 
 // Server default is 24 (max 100); each "Load More" pulls the next page.
@@ -20,33 +27,50 @@ const PAGE_SIZE = 24;
 export default function CardGrid({
   query = "",
   categoryId,
+  sort,
+  condition,
+  minPrice,
+  maxPrice,
+  initialProducts,
+  initialHasMore,
 }: CardGridProps) {
 
-  const [products, setProducts] = useState<ProductCard[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<ProductCard[]>(initialProducts ?? []);
+  const [loading, setLoading] = useState(initialProducts === undefined);
   const [error, setError] = useState<string | null>(null);
   const [isBatchLoading, setIsBatchLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
+  const [hasMore, setHasMore] = useState(initialHasMore ?? false);
+  // When the server already supplied page 0, skip the client mount fetch. The
+  // parent keys this component by the active params, so a filter/sort change
+  // remounts it with fresh server data instead of a client round-trip.
+  const skipInitialFetch = useRef(initialProducts !== undefined);
 
   // Fetch a single server page starting at `offset`, honouring the active filter.
   const fetchPage = useCallback(
     async (offset: number) => {
       const cleanQuery = query?.trim();
       const cleanCategory = categoryId?.trim();
+      const opts = { sort, condition, minPrice, maxPrice };
       let response;
       if (cleanQuery) {
-        response = await searchProducts(cleanQuery, PAGE_SIZE, offset);
+        response = await searchProducts(cleanQuery, PAGE_SIZE, offset, opts);
       } else if (cleanCategory) {
-        response = await getProductsByCategory(cleanCategory, PAGE_SIZE, offset);
+        response = await getProductsByCategory(cleanCategory, PAGE_SIZE, offset, opts);
       } else {
-        response = await getAllProducts(PAGE_SIZE, offset);
+        response = await getAllProducts(PAGE_SIZE, offset, opts);
       }
       return response?.products ?? [];
     },
-    [query, categoryId],
+    [query, categoryId, sort, condition, minPrice, maxPrice],
   );
 
   useEffect(() => {
+    // Server already rendered the first page for this param set — don't refetch.
+    if (skipInitialFetch.current) {
+      skipInitialFetch.current = false;
+      return;
+    }
+
     let ignore = false;
 
     const loadFirstPage = async () => {
@@ -93,8 +117,21 @@ export default function CardGrid({
 
   if (loading) {
     return (
-      <div className="p-8 text-center text-sm text-gray-500">
-        Loading products...
+      <div
+        className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 w-full"
+        aria-busy="true"
+        aria-label="Loading products"
+      >
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-xs animate-pulse">
+            <div className="w-full aspect-square bg-gray-100" />
+            <div className="p-3 space-y-2">
+              <div className="h-2 w-16 bg-gray-100 rounded" />
+              <div className="h-3 w-3/4 bg-gray-100 rounded" />
+              <div className="h-3 w-1/3 bg-gray-100 rounded" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -146,7 +183,7 @@ export default function CardGrid({
         "Load More Items"
       )}
     </button>
-    <span className="text-xs text-gray-400">
+    <span className="text-xs text-text-muted">
       Showing {products.length} items
     </span>
   </div>

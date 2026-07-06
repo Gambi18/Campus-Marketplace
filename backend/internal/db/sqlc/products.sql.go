@@ -130,13 +130,23 @@ FROM products p
 JOIN users      u ON u.id = p.seller_id
 JOIN categories c ON c.id = p.category_id
 WHERE p.status = 'available'
-ORDER BY p.created_at DESC
-LIMIT $2 OFFSET $1
+  AND ($1::text    IS NULL OR p.condition = $1)
+  AND ($2::numeric IS NULL OR p.price >= $2::numeric)
+  AND ($3::numeric IS NULL OR p.price <= $3::numeric)
+ORDER BY
+    CASE WHEN $4::text = 'price_low'  THEN p.price END ASC,
+    CASE WHEN $4::text = 'price_high' THEN p.price END DESC,
+    p.created_at DESC
+LIMIT $6 OFFSET $5
 `
 
 type GetAllProductsParams struct {
-	Offset int32 `json:"offset"`
-	Limit  int32 `json:"limit"`
+	Condition sql.NullString `json:"condition"`
+	MinPrice  sql.NullString `json:"min_price"`
+	MaxPrice  sql.NullString `json:"max_price"`
+	Sort      string         `json:"sort"`
+	Offset    int32          `json:"offset"`
+	Limit     int32          `json:"limit"`
 }
 
 type GetAllProductsRow struct {
@@ -159,7 +169,14 @@ type GetAllProductsRow struct {
 }
 
 func (q *Queries) GetAllProducts(ctx context.Context, arg GetAllProductsParams) ([]GetAllProductsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getAllProducts, arg.Offset, arg.Limit)
+	rows, err := q.db.QueryContext(ctx, getAllProducts,
+		arg.Condition,
+		arg.MinPrice,
+		arg.MaxPrice,
+		arg.Sort,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -262,14 +279,24 @@ JOIN users      u ON u.id = p.seller_id
 JOIN categories c ON c.id = p.category_id
 WHERE p.category_id = $1
 AND   p.status = 'available'
-ORDER BY p.created_at DESC
-LIMIT $3 OFFSET $2
+  AND ($2::text    IS NULL OR p.condition = $2)
+  AND ($3::numeric IS NULL OR p.price >= $3::numeric)
+  AND ($4::numeric IS NULL OR p.price <= $4::numeric)
+ORDER BY
+    CASE WHEN $5::text = 'price_low'  THEN p.price END ASC,
+    CASE WHEN $5::text = 'price_high' THEN p.price END DESC,
+    p.created_at DESC
+LIMIT $7 OFFSET $6
 `
 
 type GetProductsByCategoryParams struct {
-	CategoryID int32 `json:"category_id"`
-	Offset     int32 `json:"offset"`
-	Limit      int32 `json:"limit"`
+	CategoryID int32          `json:"category_id"`
+	Condition  sql.NullString `json:"condition"`
+	MinPrice   sql.NullString `json:"min_price"`
+	MaxPrice   sql.NullString `json:"max_price"`
+	Sort       string         `json:"sort"`
+	Offset     int32          `json:"offset"`
+	Limit      int32          `json:"limit"`
 }
 
 type GetProductsByCategoryRow struct {
@@ -292,7 +319,15 @@ type GetProductsByCategoryRow struct {
 }
 
 func (q *Queries) GetProductsByCategory(ctx context.Context, arg GetProductsByCategoryParams) ([]GetProductsByCategoryRow, error) {
-	rows, err := q.db.QueryContext(ctx, getProductsByCategory, arg.CategoryID, arg.Offset, arg.Limit)
+	rows, err := q.db.QueryContext(ctx, getProductsByCategory,
+		arg.CategoryID,
+		arg.Condition,
+		arg.MinPrice,
+		arg.MaxPrice,
+		arg.Sort,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -422,14 +457,24 @@ AND  (
     p.title       ILIKE '%' || $1 || '%'
     OR p.description ILIKE '%' || $1 || '%'
 )
-ORDER BY p.created_at DESC
-LIMIT $3 OFFSET $2
+  AND ($2::text    IS NULL OR p.condition = $2)
+  AND ($3::numeric IS NULL OR p.price >= $3::numeric)
+  AND ($4::numeric IS NULL OR p.price <= $4::numeric)
+ORDER BY
+    CASE WHEN $5::text = 'price_low'  THEN p.price END ASC,
+    CASE WHEN $5::text = 'price_high' THEN p.price END DESC,
+    p.created_at DESC
+LIMIT $7 OFFSET $6
 `
 
 type SearchProductsParams struct {
-	Keyword sql.NullString `json:"keyword"`
-	Offset  int32          `json:"offset"`
-	Limit   int32          `json:"limit"`
+	Keyword   sql.NullString `json:"keyword"`
+	Condition sql.NullString `json:"condition"`
+	MinPrice  sql.NullString `json:"min_price"`
+	MaxPrice  sql.NullString `json:"max_price"`
+	Sort      string         `json:"sort"`
+	Offset    int32          `json:"offset"`
+	Limit     int32          `json:"limit"`
 }
 
 type SearchProductsRow struct {
@@ -452,7 +497,15 @@ type SearchProductsRow struct {
 }
 
 func (q *Queries) SearchProducts(ctx context.Context, arg SearchProductsParams) ([]SearchProductsRow, error) {
-	rows, err := q.db.QueryContext(ctx, searchProducts, arg.Keyword, arg.Offset, arg.Limit)
+	rows, err := q.db.QueryContext(ctx, searchProducts,
+		arg.Keyword,
+		arg.Condition,
+		arg.MinPrice,
+		arg.MaxPrice,
+		arg.Sort,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}

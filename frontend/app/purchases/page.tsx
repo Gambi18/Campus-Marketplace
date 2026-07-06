@@ -20,31 +20,41 @@ export default function PurchasesPage() {
   const [rejectTarget, setRejectTarget] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [rejectError, setRejectError] = useState<string | null>(null);
 
   const handleConfirm = async (id: string) => {
+    if (confirmingId) return;
+    setActionError(null);
+    setConfirmingId(id);
     try {
       await confirmDelivery(id);
       await refetch();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to confirm delivery');
+      setActionError(err instanceof Error ? err.message : 'Failed to confirm delivery');
+    } finally {
+      setConfirmingId(null);
     }
   };
 
   const handleRejectClick = (id: string) => {
     setRejectTarget(id);
     setRejectReason('');
+    setRejectError(null);
     setShowRejectModal(true);
   };
 
   const handleConfirmReject = async () => {
     if (!rejectTarget || !rejectReason.trim() || rejecting) return;
+    setRejectError(null);
     setRejecting(true);
     try {
       await rejectDelivery(rejectTarget, rejectReason.trim());
       setShowRejectModal(false);
       await refetch();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to reject delivery');
+      setRejectError(err instanceof Error ? err.message : 'Failed to reject delivery');
     } finally {
       setRejecting(false);
     }
@@ -55,6 +65,9 @@ export default function PurchasesPage() {
       <Navbar />
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-6">
         <h1 className="text-2xl font-bold text-brand-neutral mb-6">My Purchases</h1>
+        {actionError && (
+          <p role="alert" className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{actionError}</p>
+        )}
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent"></div>
@@ -90,14 +103,14 @@ export default function PurchasesPage() {
                 <div className="mt-3 flex gap-2 flex-wrap">
                   {p.status === 'held' && (
                     <>
-                      <Button variant="outlined" size="md" onClick={() => router.push(`/conversations/${p.product_id}?user=${p.seller_id}&name=${encodeURIComponent(p.seller_name || '')}&paymentId=${p.id}`)}>
+                      <Button variant="outlined" size="md" disabled={confirmingId !== null} onClick={() => router.push(`/conversations/${p.product_id}?user=${p.seller_id}&name=${encodeURIComponent(p.seller_name || '')}&paymentId=${p.id}`)}>
                         <MessageCircle className="w-4 h-4 mr-1" />
                         Chat
                       </Button>
-                      <Button variant="primary" size="md" onClick={() => handleConfirm(p.id)}>
+                      <Button variant="primary" size="md" loading={confirmingId === p.id} disabled={confirmingId !== null} onClick={() => handleConfirm(p.id)}>
                         Confirm Received
                       </Button>
-                      <Button variant="outlined" size="md" onClick={() => handleRejectClick(p.id)}>
+                      <Button variant="outlined" size="md" disabled={confirmingId !== null} onClick={() => handleRejectClick(p.id)}>
                         Cancel & Refund
                       </Button>
                     </>
@@ -107,10 +120,13 @@ export default function PurchasesPage() {
                       variant="outlined"
                       size="md"
                       onClick={async () => {
+                        setActionError(null);
                         try {
                           const receipt = await getReceipt(p.id);
                           if (receipt.receipt_pdf_url) window.open(receipt.receipt_pdf_url, '_blank');
-                        } catch { /* ignore */ }
+                        } catch (err) {
+                          setActionError(err instanceof Error ? err.message : 'Could not load the receipt');
+                        }
                       }}
                     >
                       View Receipt
@@ -138,11 +154,14 @@ export default function PurchasesPage() {
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
             />
+            {rejectError && (
+              <p role="alert" className="mt-3 text-sm text-red-600">{rejectError}</p>
+            )}
             <div className="flex gap-3 mt-4">
               <Button variant="outlined" onClick={() => setShowRejectModal(false)} fullWidth disabled={rejecting}>
                 Go Back
               </Button>
-              <Button variant="primary" onClick={handleConfirmReject} fullWidth disabled={rejecting || !rejectReason.trim()}>
+              <Button variant="primary" onClick={handleConfirmReject} fullWidth loading={rejecting} disabled={!rejectReason.trim()}>
                 {rejecting ? 'Processing…' : 'Confirm Refund'}
               </Button>
             </div>

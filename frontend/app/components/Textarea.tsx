@@ -32,7 +32,7 @@ export default function Textarea({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className="w-full py-3 px-4 text-sm rounded-lg border border-gray-200 bg-white text-brand-neutral placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-4 focus:ring-blue-100 transition-all resize-y min-h-[120px]"
+        className="w-full py-3 px-4 text-base md:text-sm rounded-lg border border-gray-200 bg-white text-brand-neutral placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-4 focus:ring-blue-100 transition-all resize-y min-h-[120px]"
       />
     </div>
   );

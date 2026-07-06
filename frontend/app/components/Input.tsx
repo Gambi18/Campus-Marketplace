@@ -45,7 +45,7 @@ function Input({
         autoComplete={autoComplete}
         onChange={onChange}
         className={`
-          w-full py-3 px-4 text-sm rounded-lg border transition-all duration-200 outline-none
+          w-full py-3 px-4 text-base md:text-sm rounded-lg border transition-all duration-200 outline-none
           bg-white text-brand-neutral placeholder-gray-400
           ${error ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:border-brand-primary focus:ring-4 focus:ring-blue-100'}
           disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed

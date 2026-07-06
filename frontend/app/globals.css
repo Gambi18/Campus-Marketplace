@@ -3,20 +3,34 @@
 @tailwind utilities;
 
   :root {
-    --brand-primary: #2563eb;
-    --brand-tertiary: #f2f3ff;
-    --brand-neutral: #0f172a;
+    /* Brand — pine teal with a marigold signature accent */
+    --brand-primary: #0f766e;
+    --brand-primary-strong: #0c5c55;
+    --brand-tertiary: #e6f2f0;
+    --brand-neutral: #16241f;
+    --accent: #e8a317;
+    --accent-strong: #cf8f0f;
 
-    --text-main: #0f172a;
-    --text-muted: #64748b;
-    --text-body: #475569;
+    --text-main: #16241f;
+    --text-muted: #5c6b66;
+    --text-body: #3f4d48;
 
     --surface-page: #f8fafc;
     --surface-admin: #f1f5f9;
     --surface-card: #ffffff;
 
-    --bg-light: #f2f3ff;
+    --bg-light: #e6f2f0;
     --border-light: #e2e8f0;
+
+    /* Semantic status — dark text on a light tint (badge-safe contrast) */
+    --success: #15803d;
+    --success-bg: #dcfce7;
+    --warning: #a16207;
+    --warning-bg: #fef9c3;
+    --danger: #b91c1c;
+    --danger-bg: #fee2e2;
+    --info: #0f766e;
+    --info-bg: #e6f2f0;
 }
 * {
   margin: 0;
@@ -31,6 +45,12 @@ html {
 body {
   background-color: var(--surface-card);
   color: var(--text-main);
+}
+
+/* Headings carry the display face; body copy stays on the neutral sans. */
+h1, h2, h3, h4 {
+  font-family: var(--font-display), var(--font-inter), sans-serif;
+  letter-spacing: -0.015em;
 }
 
 @keyframes slideDown {

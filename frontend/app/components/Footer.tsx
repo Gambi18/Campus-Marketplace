@@ -34,7 +34,7 @@ export default function Footer() {
   return (
     <footer className="w-full bg-brand-tertiary text-text-main border-t border-gray-200">
 
-      <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
+      <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
 
         <div className="md:col-span-4 flex flex-col space-y-4">
           <Logo />
@@ -100,7 +100,7 @@ export default function Footer() {
 
       </div>
       <div className="border-t border-gray-200/60 bg-gray-50/50">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-muted">
+        <div className="max-w-6xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-muted">
           <div>
             &copy; {currentYear} CampusMarket. All rights reserved.
           </div>
