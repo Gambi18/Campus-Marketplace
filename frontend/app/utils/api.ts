@@ -14,9 +14,11 @@ export interface ApiAuthOptions {
   tokenKey?: string;
   /**
    * When true (default), a 401 on a non-auth endpoint clears the token and
-   * redirects to /login. Admin calls and passive access probes disable this.
+   * redirects to `loginPath`. Passive access probes disable this.
    */
   redirectOnUnauthorized?: boolean;
+  /** Where to send the user when their session expires. Defaults to /login. */
+  loginPath?: string;
 }
 
 export async function apiCall<T>(
@@ -27,6 +29,7 @@ export async function apiCall<T>(
   const url = `${API_URL}${endpoint}`;
   const tokenKey = auth.tokenKey ?? 'token';
   const redirectOnUnauthorized = auth.redirectOnUnauthorized ?? true;
+  const loginPath = auth.loginPath ?? '/login';
 
   // Try to get token from localStorage
   let token = null;
@@ -67,8 +70,8 @@ export async function apiCall<T>(
     if (response.status === 401 && redirectOnUnauthorized && !isAuthEndpoint && typeof window !== 'undefined') {
       localStorage.removeItem(tokenKey);
       // Avoid a redirect loop when an auth-protected call on the login page 401s.
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login';
+      if (!window.location.pathname.startsWith(loginPath)) {
+        window.location.href = loginPath;
       }
       throw new Error('Session expired');
     }

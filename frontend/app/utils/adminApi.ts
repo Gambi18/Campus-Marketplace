@@ -19,11 +19,13 @@ export async function adminFetch<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  // Reuse the shared client's token/header/error handling, but key off the
-  // admin token and never redirect to the student /login on a 401.
+  // Reuse the shared client's token/header/error handling, keyed off the admin
+  // token. On a 401 (expired/invalid session) send the admin to the admin login,
+  // not the student one.
   return apiCall<T>(endpoint, options, {
     tokenKey: ADMIN_TOKEN_KEY,
-    redirectOnUnauthorized: false,
+    redirectOnUnauthorized: true,
+    loginPath: '/admin/login',
   });
 }
 
