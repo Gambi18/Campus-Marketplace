@@ -35,8 +35,8 @@ export function createProduct(formData: FormData) {
   return postAPI("/api/v1/products", formData);
 }
 
-export function getAllProducts(limit?: number, offset?: number, opts?: ProductListOptions) {
-  return fetchAPI<{ products: ProductCard[] }>(`/api/v1/products${listQuery(limit, offset, opts)}`);
+export function getAllProducts(limit?: number, offset?: number, opts?: ProductListOptions, init?: RequestInit) {
+  return fetchAPI<{ products: ProductCard[] }>(`/api/v1/products${listQuery(limit, offset, opts)}`, init);
 }
 
 export function fetchMyProducts(limit = 100, offset = 0) {
@@ -45,13 +45,14 @@ export function fetchMyProducts(limit = 100, offset = 0) {
   );
 }
 
-export async function searchProducts(query: string, limit?: number, offset?: number, opts?: ProductListOptions) {
+export async function searchProducts(query: string, limit?: number, offset?: number, opts?: ProductListOptions, init?: RequestInit) {
   const base = `/api/v1/products/search?q=${encodeURIComponent(query)}`;
-  return fetchAPI<{ products: ProductCard[] }>(`${base}${listQuery(limit, offset, opts, "&")}`);
+  return fetchAPI<{ products: ProductCard[] }>(`${base}${listQuery(limit, offset, opts, "&")}`, init);
 }
 
-export function getProductsByCategory(categoryId: string, limit?: number, offset?: number, opts?: ProductListOptions) {
+export function getProductsByCategory(categoryId: string, limit?: number, offset?: number, opts?: ProductListOptions, init?: RequestInit) {
   return fetchAPI<{ products: ProductCard[] }>(
     `/api/v1/categories/${categoryId}/products${listQuery(limit, offset, opts)}`,
+    init,
   );
 }

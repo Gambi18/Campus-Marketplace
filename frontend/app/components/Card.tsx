@@ -1,7 +1,7 @@
 import { ProductCard } from '@/types';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { Link as LinkIcon, MapPin, Clock } from 'lucide-react';
 import { formatPrice } from '../utils/format';
 
@@ -31,7 +31,7 @@ const CONDITION_LABELS: Record<string, string> = {
   'fair': 'Fair',
 };
 
-export default function ItemCard({ item }: ItemCardProps) {
+function ItemCard({ item }: ItemCardProps) {
   const router = useRouter();
   const title = item?.title ?? Product.title;
   const price = item?.price ?? Product.price;
@@ -138,3 +138,7 @@ export default function ItemCard({ item }: ItemCardProps) {
     </div>
   );
 }
+
+// Memoized so appending a page in CardGrid ("Load More") only renders the new
+// cards, not the whole grid. Existing items keep their reference across pages.
+export default memo(ItemCard);

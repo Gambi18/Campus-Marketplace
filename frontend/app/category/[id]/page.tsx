@@ -5,6 +5,9 @@ import Hero from "../../../app/components/Hero";
 import ItemCategory from "../../../app/components/ItemCategory";
 import Navbar from "../../components/Navbar";
 import Toolbar from "../../components/Toolbar";
+import { getProductsByCategory } from "../../utils/productApi";
+
+const PAGE_SIZE = 24;
 
 type CategoryPageProps = {
   params: Promise<{
@@ -24,6 +27,21 @@ export default async function CategoryPage({
 }: CategoryPageProps) {
   const { id } = await params;
   const filters = await searchParams;
+  const opts = {
+    sort: filters?.sort,
+    condition: filters?.condition,
+    minPrice: filters?.min_price,
+    maxPrice: filters?.max_price,
+  };
+  let initial;
+  try {
+    const res = await getProductsByCategory(id, PAGE_SIZE, 0, opts, { next: { revalidate: 30 } });
+    const list = res?.products ?? [];
+    initial = { products: list, hasMore: list.length === PAGE_SIZE };
+  } catch {
+    initial = undefined; // cold backend — CardGrid falls back to a client fetch
+  }
+  const gridKey = `${id}|${opts.sort ?? ""}|${opts.condition ?? ""}|${opts.minPrice ?? ""}|${opts.maxPrice ?? ""}`;
 
   return (
     <div>
@@ -42,11 +60,14 @@ export default async function CategoryPage({
           }
         >
           <CardGrid
+            key={gridKey}
             categoryId={id}
             sort={filters?.sort}
             condition={filters?.condition}
             minPrice={filters?.min_price}
             maxPrice={filters?.max_price}
+            initialProducts={initial?.products}
+            initialHasMore={initial?.hasMore}
           />
         </Suspense>
       </main>

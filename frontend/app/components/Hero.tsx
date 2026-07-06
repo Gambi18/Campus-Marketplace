@@ -4,12 +4,13 @@
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Button from "./Button";
-import { useHeroEffects, slides } from "../../customHooks/useHerroEffects"; 
+import HeroHeadline from "./HeroHeadline";
+import { useHeroEffects, slides } from "../../customHooks/useHerroEffects";
 import { ArrowRight } from "lucide-react";
 
 export default function Hero() {
   const router = useRouter();
-  const { currentSlide, setCurrentSlide, typedText } = useHeroEffects();
+  const { currentSlide, setCurrentSlide } = useHeroEffects();
 
   return (
     <section className="relative min-h-dvh overflow-hidden text-white">
@@ -47,10 +48,7 @@ export default function Hero() {
           </div>
 
           <h1 className="mt-5 text-5xl md:text-7xl font-extrabold leading-[1.05] animate-fadeInUp">
-            <span className="text-white">
-              {typedText}
-              <span className="animate-pulse text-brand-accent">|</span>
-            </span>
+            <HeroHeadline />
             <br />
             <span className="text-brand-accent">Within Your Campus Community</span>
             </h1>

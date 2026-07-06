@@ -6,6 +6,27 @@ import ItemCategory from "./components/ItemCategory";
 import Navbar from "./components/Navbar";
 import SoldToast from "./components/SoldToast";
 import Toolbar from "./components/Toolbar";
+import { getAllProducts, searchProducts } from "./utils/productApi";
+import type { ProductCard } from "./types";
+
+// First page rendered on the server so listings ship in the initial HTML.
+const PAGE_SIZE = 24;
+
+async function loadFirstPage(
+  query: string,
+  opts: { sort?: string; condition?: string; minPrice?: string; maxPrice?: string },
+): Promise<{ products: ProductCard[]; hasMore: boolean } | undefined> {
+  try {
+    const res = query
+      ? await searchProducts(query, PAGE_SIZE, 0, opts, { next: { revalidate: 30 } })
+      : await getAllProducts(PAGE_SIZE, 0, opts, { next: { revalidate: 30 } });
+    const list = res?.products ?? [];
+    return { products: list, hasMore: list.length === PAGE_SIZE };
+  } catch {
+    // Backend cold/unavailable — let CardGrid fall back to a client fetch.
+    return undefined;
+  }
+}
 
 type HomeProps = {
   searchParams?: Promise<{
@@ -20,6 +41,14 @@ type HomeProps = {
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
   const query = params?.q ?? "";
+  const opts = {
+    sort: params?.sort,
+    condition: params?.condition,
+    minPrice: params?.min_price,
+    maxPrice: params?.max_price,
+  };
+  const initial = await loadFirstPage(query, opts);
+  const gridKey = `${query}|${opts.sort ?? ""}|${opts.condition ?? ""}|${opts.minPrice ?? ""}|${opts.maxPrice ?? ""}`;
 
   return (
     <div>
@@ -45,11 +74,14 @@ export default async function Home({ searchParams }: HomeProps) {
           }
         >
           <CardGrid
+            key={gridKey}
             query={query}
             sort={params?.sort}
             condition={params?.condition}
             minPrice={params?.min_price}
             maxPrice={params?.max_price}
+            initialProducts={initial?.products}
+            initialHasMore={initial?.hasMore}
           />
         </Suspense>
       </main>

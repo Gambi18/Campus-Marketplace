@@ -82,8 +82,10 @@ export async function apiCall<T>(
   return (text ? JSON.parse(text) : ({} as T)) as T;
 }
 
-export async function fetchAPI<T>(endpoint: string): Promise<T> {
-  return apiCall<T>(endpoint, { method: 'GET' });
+// `init` lets server components pass Next fetch caching hints
+// (e.g. `{ next: { revalidate: 30 } }`) through to the underlying fetch.
+export async function fetchAPI<T>(endpoint: string, init?: RequestInit): Promise<T> {
+  return apiCall<T>(endpoint, { method: 'GET', ...init });
 }
 
 export async function postAPI<T>(endpoint: string, data?: unknown): Promise<T> {

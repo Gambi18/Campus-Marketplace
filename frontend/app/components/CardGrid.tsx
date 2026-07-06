@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ItemCard from "./Card";
 import type { ProductCard } from "../types";
 import {
@@ -16,6 +16,9 @@ interface CardGridProps {
   condition?: string;
   minPrice?: string;
   maxPrice?: string;
+  /** First page rendered on the server so listings are in the initial HTML. */
+  initialProducts?: ProductCard[];
+  initialHasMore?: boolean;
 }
 
 // Server default is 24 (max 100); each "Load More" pulls the next page.
@@ -28,13 +31,19 @@ export default function CardGrid({
   condition,
   minPrice,
   maxPrice,
+  initialProducts,
+  initialHasMore,
 }: CardGridProps) {
 
-  const [products, setProducts] = useState<ProductCard[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<ProductCard[]>(initialProducts ?? []);
+  const [loading, setLoading] = useState(initialProducts === undefined);
   const [error, setError] = useState<string | null>(null);
   const [isBatchLoading, setIsBatchLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
+  const [hasMore, setHasMore] = useState(initialHasMore ?? false);
+  // When the server already supplied page 0, skip the client mount fetch. The
+  // parent keys this component by the active params, so a filter/sort change
+  // remounts it with fresh server data instead of a client round-trip.
+  const skipInitialFetch = useRef(initialProducts !== undefined);
 
   // Fetch a single server page starting at `offset`, honouring the active filter.
   const fetchPage = useCallback(
@@ -56,6 +65,12 @@ export default function CardGrid({
   );
 
   useEffect(() => {
+    // Server already rendered the first page for this param set — don't refetch.
+    if (skipInitialFetch.current) {
+      skipInitialFetch.current = false;
+      return;
+    }
+
     let ignore = false;
 
     const loadFirstPage = async () => {
