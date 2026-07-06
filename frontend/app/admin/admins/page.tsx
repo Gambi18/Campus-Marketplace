@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Plus, ShieldCheck, Eye, EyeOff, Trash2 } from 'lucide-react';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import { adminFetch } from '../../utils/adminApi';
@@ -22,6 +22,12 @@ export default function AdminAdminsPage() {
     [],
   );
   const admins = data?.admins ?? [];
+  // The signed-in admin's own id, so we can hide "remove" on their own row.
+  const { data: me } = useApiResource(
+    () => adminFetch<AdminAccount>('/api/v1/admin/profile'),
+    [],
+  );
+  const currentAdminId = me?.id;
   const [actionError, setActionError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const error = actionError ?? loadError;
@@ -29,6 +35,7 @@ export default function AdminAdminsPage() {
   const [showForm, setShowForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const openCreate = () => {
     setForm(emptyForm);
@@ -60,6 +67,22 @@ export default function AdminAdminsPage() {
       setActionError(err instanceof Error ? err.message : 'Could not create admin');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async (a: AdminAccount) => {
+    if (!confirm(`Remove admin "${a.username}"? They will lose admin access immediately.`)) return;
+    setActionError(null);
+    setSuccessMsg(null);
+    setDeletingId(a.id);
+    try {
+      await adminFetch(`/api/v1/admin/admins/${a.id}`, { method: 'DELETE' });
+      setSuccessMsg(`Admin "${a.username}" removed.`);
+      await refetch();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not remove admin');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -157,9 +180,24 @@ export default function AdminAdminsPage() {
                 <p className="font-semibold text-brand-neutral truncate">{a.username}</p>
                 <p className="text-sm text-text-muted truncate">{a.email}</p>
               </div>
-              {formatDate(a.created_at) && (
-                <p className="text-xs text-text-muted ml-auto flex-shrink-0">Added {formatDate(a.created_at)}</p>
-              )}
+              <div className="ml-auto flex items-center gap-3 flex-shrink-0">
+                {formatDate(a.created_at) && (
+                  <p className="text-xs text-text-muted hidden sm:block">Added {formatDate(a.created_at)}</p>
+                )}
+                {a.id === currentAdminId ? (
+                  <span className="text-xs font-medium text-text-muted bg-gray-100 rounded-full px-2 py-0.5">You</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(a)}
+                    disabled={deletingId !== null}
+                    aria-label={`Remove ${a.username}`}
+                    className="p-2 text-text-muted hover:text-red-600 rounded-lg hover:bg-red-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
           ))
         )}

@@ -48,6 +48,16 @@ func (q *Queries) CreateAdmin(ctx context.Context, arg CreateAdminParams) (Admin
 	return i, err
 }
 
+const deleteAdmin = `-- name: DeleteAdmin :exec
+DELETE FROM admins
+WHERE id = $1
+`
+
+func (q *Queries) DeleteAdmin(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteAdmin, id)
+	return err
+}
+
 const getAdminByEmail = `-- name: GetAdminByEmail :one
 SELECT id, username, email, password_hash, created_at, updated_at FROM admins
 WHERE email = $1

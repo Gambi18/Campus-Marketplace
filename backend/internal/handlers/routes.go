@@ -155,6 +155,7 @@ func SetupRoutes(
 		admin.GET("/profile", adminHandler.GetProfile)
 		admin.GET("/admins", adminHandler.GetAllAdmins)
 		admin.POST("/admins", adminHandler.CreateAdditionalAdmin)
+		admin.DELETE("/admins/:id", adminHandler.DeleteAdmin)
 		admin.GET("/users", adminHandler.GetAllUsers)
 		admin.PATCH("/users/:id/block", adminHandler.BlockUser)
 		admin.GET("/pending-users", adminHandler.GetPendingUsers)
