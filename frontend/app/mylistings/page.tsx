@@ -102,7 +102,7 @@ const router = useRouter();
                   <button
                     onClick={() => router.push(`/edit/${listing.id}`)}
                     disabled={pendingId !== null}
-                    className="flex-1 min-h-[40px] text-xs font-semibold px-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 min-h-[44px] text-xs font-semibold px-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Edit
                   </button>
@@ -110,7 +110,7 @@ const router = useRouter();
                     <button
                       onClick={() => handleStatusChange(listing.id, 'sold')}
                       disabled={pendingId !== null}
-                      className="flex-1 min-h-[40px] text-xs font-semibold px-2 rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 min-h-[44px] text-xs font-semibold px-2 rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {pendingId === listing.id ? 'Working…' : 'Mark Sold'}
                     </button>
@@ -118,7 +118,7 @@ const router = useRouter();
                   <button
                     onClick={() => handleDelete(listing.id)}
                     disabled={pendingId !== null}
-                    className="flex-1 min-h-[40px] text-xs font-semibold px-2 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 min-h-[44px] text-xs font-semibold px-2 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Delete
                   </button>

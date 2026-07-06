@@ -82,7 +82,7 @@ export default function ItemCard({ item }: ItemCardProps) {
           className="object-cover group-hover:scale-102 transition-transform duration-300"
         />
 
-        <span className="absolute top-2.5 left-2.5 px-1.5 py-0.5 bg-white/95 backdrop-blur-xs text-[10px] font-bold text-gray-700 rounded-md shadow-xs uppercase tracking-wider">
+        <span className="absolute top-2.5 left-2.5 px-1.5 py-0.5 bg-white text-[10px] font-bold text-gray-700 rounded-md shadow-xs uppercase tracking-wider">
           {displayCondition}
         </span>
 

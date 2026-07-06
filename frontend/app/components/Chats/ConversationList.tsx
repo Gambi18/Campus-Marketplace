@@ -52,7 +52,10 @@ export function ConversationList({
                   </div>
                 )}
                 {chat.unread && (
-                  <span className="absolute top-0 right-0 w-3 h-3 bg-blue-600 border-2 border-white rounded-full"></span>
+                  <>
+                    <span className="absolute top-0 right-0 w-3 h-3 bg-brand-primary border-2 border-white rounded-full" aria-hidden="true"></span>
+                    <span className="sr-only">Unread</span>
+                  </>
                 )}
               </div>
 

@@ -55,42 +55,31 @@ function LoginForm() {
   return (
     <div className="min-h-screen w-full flex bg-surface-page">
 
-      {/* LEFT COLUMN: Image Showcase Side */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-50 to-indigo-50 flex-col items-center justify-center p-12 relative border-r border-gray-100">
-        <div className="max-w-md text-center space-y-8 z-10">
-
-          {/* Floating White Showcase Card Asset */}
-          <div className="w-full bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/40 border border-gray-100 flex flex-col items-center">
-            <p className="text-xl font-bold text-slate-800 tracking-tight">
-              Student Marketplace Signup
-            </p>
-            <span className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-1 mb-4">
-              Signup
-            </span>
-
-            <div className="w-full max-w-[240px] py-2">
-              {/* Local static SVG illustration — next/image doesn't optimize SVG, so a plain img is correct here. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={registerImage.src || registerImage}
-                alt="Students collaborating"
-                className="w-full h-auto object-contain mx-auto"
-              />
-            </div>
-
-            <Button variant="primary" size="sm" className="mt-4 px-6 rounded-lg font-semibold shadow-sm shadow-blue-200" onClick={() => router.push('/register')}>
-              Join Now
-            </Button>
+      {/* LEFT COLUMN: brand showcase (single layer, no nested card) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-brand-tertiary flex-col items-center justify-center p-12 border-r border-gray-100">
+        <div className="max-w-md text-center space-y-8">
+          <div className="w-full max-w-[280px] mx-auto">
+            {/* Local static SVG illustration — next/image doesn't optimize SVG, so a plain img is correct here. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={registerImage.src || registerImage}
+              alt="Students collaborating"
+              className="w-full h-auto object-contain mx-auto"
+            />
           </div>
 
-          <div className="space-y-3 px-4">
-            <p className="text-2xl font-bold text-gray-900 tracking-tight">
-              The Smartest Way to Trade on Campus
+          <div className="space-y-3">
+            <p className="font-display text-3xl font-bold text-brand-neutral tracking-tight">
+              The smart way to trade on campus
             </p>
-            <p className="text-gray-500 leading-relaxed text-sm">
+            <p className="text-text-body leading-relaxed">
               Buy and sell textbooks, furniture and electronics with students you can trust — payments held safely until you confirm.
             </p>
           </div>
+
+          <Button variant="primary" size="lg" onClick={() => router.push('/register')}>
+            Create an account
+          </Button>
         </div>
       </div>
 

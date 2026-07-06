@@ -74,7 +74,10 @@ export function ChatHeader({
           )}
           {/* Presence is only shown when we actually know the user is online. */}
           {isActive && (
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+            <>
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" aria-hidden="true"></span>
+              <span className="sr-only">Online</span>
+            </>
           )}
         </div>
         <div>

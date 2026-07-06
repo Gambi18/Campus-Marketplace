@@ -62,8 +62,18 @@ export function FilterActions({
       if (sortRef.current && !sortRef.current.contains(event.target as Node)) setSortOpen(false);
       if (filterRef.current && !filterRef.current.contains(event.target as Node)) setFilterOpen(false);
     };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSortOpen(false);
+        setFilterOpen(false);
+      }
+    };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, []);
 
   const currentSortLabel =

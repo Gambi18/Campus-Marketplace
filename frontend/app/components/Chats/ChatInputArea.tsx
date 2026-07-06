@@ -38,7 +38,7 @@ export function ChatInputArea({
             type="submit"
             disabled={!text.trim()}
             aria-label="Send message"
-            className="flex items-center justify-center min-h-[40px] min-w-[40px] -mr-2 rounded-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+            className="flex items-center justify-center min-h-[44px] min-w-[44px] -mr-2 rounded-full text-brand-primary hover:text-brand-primary-strong hover:bg-brand-tertiary disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
           >
             <Send className="w-5 h-5" />
           </button>
