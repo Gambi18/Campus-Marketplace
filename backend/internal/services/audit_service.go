@@ -20,6 +20,7 @@ const (
 	AuditRefundPayment AuditAction = "refund_payment"
 	AuditAdminLogin    AuditAction = "admin_login"
 	AuditBootstrap     AuditAction = "bootstrap_admin"
+	AuditCreateAdmin   AuditAction = "create_admin"
 )
 
 type AuditService struct {

@@ -203,7 +203,14 @@ The platform needs a first admin before any admin can log in, which is a chicken
 
    This endpoint is public by necessity (no admin token can exist yet) but is guarded two ways: the request must carry the matching `X-Admin-Bootstrap-Token` header (constant-time compared), **and** it only succeeds while no admin exists. Once any admin is created — by either method — the endpoint returns `403` permanently. If `ADMIN_BOOTSTRAP_TOKEN` is unset, the endpoint is disabled (`403`) and only the seed path is available.
 
-   After bootstrapping, additional admins are created from within the app by an authenticated admin; rotate or unset `ADMIN_BOOTSTRAP_TOKEN` afterwards.
+   After bootstrapping, rotate or unset `ADMIN_BOOTSTRAP_TOKEN` — the bootstrap endpoint is inert anyway once an admin exists.
+
+### Adding more admins (in-app)
+
+Once a first admin exists, further admins are created from the dashboard — no bootstrap token needed:
+
+- **UI:** sign in at `/admin/login` → **Admins → Add admin** (`/admin/admins`), enter a username, email and password. The new admin can sign in immediately.
+- **API:** `POST /api/v1/admin/admins` (admin-authenticated) with `{username, email, password}`; `GET /api/v1/admin/admins` lists existing admins. Duplicate emails return `409`, and each creation is written to the audit log (`create_admin`).
 
 ## Payment Flow (Escrow via CamPay)
 

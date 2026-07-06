@@ -153,6 +153,8 @@ func SetupRoutes(
 	admin.Use(middleware.CSRF())
 	{
 		admin.GET("/profile", adminHandler.GetProfile)
+		admin.GET("/admins", adminHandler.GetAllAdmins)
+		admin.POST("/admins", adminHandler.CreateAdditionalAdmin)
 		admin.GET("/users", adminHandler.GetAllUsers)
 		admin.PATCH("/users/:id/block", adminHandler.BlockUser)
 		admin.GET("/pending-users", adminHandler.GetPendingUsers)

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FolderTree, Flag, Users, CreditCard, X, ArrowLeft } from 'lucide-react';
+import { FolderTree, Flag, Users, CreditCard, X, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { clearAdminToken } from '../../utils/adminApi';
 
 const NAV = [
@@ -10,6 +10,7 @@ const NAV = [
   { href: '/admin/categories', label: 'Categories', icon: FolderTree },
   { href: '/admin/payments', label: 'Payments (Escrow)', icon: CreditCard },
   { href: '/admin/reports', label: 'Reports & moderation', icon: Flag },
+  { href: '/admin/admins', label: 'Admins', icon: ShieldCheck },
 ];
 
 export default function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {

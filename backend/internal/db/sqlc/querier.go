@@ -76,6 +76,7 @@ type Querier interface {
 	GetUserNotifications(ctx context.Context, userID uuid.UUID) ([]Notification, error)
 	HasActivePayment(ctx context.Context, arg HasActivePaymentParams) (bool, error)
 	IsTokenBlacklisted(ctx context.Context, jti string) (bool, error)
+	ListAdmins(ctx context.Context) ([]Admin, error)
 	MarkAllNotificationsAsRead(ctx context.Context, userID uuid.UUID) error
 	MarkMessagesAsRead(ctx context.Context, arg MarkMessagesAsReadParams) error
 	MarkNotificationAsRead(ctx context.Context, arg MarkNotificationAsReadParams) (Notification, error)
