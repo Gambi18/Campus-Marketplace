@@ -7,16 +7,35 @@ export default {
   ],
   theme: {
     extend: {
+     
+        fontFamily: {
+        sans: ['var(--font-inter)', 'sans-serif'],
+      },
+     
       colors: {
         brand: {
           primary: 'var(--brand-primary)',
-          'primary-hover': 'var(--brand-primary-hover)',
-          secondary: 'var(--brand-secondary)',
-          accent: 'var(--brand-accent)',
+          tertiary: 'var(--brand-tertiary)',
+          neutral: 'var(--brand-neutral)',
+        },
+        text: {
+          main: 'var(--text-main)',
+          muted: 'var(--text-muted)',
+          body: 'var(--text-body)',
+        },
+        surface: {
+          page: 'var(--surface-page)',
+          admin: 'var(--surface-admin)',
+          card: 'var(--surface-card)',
+        },
+        border: {
+          light: 'var(--border-light)',
+        },
+        bg: {
+          light: 'var(--bg-light)',
         },
       },
     },
-    
   },
   plugins: [],
 }

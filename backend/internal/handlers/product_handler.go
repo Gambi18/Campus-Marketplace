@@ -9,6 +9,7 @@ import (
 
 	db "campus-marketplace/internal/db/sqlc"
 	"campus-marketplace/internal/models"
+	"campus-marketplace/internal/platform/httpx"
 	"campus-marketplace/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -27,12 +28,94 @@ func NewProductHandler(queries *db.Queries, productService *services.ProductServ
 	}
 }
 
-// PUBLIC ENDPOINTS
+// productInput holds the validated create/update form fields shared by
+// CreateProduct and UpdateProduct.
+type productInput struct {
+	title       string
+	description string
+	price       float64
+	categoryID  int32
+	condition   string
+}
+
+// validateProductInput parses and validates the shared product form fields,
+// performing the price bounds check, the condition whitelist check, the
+// category id parse and the category-existence check. On any failure it writes
+// the appropriate error response and returns ok=false so the caller can return.
+func (h *ProductHandler) validateProductInput(c *gin.Context) (productInput, bool) {
+	var in productInput
+
+	in.title = c.PostForm("title")
+	in.description = c.PostForm("description")
+	price := c.PostForm("price")
+	categoryIDStr := c.PostForm("category_id")
+	in.condition = c.PostForm("condition")
+
+	if in.title == "" || in.description == "" || price == "" || categoryIDStr == "" || in.condition == "" {
+		httpx.Error(c, http.StatusBadRequest, "title, description, price, category_id and condition are required")
+		return in, false
+	}
+
+	priceFloat, err := strconv.ParseFloat(price, 64)
+	if err != nil || priceFloat <= 0 || priceFloat > 10000000 {
+		httpx.Error(c, http.StatusBadRequest, "price must be a positive number")
+		return in, false
+	}
+	in.price = priceFloat
+
+	validConditions := map[string]bool{
+		"brand_new": true, "like_new": true,
+		"good": true, "fair": true,
+	}
+	if !validConditions[in.condition] {
+		httpx.Error(c, http.StatusBadRequest, "condition must be one of: brand_new, like_new, good, fair")
+		return in, false
+	}
+
+	categoryID, err := strconv.Atoi(categoryIDStr)
+	if err != nil {
+		httpx.Error(c, http.StatusBadRequest, "invalid category ID")
+		return in, false
+	}
+	in.categoryID = int32(categoryID)
+
+	if _, err := h.queries.GetCategoryByID(c.Request.Context(), in.categoryID); err != nil {
+		httpx.Error(c, http.StatusBadRequest, "category does not exist")
+		return in, false
+	}
+
+	return in, true
+}
+
+// openProductImages best-effort opens the multipart files for the given form
+// fields. A field that is absent or fails to open yields a nil entry (mirroring
+// the original best-effort behaviour). The returned cleanup closes every opened
+// file and should be deferred by the caller.
+func openProductImages(c *gin.Context, fields ...string) (files []multipart.File, cleanup func()) {
+	files = make([]multipart.File, len(fields))
+	for i, field := range fields {
+		if fh, err := c.FormFile(field); err == nil && fh != nil {
+			files[i], _ = fh.Open()
+		}
+	}
+	cleanup = func() {
+		for _, f := range files {
+			if f != nil {
+				f.Close()
+			}
+		}
+	}
+	return files, cleanup
+}
 
 func (h *ProductHandler) GetAllProducts(c *gin.Context) {
-	products, err := h.queries.GetAllProducts(c.Request.Context())
+	p := httpx.ParsePagination(c, 24, 100)
+	products, err := h.queries.GetAllProducts(c.Request.Context(), db.GetAllProductsParams{
+		Limit:  p.Limit,
+		Offset: p.Offset,
+	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch products"})
+		httpx.Error(c, http.StatusInternalServerError, "could not fetch products")
 		return
 	}
 
@@ -50,13 +133,13 @@ func (h *ProductHandler) GetAllProducts(c *gin.Context) {
 func (h *ProductHandler) GetProductByID(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
+		httpx.Error(c, http.StatusBadRequest, "invalid product ID")
 		return
 	}
 
 	product, err := h.queries.GetProductByID(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		httpx.Error(c, http.StatusNotFound, "product not found")
 		return
 	}
 
@@ -66,16 +149,18 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 func (h *ProductHandler) SearchProducts(c *gin.Context) {
 	keyword := c.Query("q")
 	if keyword == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "search keyword is required"})
+		httpx.Error(c, http.StatusBadRequest, "search keyword is required")
 		return
 	}
 
-	products, err := h.queries.SearchProducts(c.Request.Context(), sql.NullString{
-		String: keyword,
-		Valid:  true,
+	p := httpx.ParsePagination(c, 24, 100)
+	products, err := h.queries.SearchProducts(c.Request.Context(), db.SearchProductsParams{
+		Keyword: sql.NullString{String: keyword, Valid: true},
+		Limit:   p.Limit,
+		Offset:  p.Offset,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not search products"})
+		httpx.Error(c, http.StatusInternalServerError, "could not search products")
 		return
 	}
 
@@ -94,13 +179,18 @@ func (h *ProductHandler) SearchProducts(c *gin.Context) {
 func (h *ProductHandler) GetProductsByCategory(c *gin.Context) {
 	categoryID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category ID"})
+		httpx.Error(c, http.StatusBadRequest, "invalid category ID")
 		return
 	}
 
-	products, err := h.queries.GetProductsByCategory(c.Request.Context(), int32(categoryID))
+	p := httpx.ParsePagination(c, 24, 100)
+	products, err := h.queries.GetProductsByCategory(c.Request.Context(), db.GetProductsByCategoryParams{
+		CategoryID: int32(categoryID),
+		Limit:      p.Limit,
+		Offset:     p.Offset,
+	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch products"})
+		httpx.Error(c, http.StatusInternalServerError, "could not fetch products")
 		return
 	}
 
@@ -115,59 +205,43 @@ func (h *ProductHandler) GetProductsByCategory(c *gin.Context) {
 	})
 }
 
-//PROTECTED ENDPOINTS 
-
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
-	// 1. Get seller ID from JWT context
-	sellerIDStr := c.GetString("user_id")
-	sellerID, err := uuid.Parse(sellerIDStr)
+	sellerID, ok := httpx.CurrentUserID(c)
+	if !ok {
+		return
+	}
+
+	in, ok := h.validateProductInput(c)
+	if !ok {
+		return
+	}
+
+	fileHeader1, err := c.FormFile("image_1")
+	if err != nil || fileHeader1 == nil {
+		httpx.Error(c, http.StatusBadRequest, "at least one image is required (image_1)")
+		return
+	}
+	image1, err := fileHeader1.Open()
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+		httpx.Error(c, http.StatusBadRequest, "could not read image_1")
 		return
 	}
+	defer image1.Close()
 
-	// 2. Parse form fields
-	title := c.PostForm("title")
-	description := c.PostForm("description")
-	price := c.PostForm("price")
-	categoryIDStr := c.PostForm("category_id")
+	optional, cleanup := openProductImages(c, "image_2", "image_3", "image_4")
+	defer cleanup()
+	image2, image3, image4 := optional[0], optional[1], optional[2]
 
-	if title == "" || description == "" || price == "" || categoryIDStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "title, description, price and category_id are required"})
-		return
-	}
-
-	categoryID, err := strconv.Atoi(categoryIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category ID"})
-		return
-	}
-
-	// 3. Get image file if provided
-	var mf multipart.File
-	fileHeader, err := c.FormFile("image")
-	if err == nil && fileHeader != nil {
-		mf, err = fileHeader.Open()
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "could not read image file"})
-			return
-		}
-		defer mf.Close()
-	}
-
-	// 4. Call service
 	product, err := h.productService.CreateProduct(
 		c.Request.Context(),
 		sellerID,
-		int32(categoryID),
-		title,
-		description,
-		price,
-		mf,
+		in.categoryID,
+		in.title, in.description, in.price, in.condition,
+		image1, image2, image3, image4,
 	)
 	if err != nil {
-		log.Printf("Create product error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create product"})
+		log.Printf("CreateProduct error: %v", err)
+		httpx.Error(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -178,16 +252,19 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 }
 
 func (h *ProductHandler) GetMyProducts(c *gin.Context) {
-	sellerIDStr := c.GetString("user_id")
-	sellerID, err := uuid.Parse(sellerIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	sellerID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
-	products, err := h.queries.GetProductsBySellerID(c.Request.Context(), sellerID)
+	p := httpx.ParsePagination(c, 24, 100)
+	products, err := h.queries.GetProductsBySellerID(c.Request.Context(), db.GetProductsBySellerIDParams{
+		SellerID: sellerID,
+		Limit:    p.Limit,
+		Offset:   p.Offset,
+	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch your products"})
+		httpx.Error(c, http.StatusInternalServerError, "could not fetch your products")
 		return
 	}
 
@@ -203,76 +280,48 @@ func (h *ProductHandler) GetMyProducts(c *gin.Context) {
 }
 
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
-	//Gets seller ID from JWT
-	sellerIDStr := c.GetString("user_id")
-	sellerID, err := uuid.Parse(sellerIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	sellerID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
-	// Gets product ID from URL
 	productID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
+		httpx.Error(c, http.StatusBadRequest, "invalid product ID")
 		return
 	}
 
-	// Gets existing product to retrieve current image URL
 	existing, err := h.queries.GetProductByID(c.Request.Context(), productID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		httpx.Error(c, http.StatusNotFound, "product not found")
 		return
 	}
 
-	// Parses form fields
-	title := c.PostForm("title")
-	description := c.PostForm("description")
-	price := c.PostForm("price")
-	categoryIDStr := c.PostForm("category_id")
-
-	if title == "" || description == "" || price == "" || categoryIDStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "title, description, price and category_id are required"})
+	if existing.SellerID != sellerID {
+		httpx.Error(c, http.StatusForbidden, "you do not own this product")
 		return
 	}
 
-	categoryID, err := strconv.Atoi(categoryIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category ID"})
+	in, ok := h.validateProductInput(c)
+	if !ok {
 		return
 	}
 
-	//Handle image upload
-	var mf multipart.File
-	fileHeader, err := c.FormFile("image")
-	if err == nil && fileHeader != nil {
-		mf, err = fileHeader.Open()
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "could not read image"})
-			return
-		}
-		defer mf.Close()
-	}
+	imgs, cleanup := openProductImages(c, "image_1", "image_2", "image_3", "image_4")
+	defer cleanup()
+	image1, image2, image3, image4 := imgs[0], imgs[1], imgs[2], imgs[3]
 
-	existingImage := ""
-	if existing.ImageUrl.Valid {
-		existingImage = existing.ImageUrl.String
-	}
-
-	//Call service
 	product, err := h.productService.UpdateProduct(
 		c.Request.Context(),
-		productID,
-		sellerID,
-		int32(categoryID),
-		title,
-		description,
-		price,
-		mf,
-		existingImage,
+		productID, sellerID,
+		in.categoryID,
+		in.title, in.description, in.price, in.condition,
+		image1, image2, image3, image4,
+		existing.ImageUrl1, existing.ImageUrl2,
+		existing.ImageUrl3, existing.ImageUrl4,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update product"})
+		httpx.Error(c, http.StatusInternalServerError, "could not update product")
 		return
 	}
 
@@ -283,22 +332,37 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 }
 
 func (h *ProductHandler) UpdateProductStatus(c *gin.Context) {
-	sellerIDStr := c.GetString("user_id")
-	sellerID, err := uuid.Parse(sellerIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	sellerID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
 	productID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
+		httpx.Error(c, http.StatusBadRequest, "invalid product ID")
 		return
 	}
 
 	var req models.UpdateStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		httpx.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Load the product to enforce ownership and protect the escrow state machine.
+	existing, err := h.queries.GetProductByID(c.Request.Context(), productID)
+	if err != nil {
+		httpx.Error(c, http.StatusNotFound, "product not found")
+		return
+	}
+	if existing.SellerID != sellerID {
+		httpx.Error(c, http.StatusForbidden, "you do not own this product")
+		return
+	}
+	// in_escrow / sold are managed by the payment flow — the seller must not be
+	// able to flip an item out of escrow (e.g. back to "available") mid-payment.
+	if existing.Status == "in_escrow" {
+		httpx.Error(c, http.StatusConflict, "product is in an active transaction and cannot be changed")
 		return
 	}
 
@@ -308,7 +372,7 @@ func (h *ProductHandler) UpdateProductStatus(c *gin.Context) {
 		Status:   req.Status,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update product status"})
+		httpx.Error(c, http.StatusInternalServerError, "could not update product status")
 		return
 	}
 
@@ -319,38 +383,37 @@ func (h *ProductHandler) UpdateProductStatus(c *gin.Context) {
 }
 
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
-	sellerIDStr := c.GetString("user_id")
-	sellerID, err := uuid.Parse(sellerIDStr)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user"})
+	sellerID, ok := httpx.CurrentUserID(c)
+	if !ok {
 		return
 	}
 
 	productID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
+		httpx.Error(c, http.StatusBadRequest, "invalid product ID")
 		return
 	}
 
-	// Gets product to retrieve image URL before deleting
 	existing, err := h.queries.GetProductByID(c.Request.Context(), productID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		httpx.Error(c, http.StatusNotFound, "product not found")
 		return
 	}
 
-	imageURL := ""
-	if existing.ImageUrl.Valid {
-		imageURL = existing.ImageUrl.String
+	// Enforce ownership explicitly so a non-owner gets 403 instead of a 200 "deleted
+	// successfully" when the seller-scoped DELETE actually matched no rows.
+	if existing.SellerID != sellerID {
+		httpx.Error(c, http.StatusForbidden, "you do not own this product")
+		return
 	}
 
 	if err := h.productService.DeleteProduct(
 		c.Request.Context(),
-		productID,
-		sellerID,
-		imageURL,
+		productID, sellerID,
+		existing.ImageUrl1, existing.ImageUrl2,
+		existing.ImageUrl3, existing.ImageUrl4,
 	); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete product"})
+		httpx.Error(c, http.StatusInternalServerError, "could not delete product")
 		return
 	}
 

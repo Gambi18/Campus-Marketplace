@@ -1,0 +1,43 @@
+# Development override: source-mounted hot-reload on top of docker-compose.yml.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# The backend reuses the build image's Go toolchain stage and runs `go run`
+# against the mounted source; restart the container to pick up Go changes.
+# The frontend runs `next dev` with file-watch polling, which is required for
+# hot reload to work over bind mounts on Windows / WSL2 / some macOS setups.
+
+services:
+  backend:
+    build:
+      context: ./backend
+      # Stop at the toolchain stage so `go run` is available in the container.
+      target: builder
+    command: go run ./cmd/api/main.go
+    environment:
+      ENV: development
+    volumes:
+      # Mount source for live edits. The Go module cache lives in /go (outside
+      # /app), so it survives this mount.
+      - ./backend:/app
+      - backend_uploads:/app/uploads
+
+  frontend:
+    build:
+      # Stop at the deps stage (node + installed modules) instead of the
+      # production runner, then run the dev server against mounted source.
+      target: deps
+    command: sh -c "npm install && npm run dev"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:8080}
+      # Poll for file changes — native inotify events don't cross bind mounts
+      # reliably on Windows/WSL2, so hot reload would otherwise silently break.
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./frontend:/app
+      # Keep the container's node_modules (built for Linux) from being shadowed
+      # by a host node_modules that may be absent or built for another OS.
+      - /app/node_modules

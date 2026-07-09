@@ -14,7 +14,8 @@ bin/
 
 # Dependency directories
 vendor/
-go.sum
+# go.sum is intentionally tracked — Docker builds and fresh clones need it for
+# reproducible `go mod download`.
 
 # Go workspace file
 go.work

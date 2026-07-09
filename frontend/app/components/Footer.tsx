@@ -1,8 +1,13 @@
+"use client";
 
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Logo from './Logo';
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname !== '/') return null;
+
   const currentYear = new Date().getFullYear();
 
   const marketplaceLinks = [
@@ -14,7 +19,7 @@ export default function Footer() {
 
   const resourceLinks = [
     { label: 'Safety Guide', href: '/' },
-    { label: 'Sell an Item', href: '/' },
+    { label: 'Sell an Item', href: '/sell' },
     { label: 'Price Checker', href: '/' },
     { label: 'Community Blog', href: '/' },
   ];
@@ -30,13 +35,13 @@ export default function Footer() {
     <footer className="w-full bg-brand-tertiary text-text-main border-t border-gray-200">
 
       <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
-        
+
         <div className="md:col-span-4 flex flex-col space-y-4">
-          <Logo/>
+          <Logo />
           <p className="text-sm text-text-muted leading-relaxed max-w-sm">
-            The premier peer-to-peer marketplace designed exclusively for university students to trade, sell, and buy with confidence.
+            A peer-to-peer marketplace for university students—everyone can list items and shop listings from others on campus.
           </p>
-          
+
           <div className="flex items-center space-x-4 pt-2 text-text-muted">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 cursor-pointer hover:text-brand-primary transition-colors">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
@@ -62,7 +67,7 @@ export default function Footer() {
             </ul>
           </div>
 
-       
+
           <div className="flex flex-col space-y-3.5">
             <h4 className="text-xs font-bold uppercase tracking-wider text-brand-neutral">
               Resources
@@ -98,17 +103,6 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-muted">
           <div>
             &copy; {currentYear} CampusMarket. All rights reserved.
-          </div>
-          <div className="flex items-center space-x-6">
-            <Link href="/legal/privacy" className="hover:text-brand-primary transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="/legal/cookies" className="hover:text-brand-primary transition-colors">
-              Cookie Settings
-            </Link>
-            <Link href="/accessibility" className="hover:text-brand-primary transition-colors">
-              Accessibility
-            </Link>
           </div>
         </div>
       </div>

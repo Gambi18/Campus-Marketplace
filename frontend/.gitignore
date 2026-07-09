@@ -8,6 +8,8 @@
 
 # Next.js
 /.next
+/.next_old
+.next_old/
 /out
 
 # Production
